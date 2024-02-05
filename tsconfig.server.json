@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "allowImportingTsExtensions": false,
+        "outDir": "./dist"
+    },
+    "include": ["types/*.ts", "src/backend/*.ts"]  // Adjust the path accordingly
+}

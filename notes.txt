@@ -1,0 +1,14 @@
+https://www.youtube.com/watch?v=IcBzsP-fvPo&ab_channel=RichRadke
+
+JSFeat sample code (needed):
+view-source:https://inspirit.github.io/jsfeat/sample_orb.html
+
+article on homography with tracking.js, JSFeat:
+https://hub.packtpub.com/object-detection-using-image-features-javascript/
+
+Sudoku solver (opencv):
+https://www.youtube.com/watch?v=O6WfZRyatcY&ab_channel=Murtaza%27sWorkshop-RoboticsandAI
+
+- Note! All crossings of orthogonal lines look the same so brute force matching 
+  will generate false matches. However, most of these false matches get weeded 
+  out by enforcing symmetric matching.
