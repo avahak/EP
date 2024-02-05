@@ -1,6 +1,6 @@
 .game-table {
     border-collapse: collapse;
-    width: 50%;
+    width: 100%;
     border: 2px solid black;
 }
 
@@ -10,61 +10,75 @@
 }
 
 /* Make every other separating line thicker */
-.game-table tr:nth-child(2n) td, .game-table td.cell1 {
+.game-table tr:nth-child(2n) td, .game-table td.table-col-1, .game-table td.table-col-5 {
     border-bottom: 3px solid #000;
 }
 
 /* Allow the remaining columns to adjust based on content */
-.game-table .cell3 {
+.game-table .table-col-3 {
     width: 0%;
     background: white;
     /* white-space: nowrap; */
 }
 
-.game-table .cell1 {
+.game-table .table-col-1 {
     width: 0%;
     background: white;
     white-space: nowrap;
     color: gray;
     padding: 0 5px;
+    text-align: center;
 }
 
-.game-table .cell2 {
-    width: 10%;
-    color: gray;
-    background: white;
+.game-table .table-head-2 {
+    max-width: 15px;
 }
 
-.game-table .cell4 {
-    width: 2%;
-    color: gray;
-    background: white;
-}
-
-.game-table .cell5 {
-    width: 2%;
+.game-table .table-col-2 {
+    width: 100%;
+    max-width: 1px;
     color: gray;
     background: white;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.player-name {
-    font-weight: bold;
+.game-table .table-col-4 {
+    width: 1px;
+    color: gray;
+    background: white;
+    padding: 0 5px;
+    text-align: center;
+}
+
+.game-table .table-col-4.winner {
+    width: 0%;
+    background: rgb(191, 254, 191);
+    padding: 0 5px;
+}
+
+.game-table .table-col-5 {
+    width: 0%;
+    color: gray;
+    background: white;
+    white-space: nowrap;
+    text-align: center;
+    padding: 0 5px;
 }
 
 /* Add styles for the select with non-trivial selection using the added class */
-.game-table select.modified {
-    background-color: rgb(47, 210, 47);
+.game-table select.winner {
+    background-color: rgb(191, 254, 191);
     /* border: 1px solid black; */
 }
 
 .game-table select {
-    background-color: rgb(190, 190, 190);
+    background-color: lightgray;
     /* border: 1px solid gray; */
     color: black;
 }
   
-
 .player-div {
     display: inline-block;
     color: blue;
