@@ -102,6 +102,11 @@ app.post("/hough",  async (req: Request, res: Response) => {
     res.json({ images: [image1, image2] });
 });
 
+// For any other routes, serve the React app
+app.get('*', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

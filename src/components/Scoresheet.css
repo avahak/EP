@@ -1,0 +1,72 @@
+.game-table {
+    border-collapse: collapse;
+    width: 50%;
+    border: 2px solid black;
+}
+
+.game-table td {
+    border: 1px solid #000;
+    padding: 1px;
+}
+
+/* Make every other separating line thicker */
+.game-table tr:nth-child(2n) td, .game-table td.cell1 {
+    border-bottom: 3px solid #000;
+}
+
+/* Allow the remaining columns to adjust based on content */
+.game-table .cell3 {
+    width: 0%;
+    background: white;
+    /* white-space: nowrap; */
+}
+
+.game-table .cell1 {
+    width: 0%;
+    background: white;
+    white-space: nowrap;
+    color: gray;
+    padding: 0 5px;
+}
+
+.game-table .cell2 {
+    width: 10%;
+    color: gray;
+    background: white;
+}
+
+.game-table .cell4 {
+    width: 2%;
+    color: gray;
+    background: white;
+}
+
+.game-table .cell5 {
+    width: 2%;
+    color: gray;
+    background: white;
+    white-space: nowrap;
+}
+
+.player-name {
+    font-weight: bold;
+}
+
+/* Add styles for the select with non-trivial selection using the added class */
+.game-table select.modified {
+    background-color: rgb(47, 210, 47);
+    /* border: 1px solid black; */
+}
+
+.game-table select {
+    background-color: rgb(190, 190, 190);
+    /* border: 1px solid gray; */
+    color: black;
+}
+  
+
+.player-div {
+    display: inline-block;
+    color: blue;
+    margin-right: 8px; /* Adjust the margin as needed */
+}
