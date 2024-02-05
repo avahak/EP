@@ -6,7 +6,7 @@ const Hough = () => {
     
     const fetchHough = async () => {
         try {
-            const imageUrl = './kuvat (2).jpg';
+            const imageUrl = './test_image.jpg';
             
             const response = await fetch('http://localhost:3001/hough', {
                 method: 'POST',

@@ -20,6 +20,10 @@ const __dirname = process.cwd();
 
 dotenv.config();
 
+// Serve static files from the 'dist' directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Enable CORS for all routes
