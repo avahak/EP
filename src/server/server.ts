@@ -24,7 +24,7 @@ dotenv.config();
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use('public', express.static(path.join(__dirname, 'public')));
 
 // Enable CORS for all routes
 app.use(cors());
