@@ -4,14 +4,14 @@
     "version": "0.0.0",
     "type": "module",
     "engines": {
-        "node": "20.x"
+        "node": ">=18.0"
     },
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
-        "server": "tsc -p tsconfig.server.json && node dist/server.js"
+        "start": "tsc -p tsconfig.server.json && node dist/server.js"
     },
     "dependencies": {
         "@google-cloud/vision": "^4.0.3",
