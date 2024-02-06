@@ -4,10 +4,9 @@
  * Remember: use // @ts-ignore to suppress warnings about unused methods
  */
 import { useForm, SubmitHandler } from "react-hook-form";
-// import { useEffect /*, useState*/ } from 'react';
-import './Scoresheet.css';
 import React, { useEffect } from "react";
-import { DiagonalSplitBox } from "./DiagonalSplitBox";
+import { ScoreTable } from "./ScoreTable";
+import './Scoresheet.css';
 
 // Possible outcomes of rounds
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -133,13 +132,7 @@ const Scoresheet: React.FC = () => {
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
 
             {/* Tuloslaatikko */}
-            <div className="result-box">
-            {[0, 1, 2].map((row) => (
-                [0, 1, 2].map((col) => (
-                    <DiagonalSplitBox key={`${row}-${col}`} left={roundWins[(9-row*2+col*3) % 9][0]} right={roundWins[(9-row*2+col*3) % 9][1]} />
-                ))
-            ))}
-            </div>
+            <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
 
             <br></br>
 
@@ -196,7 +189,7 @@ const Scoresheet: React.FC = () => {
                     </React.Fragment>))}
             </div>
 
-            {/* Map through game scores dynamically */}
+            {/* Map through game scores and place them in a table */}
             <table className="game-table">
             <thead>
                 <tr>
