@@ -1,5 +1,6 @@
 /**
  * ThumbnailSelector is a scrollable container of thumbnails that can be clicked.
+ * TODO The thumbnails should be loaded lazily.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -30,14 +31,10 @@ const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({ selectionCallback
     
     return (
         <div style={{ display: 'flex', height: '100%' }}>
-            <div style={{ width: '200px', height: '100%', overflowY: 'scroll', border: '1px solid #ccc' }}>
-                <ul>
-                    {thumbnails.map((thumbnail, index) => (
-                        <li key={index} onClick={() => selectionCallback(thumbnail)}>
-                            <img src={`${backendUrl}/thumbnails/${thumbnail}`} alt={`${thumbnail}`} />
-                        </li>
-                    ))}
-                </ul>
+            <div style={{ width: '200px', height: '100%', overflowX: 'hidden', overflowY: 'scroll', border: '1px solid #ccc' }}>
+                {thumbnails.map((thumbnail, index) => (
+                    <img key={index} src={`${backendUrl}/thumbnails/${thumbnail}`} alt={`${thumbnail}`} onClick={() => selectionCallback(thumbnail)} />
+                ))}
             </div>
         </div>
     );
