@@ -1,0 +1,27 @@
+.diagonal-box {
+    position: relative;
+    border: 1px solid black;
+    width: 40px;
+    height: 40px;
+}
+
+.left-text {
+    position: absolute;
+    transform: translate(20px, 20px) translate(-50%, -50%) translate(-10px, 8px);
+    /* border: 1px solid blue; */
+}
+
+.right-text {
+    position: absolute;
+    transform: translate(20px, 20px) translate(-50%, -50%) translate(10px, -8px);
+    /* border: 1px solid blue; */
+}
+
+.diagonal-line {
+    position: absolute;
+    width: calc(40px*1.414);
+    height: 0;
+    border: 1px solid black;
+    transform-origin: 1px 0px;
+    transform: rotate(45deg);
+}

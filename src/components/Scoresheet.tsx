@@ -7,6 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 // import { useEffect /*, useState*/ } from 'react';
 import './Scoresheet.css';
 import React, { useEffect } from "react";
+import { DiagonalSplitBox } from "./DiagonalSplitBox";
 
 // Possible outcomes of rounds
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -130,6 +131,18 @@ const Scoresheet: React.FC = () => {
 
     return (
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
+
+            {/* Tuloslaatikko */}
+            <div className="result-box">
+            {[0, 1, 2].map((row) => (
+                [0, 1, 2].map((col) => (
+                    <DiagonalSplitBox key={`${row}-${col}`} left={roundWins[(9-row*2+col*3) % 9][0]} right={roundWins[(9-row*2+col*3) % 9][1]} />
+                ))
+            ))}
+            </div>
+
+            <br></br>
+
             {/* Päivämäärä */}
             <label>
             Ottelun päivämäärä:

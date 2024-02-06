@@ -96,3 +96,8 @@
     grid-template-columns: minmax(min-content, 200px) min-content;
     grid-gap: 150;
 }
+
+.result-box {
+    display: grid;
+    grid-template-columns: repeat(3, min-content);
+}
