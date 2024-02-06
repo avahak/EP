@@ -1,3 +1,7 @@
+/**
+ * ThumbnailSelector is a scrollable container of thumbnails that can be clicked.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -27,11 +31,10 @@ const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({ selectionCallback
     return (
         <div style={{ display: 'flex', height: '100%' }}>
             <div style={{ width: '200px', height: '100%', overflowY: 'scroll', border: '1px solid #ccc' }}>
-                <h2>Thumbnail Selector</h2>
                 <ul>
                     {thumbnails.map((thumbnail, index) => (
                         <li key={index} onClick={() => selectionCallback(thumbnail)}>
-                            {thumbnail}
+                            <img src={`${backendUrl}/thumbnails/${thumbnail}`} alt={`${thumbnail}`} />
                         </li>
                     ))}
                 </ul>
