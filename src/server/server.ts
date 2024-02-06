@@ -170,9 +170,8 @@ app.get('/thumbnails/:filename', (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(thumbnailDirectory, filename);
     try {
-        // Check if the file exists
+        // If the file exists, serve it:
         if (fs.existsSync(filePath)) {
-            // Serve the file
             res.sendFile(filePath);
         } else {
             res.status(404).send('Thumbnail not found.');
@@ -180,6 +179,23 @@ app.get('/thumbnails/:filename', (req, res) => {
     } catch (error) {
         console.error('Error serving thumbnail:', error);
         res.status(500).send('Error serving thumbnail.');
+    }
+});
+
+// Serve a specific image
+app.get('/images/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(imageDirectory, filename);
+    try {
+        // If the file exists, serve it:
+        if (fs.existsSync(filePath)) {
+            res.sendFile(filePath);
+        } else {
+            res.status(404).send('Image not found.');
+        }
+    } catch (error) {
+        console.error('Error serving image:', error);
+        res.status(500).send('Error serving image.');
     }
 });
 
