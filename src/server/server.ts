@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-// import fs from 'fs';
+import fs from 'fs';
 import cors from 'cors';
 // import mysql, { RowDataPacket } from 'mysql2/promise';
 import dotenv from 'dotenv';
@@ -115,9 +115,27 @@ app.post('/upload', upload.single('file'), (req, res) => {
         res.status(400).send('No file uploaded.');
         return;
     }
-    // Handle the file as needed (save to disk, database, etc.)
-    console.log(`Received file: ${file.originalname}, size: ${file.size}`);
-    res.status(200).send(`Received file: ${file.originalname}, size: ${file.size}`);
+
+    // Directory to save the file in:
+    const targetDirectory = '/home/userdata/images';
+    const targetPath = path.join(targetDirectory, file.originalname);
+    // Check if the target directory exists
+    if (!fs.existsSync(targetDirectory)) {
+        const errorMessage = `Target directory '${targetDirectory}' does not exist.`;
+        console.error(errorMessage);
+        res.status(500).send(errorMessage);
+        return;
+    }
+
+    fs.writeFile(targetPath, file.buffer, (err) => {
+        if (err) {
+            console.error('Error saving file:', err);
+            res.status(500).send(`Error saving file: ${err.message}`);
+        } else {
+            console.log(`File saved to: ${targetPath}`);
+            res.status(200).send(`Received and saved file: ${file.originalname}, size: ${file.size}`);
+        }
+    });
 });
 
 // For any other routes, serve the React app
