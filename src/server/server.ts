@@ -18,6 +18,8 @@ import { createThumbnail } from './imageTools.js';
 
 const app = express();
 const PORT = 3001;
+const imageDirectory = '/home/userdata/images';
+const thumbnailDirectory = '/home/userdata/images/thumbnails';
 
 const __dirname = process.cwd();
 
@@ -112,7 +114,8 @@ app.post("/hough",  async (req: Request, res: Response) => {
 });
 
 /**
- * Upload an image to the server.
+ * Upload an image to the server. It creates a thumbnail of the image¨
+ * and stores both the image and the thumbnail on the file system.
  */
 app.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
@@ -122,12 +125,10 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     // Directory to save the file in:
-    const targetDirectory = '/home/userdata/images';
-    const targetDirectoryThumbnail = '/home/userdata/images/thumbnails';
-    const targetPath = path.join(targetDirectory, file.originalname);
-    const targetPathThumbnail = path.join(targetDirectoryThumbnail, `thumbnail_${file.originalname}.jpeg`);
+    const imagePath = path.join(imageDirectory, file.originalname);
+    const thumbnailPath = path.join(thumbnailDirectory, `thumbnail_${file.originalname}.jpeg`);
     // Check if the target directory exists
-    if (!fs.existsSync(targetDirectory) || !fs.existsSync(targetDirectoryThumbnail)) {
+    if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory)) {
         const errorMessage = `Image directory does not exist.`;
         console.error(errorMessage);
         res.status(500).send(errorMessage);
@@ -135,18 +136,50 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     try {
-        await writeFileAsync(targetPath, file.buffer);
+        await writeFileAsync(imagePath, file.buffer);
         const thumbnailBuffer = await createThumbnail(file.buffer);
         if (!thumbnailBuffer) {
             res.status(500).send("Creating thumbnail failed.");
             return;
         }
-        await writeFileAsync(targetPathThumbnail, thumbnailBuffer);
-        console.log(`File saved to: ${targetPath}`);
+        await writeFileAsync(thumbnailPath, thumbnailBuffer);
+        console.log(`File saved to: ${imagePath}`);
         res.status(200).send(`Received and saved thumbnail and image: ${file.originalname}, size: ${file.size}`);
     } catch (error) {
         console.error('Error saving file or thumbnail:', error);
         res.status(500).send(`Error saving file or thumbnail: ${error}`);
+    }
+});
+
+// List all thumbnails
+app.get('/thumbnails', (_req, res) => {
+    try {
+        if (!fs.existsSync(thumbnailDirectory))
+            throw Error("No thumbnail directory");
+        // Read the contents of the thumbnails directory
+        const thumbnailFiles = fs.readdirSync(thumbnailDirectory);
+        res.json({ thumbnails: thumbnailFiles });
+    } catch (error) {
+        console.error('Error listing thumbnails:', error);
+        res.status(500).send('Error listing thumbnails.');
+    }
+});
+
+// Serve a specific thumbnail
+app.get('/thumbnails/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(thumbnailDirectory, filename);
+    try {
+        // Check if the file exists
+        if (fs.existsSync(filePath)) {
+            // Serve the file
+            res.sendFile(filePath);
+        } else {
+            res.status(404).send('Thumbnail not found.');
+        }
+    } catch (error) {
+        console.error('Error serving thumbnail:', error);
+        res.status(500).send('Error serving thumbnail.');
     }
 });
 
