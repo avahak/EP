@@ -1,3 +1,4 @@
+import util from 'util';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -8,6 +9,7 @@ import { Homography } from './homography.js';
 import { test } from './test.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
+import { createThumbnail } from './imageTools.js';
 
 // interface User extends RowDataPacket {
 //     id: number;
@@ -34,6 +36,9 @@ app.use(express.json());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
+// Promisify fs.writeFile
+const writeFileAsync = util.promisify(fs.writeFile);
 
 // const pool = mysql.createPool({
 //     host: process.env.DB_HOST,
@@ -109,7 +114,7 @@ app.post("/hough",  async (req: Request, res: Response) => {
 /**
  * Upload an image to the server.
  */
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
     if (!file) {
         res.status(400).send('No file uploaded.');
@@ -118,24 +123,31 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
     // Directory to save the file in:
     const targetDirectory = '/home/userdata/images';
+    const targetDirectoryThumbnail = '/home/userdata/images/thumbnails';
     const targetPath = path.join(targetDirectory, file.originalname);
+    const targetPathThumbnail = path.join(targetDirectoryThumbnail, `thumbnail_${file.originalname}.jpeg`);
     // Check if the target directory exists
-    if (!fs.existsSync(targetDirectory)) {
-        const errorMessage = `Target directory '${targetDirectory}' does not exist.`;
+    if (!fs.existsSync(targetDirectory) || !fs.existsSync(targetDirectoryThumbnail)) {
+        const errorMessage = `Image directory does not exist.`;
         console.error(errorMessage);
         res.status(500).send(errorMessage);
         return;
     }
 
-    fs.writeFile(targetPath, file.buffer, (err) => {
-        if (err) {
-            console.error('Error saving file:', err);
-            res.status(500).send(`Error saving file: ${err.message}`);
-        } else {
-            console.log(`File saved to: ${targetPath}`);
-            res.status(200).send(`Received and saved file: ${file.originalname}, size: ${file.size}`);
+    try {
+        await writeFileAsync(targetPath, file.buffer);
+        const thumbnailBuffer = await createThumbnail(file.buffer);
+        if (!thumbnailBuffer) {
+            res.status(500).send("Creating thumbnail failed.");
+            return;
         }
-    });
+        await writeFileAsync(targetPathThumbnail, thumbnailBuffer);
+        console.log(`File saved to: ${targetPath}`);
+        res.status(200).send(`Received and saved thumbnail and image: ${file.originalname}, size: ${file.size}`);
+    } catch (error) {
+        console.error('Error saving file or thumbnail:', error);
+        res.status(500).send(`Error saving file or thumbnail: ${error}`);
+    }
 });
 
 // For any other routes, serve the React app

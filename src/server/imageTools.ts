@@ -168,4 +168,22 @@ class GrayscaleImage {
     // }
 }
 
-export { GrayscaleImage };
+/**
+ * Attempts to load the buffer as an image and returns a thumbnail of it if
+ * successfull. Otherwise returns null.
+ */
+async function createThumbnail(buffer: Buffer, thumbnailSize = 100) {
+    try {
+        // Resize the image to create a thumbnail
+        const thumbnailBuffer = await sharp(buffer)
+            .resize(thumbnailSize, thumbnailSize)
+            .jpeg()
+            .toBuffer();
+        return thumbnailBuffer;
+    } catch (error) {
+        console.error('Error creating thumbnail:', error);
+        return null;
+    }
+}
+
+export { GrayscaleImage, createThumbnail };
