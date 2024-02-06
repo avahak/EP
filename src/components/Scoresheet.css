@@ -1,6 +1,7 @@
 .game-table {
     border-collapse: collapse;
     width: 100%;
+    max-width: 600px;
     border: 2px solid black;
 }
 
@@ -32,6 +33,9 @@
 
 .game-table .table-head-2 {
     max-width: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-table .table-col-2 {
@@ -79,8 +83,16 @@
     color: black;
 }
   
-.player-div {
+.player-label {
     display: inline-block;
     color: blue;
     margin-right: 8px; /* Adjust the margin as needed */
+    white-space: nowrap;
+}
+
+/* Used for aligning teams info horizontally */
+.grid-container {
+    display: grid; 
+    grid-template-columns: minmax(min-content, 200px) min-content;
+    grid-gap: 150;
 }

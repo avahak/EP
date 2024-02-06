@@ -1,11 +1,12 @@
 /**
  * Scoresheet form.
  * NOTE: ottelu=match, peli=game, erä=round
+ * Remember: use // @ts-ignore to suppress warnings about unused methods
  */
 import { useForm, SubmitHandler } from "react-hook-form";
 // import { useEffect /*, useState*/ } from 'react';
 import './Scoresheet.css';
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 // Possible outcomes of rounds
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -61,6 +62,17 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
     return `${defaultName} ${index+1}`;
 }
 
+/**
+ * Helper function to get today's date in the format YYYY-MM-DD.
+ */
+// const getTodayDateString = () => {
+//     const today = new Date();
+//     const year = today.getFullYear();
+//     const month = String(today.getMonth() + 1).padStart(2, '0');
+//     const day = String(today.getDate()).padStart(2, '0');
+//     return `${year}-${month}-${day}`;
+// };
+
 const Scoresheet: React.FC = () => {
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
@@ -74,7 +86,7 @@ const Scoresheet: React.FC = () => {
     });
 
     useEffect(() => {
-        console.log("useEffect");
+        console.log("useEffect called");
     }, []);
 
     const onSubmit: SubmitHandler<FormFields> = (data) => {
@@ -82,8 +94,11 @@ const Scoresheet: React.FC = () => {
     }
 
     const scores = watch('scores');
+    // const date = watch('date');
     const playersHome = watch('playersHome');
     const playersAway = watch('playersAway');
+    const allFormValues = watch();
+    // console.log(date);
 
     const { runningScore, roundWins } = computeDerivedStats(scores);
 
@@ -98,35 +113,74 @@ const Scoresheet: React.FC = () => {
         if (selectValue !== " ")
             updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
         setValue('scores', updatedScores);
-    };    
+    };
+
+    /**
+     * Updates the teams in the match.
+     */
+    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectValue = event.target.value;
+        const parts = selectValue.split("-", 2);
+        // parts should always have 2 elements:
+        if (parts.length != 2)
+            return;
+        setValue('teamHome', parts[0]);
+        setValue('teamAway', parts[1]);
+    };
 
     return (
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
-            <label className="team-label">
-                Kotijoukkue:
-                <input {...register("teamHome")} type="text" placeholder="kotijoukkue" />
-            </label>
-            <label className="team-label">
-                Vierasjoukkue:
-                <input {...register("teamAway")} type="text" placeholder="vierasjoukkue" />
+            {/* Päivämäärä */}
+            <label>
+            Ottelun päivämäärä:
+            <input type="date" {...register('date')} />
             </label>
 
-            <div className="player-div">
-            {playersHome.map((_player, playerIndex) => (
-                <div key={playerIndex}>
-                    Pelaaja {playerIndex + 1}
+            <br></br>
+
+            {/* Ottelun valinta (TODO) */}
+            <label>
+            Ottelu (TODO):
+            <select onChange={handleSelectMatch} defaultValue="">
+                <option value="" disabled hidden>
+                    Valitse ottelu
+                </option>
+                {["TH3-RT4", "OT2-JI3"].map((outcome, outcomeIndex) => (
+                <option key={outcomeIndex} value={outcome}>
+                    {outcome}
+                </option>
+                ))}
+            </select>
+            </label>
+
+            <br></br>
+
+            {/* Kotijoukkueen nimi ja pelaajat */}
+            <div className="grid-container">
+                {/* Kotijoukkuen nimi */}
+                <label className="team-label">Kotijoukkue:</label>
+                {!!allFormValues.teamHome ? allFormValues.teamHome : "-"}
+
+                {/* Kotijoukkueen pelaajat */}
+                {playersHome.map((_player, playerIndex) => (
+                    <React.Fragment key={`player-${playerIndex}`}>
+                    <label className="player-label">Kotipelaaja {playerIndex + 1}</label>
                     <input {...register(`playersHome.${playerIndex}` as const)} />
-                </div>
-            ))}
+                    </React.Fragment>))}
             </div>
 
-            <div className="player-div">
-            {playersAway.map((_player, playerIndex) => (
-                <div key={playerIndex}>
-                    Pelaaja {playerIndex + 1}
+            {/* Vierasjoukkueen nimi ja pelaajat */}
+            <div className="grid-container">
+                {/* Vierasjoukkuen nimi */}
+                <label className="team-label">Vierasjoukkue:</label>
+                {!!allFormValues.teamAway ? allFormValues.teamAway : "-"}
+
+                {/* Vierasjoukkueen pelaajat */}
+                {playersAway.map((_player, playerIndex) => (
+                    <React.Fragment key={`player-${playerIndex}`}>
+                    <label className="player-label">Vieraspelaaja {playerIndex + 1}</label>
                     <input {...register(`playersAway.${playerIndex}` as const)} />
-                </div>
-            ))}
+                    </React.Fragment>))}
             </div>
 
             {/* Map through game scores dynamically */}
@@ -141,7 +195,7 @@ const Scoresheet: React.FC = () => {
                 <th>4.</th>
                 <th>5.</th>
                 <th>Voitot</th>
-                <th>Tilanne<br></br>(K - V)</th>
+                <th>Tilanne<br></br>K - V</th>
                 </tr>
             </thead>
             <tbody>
