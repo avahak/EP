@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { Homography } from './homography.js';
 import { test } from './test.js';
 import { HoughTransform } from './hough.js';
+import multer from 'multer';
 
 // interface User extends RowDataPacket {
 //     id: number;
@@ -30,6 +31,9 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.use(cors());
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // const pool = mysql.createPool({
 //     host: process.env.DB_HOST,
@@ -102,11 +106,26 @@ app.post("/hough",  async (req: Request, res: Response) => {
     res.json({ images: [image1, image2] });
 });
 
+/**
+ * Upload an image to the server.
+ */
+app.post('/upload', upload.single('file'), (req, res) => {
+    const file = req.file;
+    if (!file) {
+        res.status(400).send('No file uploaded.');
+        return;
+    }
+    // Handle the file as needed (save to disk, database, etc.)
+    console.log(`Received file: ${file.originalname}, size: ${file.size}`);
+    res.status(200).send(`Received file: ${file.originalname}, size: ${file.size}`);
+});
+
 // For any other routes, serve the React app
 app.get('*', (_req, res) => {
+    console.log("*:", _req.url);
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
