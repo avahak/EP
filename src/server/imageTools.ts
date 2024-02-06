@@ -172,7 +172,7 @@ class GrayscaleImage {
  * Attempts to load the buffer as an image and returns a thumbnail of it if
  * successfull. Otherwise returns null.
  */
-async function createThumbnail(buffer: Buffer, thumbnailSize = 100) {
+async function createThumbnail(buffer: Buffer, thumbnailSize = 200) {
     try {
         // Resize the image to create a thumbnail
         const thumbnailBuffer = await sharp(buffer)
