@@ -44,6 +44,7 @@ const FileUpload: React.FC = () => {
 
     return (
         <>
+        <Link to="/">Back</Link>
         <div style={{padding: "10px"}}>
         <h1>Upload image/file</h1>
         <form onSubmit={onFormSubmit}>
@@ -52,7 +53,6 @@ const FileUpload: React.FC = () => {
         {message && <p>{message}</p>}
         </form>
         </div>
-        <Link to="/">Back</Link>
         </>);
 };
 

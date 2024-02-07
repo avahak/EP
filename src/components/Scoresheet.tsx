@@ -2,7 +2,7 @@
  * Scoresheet form.
  * NOTE: ottelu=match, peli=game, erä=round
  */
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect } from "react";
 import { ScoreTable } from "./ScoreTable";
@@ -84,13 +84,15 @@ const Scoresheet: React.FC = () => {
             scores: Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' '))),
         },
     });
+    const navigate = useNavigate();
 
     useEffect(() => {
         console.log("useEffect called");
     }, []);
 
-    const onSubmit: SubmitHandler<FormFields> = (data) => {
-        console.log(data);
+    // This function is called on submit:
+    const onSubmit: SubmitHandler<FormFields> = (_data) => {
+        navigate("/");
     }
 
     const scores = watch('scores');
@@ -130,6 +132,7 @@ const Scoresheet: React.FC = () => {
 
     return (
         <>
+        <Link to="/">Back</Link>
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
 
             {/* Tuloslaatikko */}
@@ -264,7 +267,6 @@ const Scoresheet: React.FC = () => {
 
             <button type="submit">Lähetä</button>
         </form>
-        <Link to="/">Back</Link>
         </>
     );
 }

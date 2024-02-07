@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import Draw from './DrawHomography.js';
 import { getApiUrl } from "../utils/apiUtils";
+import { Link } from 'react-router-dom';
 
 function Homography() {
     const [homography, setHomography] = useState<any>(null);
 
-    const imgUrl1 = "./box_half.png";
-    const imgUrl2 = "./box_in_scene.png";
+    const imgName1 = "box_half.png";
+    const imgName2 = "box_in_scene.png";
     
     useEffect(() => {
         const fetchHomography = async () => {
@@ -18,8 +19,8 @@ function Homography() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        imgUrl1: imgUrl1,
-                        imgUrl2: imgUrl2,
+                        imgName1: imgName1,
+                        imgName2: imgName2,
                     }),
                 }); 
                 const data = await response.json();
@@ -33,11 +34,14 @@ function Homography() {
     }, []);
 
     return (
-        !!homography ? 
+        <>
+        <Link to="/">Back</Link>
+        {!!homography ? 
         (<div><p>{<Draw data={homography.data} />}</p>
         <p>Result: {JSON.stringify(homography.data.image1)}</p>
         </div>) 
-        : (<>"Nothing here"</>)
+        : (<>"Fetching.."</>)}
+        </>
     );
 }
     

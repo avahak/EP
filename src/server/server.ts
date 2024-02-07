@@ -98,20 +98,25 @@ const poolEP = mysql.createPool({
  * Used to test homography calculations.
  */
 app.post('/api/homography', async (req: Request, res: Response) => {
-    const imgUrl1 = `./public/${req.body.imgUrl1}`;
-    const imgUrl2 = `./public/${req.body.imgUrl2}`;
-    console.log("imgUrl1", imgUrl1);
-    console.log("imgUrl2", imgUrl2);
-    const h = new Homography(imgUrl1, imgUrl2);
+    try {
+        const imgPath1 = `${imageDirectory}/${req.body.imgName1}`;
+        const imgPath2 = `${imageDirectory}/${req.body.imgName2}`;
+        console.log("imgPath1", imgPath1);
+        console.log("imgPath2", imgPath2);
+        const h = new Homography(imgPath1, imgPath2);
 
-    const x = Math.random();
+        const x = Math.random();
 
-    console.time(`h.execute_${x}`);
-    await h.execute();
-    console.timeEnd(`h.execute_${x}`);
+        console.time(`h.execute_${x}`);
+        await h.execute();
+        console.timeEnd(`h.execute_${x}`);
 
-    console.log("h.data.matches.length", h.data.matches.length);
-    res.json({"data": h.data});
+        console.log("h.data.matches.length", h.data.matches.length);
+        res.json({"data": h.data});
+    } catch (error) {
+        console.error('Hough transform failed.', error);
+        res.status(500).send('Hough transform failed.');
+    }
 });
 
 // Does nothing
@@ -123,17 +128,22 @@ app.get("/api/opencv", async (_req: Request, _res: Response) => {
  * Used to test Hough transform calculations.
  */
 app.post("/api/hough",  async (req: Request, res: Response) => {
-    console.log("req.body", req.body);
-    const imgUrl = `./public/${req.body.imgUrl}`;
-    console.log("imgUrl", imgUrl);
-    const hough = await HoughTransform.hough(imgUrl);
+    try {
+        console.log("req.body", req.body);
+        const imgPath = `${imageDirectory}/${req.body.imgName}`;
+        console.log("imgPath", imgPath);
+        const hough = await HoughTransform.hough(imgPath);
 
-    // Encode the images as base64 data URLs
-    const image1 = `data:image/png;base64,${hough[0].toString('base64')}`;
-    const image2 = `data:image/png;base64,${hough[1].toString('base64')}`;
+        // Encode the images as base64 data URLs
+        const image1 = `data:image/png;base64,${hough[0].toString('base64')}`;
+        const image2 = `data:image/png;base64,${hough[1].toString('base64')}`;
 
-    // Send the images as JSON in the response
-    res.json({ images: [image1, image2] });
+        // Send the images as JSON in the response
+        res.json({ images: [image1, image2] });
+    } catch (error) {
+        console.error('Hough transform failed.', error);
+        res.status(500).send('Hough transform failed.');
+    }
 });
 
 /**

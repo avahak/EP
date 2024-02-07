@@ -10,6 +10,7 @@ import { Scoresheet } from './Scoresheet';
 import { App } from './App';
 import HoughDemo from './HoughDemo';
 import HomographyDemo from './HomographyDemo';
+import VisionExample from './VisionExample';
 
 // const port = (window.location.hostname == "localhost") ? ":3001" : "";
 // const backendUrl = `${window.location.protocol}//${window.location.hostname}${port}`;
@@ -22,7 +23,7 @@ const AppRouter = () => {
               <Route path="/scoresheet" element={<Scoresheet />} />
               <Route path="/hough" element={<HoughDemo />} />
               <Route path="/homography" element={<HomographyDemo />} />
-              <Route path="/vision" element={"Todo"} />
+              <Route path="/vision" element={<VisionExample />} />
               <Route path="/upload" element={<FileUpload />} />
               <Route path="/" element={<App />} />
             </Routes>

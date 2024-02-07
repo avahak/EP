@@ -9,15 +9,15 @@ class Homography {
     static BLUR_SIZE = 5;
 
     static hammingWeight: Uint8Array | null = null;
-    imageUrl1: string;
-    imageUrl2: string;
+    imagePath1: string;
+    imagePath2: string;
     data: any;
 
-    constructor(imageUrl1: string, imageUrl2: string) {
+    constructor(imagePath1: string, imagePath2: string) {
         if (!Homography.hammingWeight)
             Homography.computeHammingWeights();
-        this.imageUrl1 = imageUrl1;
-        this.imageUrl2 = imageUrl2;
+        this.imagePath1 = imagePath1;
+        this.imagePath2 = imagePath2;
     }
 
     static computeHammingWeights() {
@@ -146,14 +146,14 @@ class Homography {
     }
 
     async execute() {
-        let image1 = await this.grayscaleImage(this.imageUrl1);
+        let image1 = await this.grayscaleImage(this.imagePath1);
         let corners1 = this.findKeypoints(image1);
         let descriptors1 = this.findDescriptors(image1, corners1);
 
         // console.log("corners1", corners1);
         // console.log("descriptors1", descriptors1);
 
-        let image2 = await this.grayscaleImage(this.imageUrl2);
+        let image2 = await this.grayscaleImage(this.imagePath2);
         let corners2 = this.findKeypoints(image2);
         let descriptors2 = this.findDescriptors(image2, corners2);
 

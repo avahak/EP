@@ -179,9 +179,9 @@ class HoughTransform {
     /**
      * Performs the Hough transform.
      */
-    static async hough(imgUrl: string) {
+    static async hough(imgPath: string) {
         // grayscale, gaussian blur, threshold, invert, dilate
-        const image = sharp(imgUrl);
+        const image = sharp(imgPath);
 
         let gsi = await (await GrayscaleImage.load(image)).resize(800);
         let gsi2 = await ((await gsi.adaptiveThreshold()).invert());//.dilate();
