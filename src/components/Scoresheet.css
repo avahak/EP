@@ -12,7 +12,7 @@
 
 /* Make every other separating line thicker */
 .game-table tr:nth-child(2n) td, .game-table td.table-col-1, .game-table td.table-col-5 {
-    border-bottom: 3px solid #000;
+    border-bottom: 5px solid #7a7a7a;
 }
 
 /* Allow the remaining columns to adjust based on content */
@@ -100,4 +100,11 @@
 .result-box {
     display: grid;
     grid-template-columns: repeat(4, min-content);
+}
+
+.game-table .even {
+    background: white;
+}
+.game-table .odd {
+    background: lightgray;
 }

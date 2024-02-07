@@ -10,6 +10,7 @@ import './Scoresheet.css';
 
 // Possible outcomes of rounds
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
+const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
 type FormFields = {
     teamHome: string;
@@ -136,7 +137,9 @@ const Scoresheet: React.FC = () => {
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
 
             {/* Tuloslaatikko */}
-            <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
+            <div style={{ transformOrigin: '0 0', transform: 'scale(1)' }}>
+                <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
+            </div>
 
             <br></br>
 
@@ -155,9 +158,9 @@ const Scoresheet: React.FC = () => {
                 <option value="" disabled hidden>
                     Valitse ottelu
                 </option>
-                {["TH3-RT4", "OT2-JI3"].map((outcome, outcomeIndex) => (
-                <option key={outcomeIndex} value={outcome}>
-                    {outcome}
+                {["TH3-RT4", "OT2-JI3"].map((match, matchIndex) => (
+                <option key={matchIndex} value={match}>
+                    {match}
                 </option>
                 ))}
             </select>
@@ -213,15 +216,14 @@ const Scoresheet: React.FC = () => {
                 Array.from({ length: 2 }, (_, playerIndex) => (
                     <tr key={`row-${gameIndex}-${playerIndex}`}>
                     {/* Peli */}
-                    {playerIndex == 0 ? 
-                        <td className="table-col-1" rowSpan={2} style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                    {playerIndex == 0 &&
+                        <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
                             {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
                         </td>
-                        : <></>
                     }
 
                     {/* Pelaaja */}
-                    <td className="table-col-2" key={`player-${gameIndex}-${playerIndex}`}>
+                    <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
                         {playerIndex == 0 ? 
                             playerName(playersHome, gameIndex % 3, "Kotipelaaja")
                             : playerName(playersAway, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
@@ -229,7 +231,7 @@ const Scoresheet: React.FC = () => {
 
                     {/* Erätulokset */}
                     {Array.from({ length: 5 }, (_, roundIndex) => (
-                        <td className="table-col-3" key={`cell-${gameIndex}-${playerIndex}-${roundIndex + 500}`}>
+                        <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
                         <select className={scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
                             {...register(
                             `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
@@ -246,13 +248,13 @@ const Scoresheet: React.FC = () => {
                     ))}
 
                     {/* Voitot */}
-                    <td className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+                    <td className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
                         {roundWins[gameIndex][playerIndex]}
                     </td>
 
                     {/* Tilanne */}
                     {playerIndex == 0 ? 
-                    <td rowSpan={2} className="table-col-5" key={`running-score-${gameIndex}-${playerIndex}`}>
+                    <td rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
                         {runningScore[gameIndex][0] >= 0 ? 
                         `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
                         : " - "}
