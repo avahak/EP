@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 // import Draw from './DrawHough.js';
+import { getApiUrl } from "../utils/apiUtils";
 
 const Hough = () => {
     const [images, setImages] = useState<any[]>([]);
@@ -8,7 +9,8 @@ const Hough = () => {
         try {
             const imageUrl = './test_image.jpg';
             
-            const response = await fetch('http://localhost:3001/hough', {
+            const apiUrl = `${getApiUrl()}/hough`;
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

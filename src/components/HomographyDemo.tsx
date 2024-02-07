@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Draw from './DrawHomography.js';
+import { getApiUrl } from "../utils/apiUtils";
 
 function Homography() {
     const [homography, setHomography] = useState<any>(null);
@@ -10,7 +11,8 @@ function Homography() {
     useEffect(() => {
         const fetchHomography = async () => {
             try {
-                const response = await fetch('http://localhost:3001/homography', {
+                const apiUrl = `${getApiUrl()}/homography`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

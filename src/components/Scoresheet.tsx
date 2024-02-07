@@ -2,6 +2,7 @@
  * Scoresheet form.
  * NOTE: ottelu=match, peli=game, erä=round
  */
+import { Link } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect } from "react";
 import { ScoreTable } from "./ScoreTable";
@@ -128,6 +129,7 @@ const Scoresheet: React.FC = () => {
     };
 
     return (
+        <>
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
 
             {/* Tuloslaatikko */}
@@ -262,6 +264,8 @@ const Scoresheet: React.FC = () => {
 
             <button type="submit">Lähetä</button>
         </form>
+        <Link to="/">Back</Link>
+        </>
     );
 }
 
