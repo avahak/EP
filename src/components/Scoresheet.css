@@ -12,7 +12,7 @@
 
 /* Make every other separating line thicker */
 .game-table tr:nth-child(2n) td, .game-table td.table-col-1, .game-table td.table-col-5 {
-    border-bottom: 5px solid #7a7a7a;
+    border-bottom: 5px solid #292929;
 }
 
 /* Allow the remaining columns to adjust based on content */
@@ -78,7 +78,7 @@
 }
 
 .game-table select {
-    background-color: lightgray;
+    background-color: rgb(207, 186, 186);
     /* border: 1px solid gray; */
     color: black;
 }
@@ -93,8 +93,7 @@
 /* Used for aligning teams info horizontally */
 .grid-container {
     display: grid; 
-    grid-template-columns: minmax(min-content, 200px) min-content;
-    grid-gap: 150;
+    grid-template-columns: minmax(min-content, 150px) min-content;
 }
 
 .result-box {

@@ -135,14 +135,7 @@ const Scoresheet: React.FC = () => {
         <>
         <Link to="/">Back</Link>
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
-
-            {/* Tuloslaatikko */}
-            <div style={{ transformOrigin: '0 0', transform: 'scale(1)' }}>
-                <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
-            </div>
-
-            <br></br>
-
+            
             {/* Päivämäärä */}
             <label>
             Ottelun päivämäärä:
@@ -168,32 +161,41 @@ const Scoresheet: React.FC = () => {
 
             <br></br>
 
-            {/* Kotijoukkueen nimi ja pelaajat */}
-            <div className="grid-container">
-                {/* Kotijoukkuen nimi */}
-                <label className="team-label">Kotijoukkue:</label>
-                {!!allFormValues.teamHome ? allFormValues.teamHome : "-"}
+            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '10px'}}>
+                <div style={{display: 'flex', flexDirection: 'column', padding: '10px'}}>
+                    {/* Kotijoukkueen nimi ja pelaajat */}
+                    <div className="grid-container">
+                        {/* Kotijoukkuen nimi */}
+                        <label className="team-label">Kotijoukkue:</label>
+                        {!!allFormValues.teamHome ? allFormValues.teamHome : "-"}
 
-                {/* Kotijoukkueen pelaajat */}
-                {playersHome.map((_player, playerIndex) => (
-                    <React.Fragment key={`player-${playerIndex}`}>
-                    <label className="player-label">Kotipelaaja {playerIndex + 1}</label>
-                    <input {...register(`playersHome.${playerIndex}` as const)} />
-                    </React.Fragment>))}
-            </div>
+                        {/* Kotijoukkueen pelaajat */}
+                        {playersHome.map((_player, playerIndex) => (
+                            <React.Fragment key={`player-${playerIndex}`}>
+                            <label className="player-label">Kotipelaaja {playerIndex + 1}</label>
+                            <input {...register(`playersHome.${playerIndex}` as const)} />
+                            </React.Fragment>))}
+                    </div>
 
-            {/* Vierasjoukkueen nimi ja pelaajat */}
-            <div className="grid-container">
-                {/* Vierasjoukkuen nimi */}
-                <label className="team-label">Vierasjoukkue:</label>
-                {!!allFormValues.teamAway ? allFormValues.teamAway : "-"}
+                    {/* Vierasjoukkueen nimi ja pelaajat */}
+                    <div className="grid-container">
+                        {/* Vierasjoukkuen nimi */}
+                        <label className="team-label">Vierasjoukkue:</label>
+                        {!!allFormValues.teamAway ? allFormValues.teamAway : "-"}
 
-                {/* Vierasjoukkueen pelaajat */}
-                {playersAway.map((_player, playerIndex) => (
-                    <React.Fragment key={`player-${playerIndex}`}>
-                    <label className="player-label">Vieraspelaaja {playerIndex + 1}</label>
-                    <input {...register(`playersAway.${playerIndex}` as const)} />
-                    </React.Fragment>))}
+                        {/* Vierasjoukkueen pelaajat */}
+                        {playersAway.map((_player, playerIndex) => (
+                            <React.Fragment key={`player-${playerIndex}`}>
+                            <label className="player-label">Vieraspelaaja {playerIndex + 1}</label>
+                            <input {...register(`playersAway.${playerIndex}` as const)} />
+                            </React.Fragment>))}
+                    </div>
+                </div>
+
+                {/* Tuloslaatikko */}
+                <div style={{ transformOrigin: '0 0', transform: 'scale(1)' }}>
+                    <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
+                </div>
             </div>
 
             {/* Map through game scores and place them in a table */}

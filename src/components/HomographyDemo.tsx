@@ -38,7 +38,7 @@ function Homography() {
         <Link to="/">Back</Link>
         {!!homography ? 
         (<div><p>{<Draw data={homography.data} />}</p>
-        <p>Result: {JSON.stringify(homography.data.image1)}</p>
+        {/* <p>Result: {JSON.stringify(homography.data.image1)}</p> */}
         </div>) 
         : (<>"Fetching.."</>)}
         </>
