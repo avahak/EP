@@ -1,3 +1,7 @@
+/**
+ * File upload tool for internal use only.
+ */
+
 import React, { ChangeEvent, FormEvent, useState } from 'react';
 import axios from 'axios';
 
@@ -24,7 +28,7 @@ const FileUpload: React.FC = () => {
         
         try {
             const port = (window.location.hostname == "localhost") ? ":3001" : "";
-            const apiUrl = `${window.location.protocol}//${window.location.hostname}${port}/upload`;
+            const apiUrl = `${window.location.protocol}//${window.location.hostname}${port}/api/upload`;
             const response = await axios.post(apiUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -39,6 +43,7 @@ const FileUpload: React.FC = () => {
 
     return (
         <div>
+        <h1>Upload image/file</h1>
         <form onSubmit={onFormSubmit}>
         <input type="file" onChange={handleFileChange} />
         <button type="submit">Upload</button>

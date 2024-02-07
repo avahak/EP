@@ -2,8 +2,8 @@ import sharp from 'sharp';
 // import jsfeat from 'jsfeat';
 
 /**
- * Holds a grayscale image for image processing and provides various means
- * to modify or process it.
+ * GrayscaleImage holds a grayscale image for image processing and provides 
+ * various means to modify or process it. Uses sharp as basis for image manipulation.
  */
 class GrayscaleImage {
     buffer: Buffer;

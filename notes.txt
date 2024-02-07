@@ -12,3 +12,5 @@ https://www.youtube.com/watch?v=O6WfZRyatcY&ab_channel=Murtaza%27sWorkshop-Robot
 - Note! All crossings of orthogonal lines look the same so brute force matching 
   will generate false matches. However, most of these false matches get weeded 
   out by enforcing symmetric matching.
+
+- Use // @ts-ignore to suppress typescript warnings

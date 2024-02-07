@@ -1,3 +1,5 @@
+// OpenCV testing, NOT USED
+
 // import sharp from 'sharp';
 // import * as cv from 'opencv.js';
 // declare const cv: any;

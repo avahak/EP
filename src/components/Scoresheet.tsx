@@ -1,7 +1,6 @@
 /**
  * Scoresheet form.
  * NOTE: ottelu=match, peli=game, erä=round
- * Remember: use // @ts-ignore to suppress warnings about unused methods
  */
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect } from "react";

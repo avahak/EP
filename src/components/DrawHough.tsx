@@ -1,7 +1,5 @@
 import { useRef, useEffect } from 'react';
 
-// Not used atm.
-
 // function rgbaFromGrayscale(imgData: any): ImageData {
 //     // Create an array for RGBA data
 //     const grayscaleData = new Uint8Array(Object.values(imgData.data));

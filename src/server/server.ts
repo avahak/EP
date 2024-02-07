@@ -1,15 +1,21 @@
+/**
+ * Express backend for serving the React app, SQL queries, etc.
+ */
+
 import util from 'util';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import cors from 'cors';
-// import mysql, { RowDataPacket } from 'mysql2/promise';
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import { Homography } from './homography.js';
 import { test } from './test.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
+
+dotenv.config();
 
 // interface User extends RowDataPacket {
 //     id: number;
@@ -18,12 +24,12 @@ import { createThumbnail } from './imageTools.js';
 
 const app = express();
 const PORT = 3001;
-const imageDirectory = '/home/userdata/images';
-const thumbnailDirectory = '/home/userdata/images/thumbnails';
+const baseUploadDirectory = process.env.BASE_UPLOAD_DIRECTORY || "/home/userdata";
+const imageDirectory = `${baseUploadDirectory}/images`;
+const thumbnailDirectory = `${baseUploadDirectory}/images/thumbnails`;
+const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const __dirname = process.cwd();
-
-dotenv.config();
 
 // Serve static files from the 'dist' directory
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -42,13 +48,23 @@ const upload = multer({ storage: storage });
 // Promisify fs.writeFile
 const writeFileAsync = util.promisify(fs.writeFile);
 
-// const pool = mysql.createPool({
-//     host: process.env.DB_HOST,
-//     port: parseInt(process.env.DB_PORT || '3306', 10),
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_NAME
-// });
+// @ts-ignore
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
+
+// @ts-ignore
+const poolEP = mysql.createPool({
+    host: process.env.EP_DB_HOST,
+    port: parseInt(process.env.EP_DB_PORT || '3306'),
+    user: process.env.EP_DB_USER,
+    password: process.env.EP_DB_PASSWORD,
+    database: process.env.EP_DB_NAME
+});
 
 // app.get('/api/anecdotes', (_req: Request, res: Response) => {
 //     try {
@@ -62,7 +78,7 @@ const writeFileAsync = util.promisify(fs.writeFile);
 //     }
 // });
 
-// app.get('/users', async (_req: Request, res: Response) => {
+// app.get('/api/users', async (_req: Request, res: Response) => {
 //     try {
 //         const [rows] = await pool.query<User[]>('SELECT * FROM users');
 
@@ -78,7 +94,10 @@ const writeFileAsync = util.promisify(fs.writeFile);
 //     }
 // });
 
-app.post('/homography', async (req: Request, res: Response) => {
+/**
+ * Used to test homography calculations.
+ */
+app.post('/api/homography', async (req: Request, res: Response) => {
     const imgUrl1 = `./public/${req.body.imgUrl1}`;
     const imgUrl2 = `./public/${req.body.imgUrl2}`;
     console.log("imgUrl1", imgUrl1);
@@ -95,11 +114,15 @@ app.post('/homography', async (req: Request, res: Response) => {
     res.json({"data": h.data});
 });
 
-app.get("/opencv", async (_req: Request, _res: Response) => {
+// Does nothing
+app.get("/api/opencv", async (_req: Request, _res: Response) => {
     test();
 });
 
-app.post("/hough",  async (req: Request, res: Response) => {
+/**
+ * Used to test Hough transform calculations.
+ */
+app.post("/api/hough",  async (req: Request, res: Response) => {
     console.log("req.body", req.body);
     const imgUrl = `./public/${req.body.imgUrl}`;
     console.log("imgUrl", imgUrl);
@@ -114,10 +137,10 @@ app.post("/hough",  async (req: Request, res: Response) => {
 });
 
 /**
- * Upload an image to the server. It creates a thumbnail of the image¨
+ * Upload an image to the server. It creates a thumbnail of the image
  * and stores both the image and the thumbnail on the file system.
  */
-app.post('/upload', upload.single('file'), async (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
     if (!file) {
         res.status(400).send('No file uploaded.');
@@ -127,24 +150,29 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     // Directory to save the file in:
     const imagePath = path.join(imageDirectory, file.originalname);
     const thumbnailPath = path.join(thumbnailDirectory, `thumbnail_${file.originalname}.jpeg`);
+    const miscPath = path.join(miscDirectory, file.originalname);
+    console.log("BASE_UPLOAD_DIRECTORY", process.env.BASE_UPLOAD_DIRECTORY);
+    console.log("miscDirectory", miscDirectory);
     // Check if the target directory exists
-    if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory)) {
-        const errorMessage = `Image directory does not exist.`;
+    if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory) || !fs.existsSync(miscDirectory)) {
+        const errorMessage = `Upload directory does not exist.`;
         console.error(errorMessage);
         res.status(500).send(errorMessage);
         return;
     }
 
     try {
-        await writeFileAsync(imagePath, file.buffer);
         const thumbnailBuffer = await createThumbnail(file.buffer);
-        if (!thumbnailBuffer) {
-            res.status(500).send("Creating thumbnail failed.");
-            return;
+        if (thumbnailBuffer) {
+            // File is an image
+            await writeFileAsync(imagePath, file.buffer);
+            await writeFileAsync(thumbnailPath, thumbnailBuffer);
+        } else {
+            // File is not an image
+            await writeFileAsync(miscPath, file.buffer);
         }
-        await writeFileAsync(thumbnailPath, thumbnailBuffer);
-        console.log(`File saved to: ${imagePath}`);
-        res.status(200).send(`Received and saved thumbnail and image: ${file.originalname}, size: ${file.size}`);
+        console.log(`File saved to: ${thumbnailBuffer ? imagePath : miscPath}`);
+        res.status(200).send(`Received and saved: ${file.originalname}, size: ${file.size}`);
     } catch (error) {
         console.error('Error saving file or thumbnail:', error);
         res.status(500).send(`Error saving file or thumbnail: ${error}`);
@@ -152,7 +180,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 // List all thumbnails
-app.get('/thumbnails', (_req, res) => {
+app.get('/api/thumbnails', (_req, res) => {
     try {
         if (!fs.existsSync(thumbnailDirectory))
             throw Error("No thumbnail directory");
@@ -165,37 +193,50 @@ app.get('/thumbnails', (_req, res) => {
     }
 });
 
-// Serve a specific thumbnail
-app.get('/thumbnails/:filename', (req, res) => {
+// Serve a file
+const serveFile = (req: Request, res: Response, baseDirectory: string) => {
     const filename = req.params.filename;
-    const filePath = path.join(thumbnailDirectory, filename);
+    const filePath = path.join(baseDirectory, filename);
     try {
         // If the file exists, serve it:
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            res.status(404).send('Thumbnail not found.');
+            res.status(404).send('File not found.');
         }
     } catch (error) {
-        console.error('Error serving thumbnail:', error);
-        res.status(500).send('Error serving thumbnail.');
+        console.error('Error serving file:', error);
+        res.status(500).send('Error serving file.');
     }
-});
+};
 
-// Serve a specific image
-app.get('/images/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(imageDirectory, filename);
+// Serve images
+app.get('/api/images/:filename', (req, res) => serveFile(req, res, imageDirectory));
+// Serve thumbnails
+app.get('/api/thumbnails/:filename', (req, res) => serveFile(req, res, thumbnailDirectory));
+// Serve misc files
+app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory));
+
+/**
+ * Queries the SQL database for a schema and serves it.
+ */
+app.get('/api/schema', async (_req, res) => {
+    // res.json({ 
+    //     DB_HOST: process.env.DB_HOST,
+    //     DB_PORT: process.env.DB_PORT,
+    //     DB_NAME: process.env.DB_NAME,
+    //     EP_DB_HOST: process.env.EP_DB_HOST,
+    //     EP_DB_PORT: process.env.EP_DB_PORT,
+    //     EP_DB_NAME: process.env.EP_DB_NAME,
+    // });
+
     try {
-        // If the file exists, serve it:
-        if (fs.existsSync(filePath)) {
-            res.sendFile(filePath);
-        } else {
-            res.status(404).send('Image not found.');
-        }
+        const [rows] = await poolEP.query<any>('SHOW TABLES');
+
+        res.json({ rows });
     } catch (error) {
-        console.error('Error serving image:', error);
-        res.status(500).send('Error serving image.');
+        console.error('Error executing query:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
 
