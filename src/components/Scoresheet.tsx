@@ -147,35 +147,38 @@ const Scoresheet: React.FC = () => {
         setValue('playersAway', ['', '', '']);
     };
 
+    // const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    //     console.log(event);
+    // };
+
     /**
      * Creates a team selection label and select box.
      */
     const teamSelection = (team: "home" | "away") => {
         const teamName = (team == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
         const allTeamPlayers = (team == "home") ? allPlayersHome : allPlayersAway;
-        const players = (team == "home") ? "playersHome" : "playersAway";
+        const playersText = (team == "home") ? "playersHome" : "playersAway";
+        const players = (team == "home") ? playersHome : playersAway;
         const teamText = (team == "home") ? "Kotijoukkue" : "Vierasjoukkue";
         const defaultOptionText = (team == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
         return (<>
-        {/* Kotijoukkueen nimi ja pelaajat */}
+        {/* Joukkueen nimi ja pelaajat */}
         <div className="team-select-container">
-            {/* Kotijoukkuen nimi */}
+            {/* Joukkuen nimi */}
             <label className="team-label">{teamText}&nbsp;
             {!!teamName ? teamName : "-"}
             </label>
 
-            {/* Kotijoukkueen pelaajat */}
+            {/* Joukkueen pelaajat */}
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
-                {/* <label className="player-label">Kotipelaaja {playerIndex + 1}</label> */}
-                {/* <input {...register(`playersHome.${playerIndex}` as const)} /> */}
                 <select disabled={!teamName} defaultValue="" 
-                        {...register(`${players}.${playerIndex}` as const)}>
+                        {...register(`${playersText}.${playerIndex}` as const)}>
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
                     {allTeamPlayers.map((playerOption, playerOptionIndex) => (
-                        <option key={`player-option-${playerOptionIndex}`}>
+                        <option disabled={players.includes(playerOption)} key={`player-option-${playerOptionIndex}`}>
                             {playerOption}
                         </option>
                     ))}
