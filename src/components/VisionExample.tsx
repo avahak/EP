@@ -67,6 +67,13 @@ const VisionExample: React.FC = () => {
         <>
         <div style={{padding: '10px'}}>
             <Link to="/">Back</Link>
+            <br />
+            Alla on esimerkki <Link to="https://cloud.google.com/vision?hl=en">Google Vision API</Link> tekstintunnistuksesta.
+            Se palauttaa JSON tiedostossa löydetyt tekstit (sinisellä) 
+            ja niiden koordinaatit (bounding box on punaisella). Kuten näkyy,
+            tuloksia joutuu tulkitsemaan vähän (esim V on luettu symbolina "&gt;") ja
+            jotain virheitä löytyy (Oruo vs Orvo) ja suoria viivoja ei ole tulkittu
+            numerona 1. Tulos alla on kuitenkin hyvä ja sitä voisi käyttää (prosessoituna).
         </div>
         <div>
         <canvas ref={canvasRef} />

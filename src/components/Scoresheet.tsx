@@ -205,7 +205,7 @@ const Scoresheet: React.FC = () => {
             <th>4.</th>
             <th>5.</th>
             <th>Voitot</th>
-            <th>Tilanne<br></br>K - V</th>
+            <th>Tilanne<br />K - V</th>
             </tr>
         </thead>
         <tbody>
@@ -269,16 +269,9 @@ const Scoresheet: React.FC = () => {
     return (
         <>
         <Link to="/">Back</Link>
-        <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
-
-            {/* Päivämäärä */}
-            <label>
-            Ottelun päivämäärä:
-            <input type="date" {...register('date')} />
-            </label>
-
-            <br></br>
-
+        <div id="container">
+        <div id="scoresheet">
+        <form onSubmit={handleSubmit(onSubmit)}>
             {/* Ottelun valinta (TODO) */}
             <label>
             Ottelu (TODO):
@@ -287,14 +280,22 @@ const Scoresheet: React.FC = () => {
                     Valitse ottelu
                 </option>
                 {["TH3-RT4", "OT2-JI3"].map((match, matchIndex) => (
-                <option key={matchIndex} value={match}>
+                    <option key={matchIndex} value={match}>
                     {match}
                 </option>
                 ))}
             </select>
             </label>
 
-            <br></br>
+            <br />
+
+            {/* Päivämäärä */}
+            <label>
+            Ottelun päivämäärä:
+            <input type="date" {...register('date')} />
+            </label>
+
+            <br />
 
             <div id="table-box-outer">
                 <div id="table-box-outer-top">
@@ -318,6 +319,8 @@ const Scoresheet: React.FC = () => {
 
             <button type="submit">Lähetä</button>
         </form>
+        </div>
+        </div>
         </>
     );
 }
