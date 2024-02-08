@@ -15,11 +15,11 @@ const App = () => {
                 <Typography variant="h3">Demot</Typography>
                 <Link to="/scoresheet">Scoresheet</Link> 
                 <br></br>
+                <Link to="/vision">Google Vision API esimerkki</Link> 
+                <br></br>
                 <Link to="/hough">Hough-muunnos</Link> 
                 <br></br>
                 <Link to="/homography">Homografiat</Link> 
-                <br></br>
-                <Link to="/vision">Google Vision API esimerkki</Link> 
             </div>
             <div style={{padding: "2em"}}>
                 <Typography variant="h6">Työkalut</Typography>

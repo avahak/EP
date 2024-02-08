@@ -1,7 +1,7 @@
 .game-table {
     border-collapse: collapse;
     width: 100%;
-    max-width: 600px;
+    /* max-width: 600px; */
     border: 2px solid black;
 }
 
@@ -41,7 +41,8 @@
 .game-table .table-col-2 {
     width: 100%;
     max-width: 1px;
-    color: gray;
+    /* color: gray; */
+    text-align: center;
     background: white;
     white-space: nowrap;
     overflow: hidden;
@@ -114,4 +115,22 @@
 }
 .game-table .odd {
     background: lightgray;
+}
+
+.score-table {
+    padding-right: 30px;
+}
+
+#table-box-outer {
+    display: flex;
+    flex-direction: column;
+    /* border: 3px solid red; */
+    gap: 10px;
+    padding: 10px;
+}
+
+#table-box-outer-top {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }

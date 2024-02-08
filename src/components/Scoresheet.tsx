@@ -188,6 +188,84 @@ const Scoresheet: React.FC = () => {
         </>)
     };
 
+    /**
+     * Creates a table for selecting results.
+     */
+    const makeTable = () => {
+        return (
+        <div id="table-box">
+        <table className="game-table">
+        <thead>
+            <tr>
+            <th>Peli</th>
+            <th className="table-head-2">Pelaajan nimi</th>
+            <th>1.</th>
+            <th>2.</th>
+            <th>3.</th>
+            <th>4.</th>
+            <th>5.</th>
+            <th>Voitot</th>
+            <th>Tilanne<br></br>K - V</th>
+            </tr>
+        </thead>
+        <tbody>
+            {scores.map((_game, gameIndex) => (
+            Array.from({ length: 2 }, (_, playerIndex) => (
+                <tr key={`row-${gameIndex}-${playerIndex}`}>
+                {/* Peli */}
+                {playerIndex == 0 &&
+                    <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
+                        {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
+                    </td>
+                }
+
+                {/* Pelaaja */}
+                <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
+                    {playerIndex == 0 ? 
+                        playerName(playersHome, gameIndex % 3, "Kotipelaaja")
+                        : playerName(playersAway, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
+                </td>
+
+                {/* Erätulokset */}
+                {Array.from({ length: 5 }, (_, roundIndex) => (
+                    <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                    <select className={scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
+                        {...register(
+                        `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
+                        )}
+                        onChange={(event) => handleSelectChange(event, gameIndex, playerIndex, roundIndex)}
+                    >
+                        {OUTCOMES.map((outcome, outcomeIndex) => (
+                        <option key={outcomeIndex} value={outcome}>
+                            {outcome}
+                        </option>
+                        ))}
+                    </select>
+                    </td>
+                ))}
+
+                {/* Voitot */}
+                <td className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+                    {roundWins[gameIndex][playerIndex]}
+                </td>
+
+                {/* Tilanne */}
+                {playerIndex == 0 ? 
+                <td rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
+                    {runningScore[gameIndex][0] >= 0 ? 
+                    `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
+                    : " - "}
+                </td>
+                : <></>}
+
+                </tr>
+            ))
+            ))}
+        </tbody>
+        </table>
+        </div>);
+    };
+
     return (
         <>
         <Link to="/">Back</Link>
@@ -218,91 +296,25 @@ const Scoresheet: React.FC = () => {
 
             <br></br>
 
-            <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
-                <div style={{display: 'flex', flexDirection: 'column'}}>
-                    {/* Kotijoukkueen nimi ja pelaajat */}
-                    {teamSelection("home")}
+            <div id="table-box-outer">
+                <div id="table-box-outer-top">
+                    <div style={{display: 'flex', flexDirection: 'column'}}>
+                        {/* Kotijoukkueen nimi ja pelaajat */}
+                        {teamSelection("home")}
 
-                    {/* Vierasjoukkueen nimi ja pelaajat */}
-                    {teamSelection("away")}
+                        {/* Vierasjoukkueen nimi ja pelaajat */}
+                        {teamSelection("away")}
+                    </div>
+
+                    {/* Tuloslaatikko */}
+                    <div className="score-table">
+                        <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
+                    </div>
                 </div>
 
-                {/* Tuloslaatikko */}
-                <div style={{ transformOrigin: '0 0', transform: 'scale(1)' }}>
-                    <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
-                </div>
+                {/* Taulukko tulosten kirjaamiseksi */}
+                {makeTable()}
             </div>
-
-            {/* Map through game scores and place them in a table */}
-            <table className="game-table">
-            <thead>
-                <tr>
-                <th>Peli</th>
-                <th className="table-head-2">Pelaajan nimi</th>
-                <th>1.</th>
-                <th>2.</th>
-                <th>3.</th>
-                <th>4.</th>
-                <th>5.</th>
-                <th>Voitot</th>
-                <th>Tilanne<br></br>K - V</th>
-                </tr>
-            </thead>
-            <tbody>
-                {scores.map((_game, gameIndex) => (
-                Array.from({ length: 2 }, (_, playerIndex) => (
-                    <tr key={`row-${gameIndex}-${playerIndex}`}>
-                    {/* Peli */}
-                    {playerIndex == 0 &&
-                        <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
-                            {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
-                        </td>
-                    }
-
-                    {/* Pelaaja */}
-                    <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
-                        {playerIndex == 0 ? 
-                            playerName(playersHome, gameIndex % 3, "Kotipelaaja")
-                            : playerName(playersAway, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
-                    </td>
-
-                    {/* Erätulokset */}
-                    {Array.from({ length: 5 }, (_, roundIndex) => (
-                        <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                        <select className={scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
-                            {...register(
-                            `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
-                            )}
-                            onChange={(event) => handleSelectChange(event, gameIndex, playerIndex, roundIndex)}
-                        >
-                            {OUTCOMES.map((outcome, outcomeIndex) => (
-                            <option key={outcomeIndex} value={outcome}>
-                                {outcome}
-                            </option>
-                            ))}
-                        </select>
-                        </td>
-                    ))}
-
-                    {/* Voitot */}
-                    <td className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
-                        {roundWins[gameIndex][playerIndex]}
-                    </td>
-
-                    {/* Tilanne */}
-                    {playerIndex == 0 ? 
-                    <td rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
-                        {runningScore[gameIndex][0] >= 0 ? 
-                        `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
-                        : " - "}
-                    </td>
-                    : <></>}
-
-                    </tr>
-                ))
-                ))}
-            </tbody>
-            </table>
 
             <button type="submit">Lähetä</button>
         </form>
