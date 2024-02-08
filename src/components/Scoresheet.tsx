@@ -4,7 +4,7 @@
  */
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
 import './Scoresheet.css';
 
@@ -75,6 +75,7 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 // };
 
 const Scoresheet: React.FC = () => {
+    const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
             teamHome: '',
@@ -82,9 +83,21 @@ const Scoresheet: React.FC = () => {
             date: undefined,
             playersHome: ['', '', ''],
             playersAway: ['', '', ''],
-            scores: Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' '))),
+            scores: [...scoresDefaultValue],
         },
     });
+    // List of all players (including ones not currently playing) in Home team:
+    const [allPlayersHome, setAllPlayersHome] = useState<string[]>([]);
+    // List of all players (including ones not currently playing) in Away team:
+    const [allPlayersAway, setAllPlayersAway] = useState<string[]>([]);
+
+    const scores = watch('scores');
+    // const date = watch('date');
+    const playersHome = watch('playersHome');
+    const playersAway = watch('playersAway');
+    const allFormValues = watch();
+    // console.log(date);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -95,13 +108,6 @@ const Scoresheet: React.FC = () => {
     const onSubmit: SubmitHandler<FormFields> = (_data) => {
         navigate("/");
     }
-
-    const scores = watch('scores');
-    // const date = watch('date');
-    const playersHome = watch('playersHome');
-    const playersAway = watch('playersAway');
-    const allFormValues = watch();
-    // console.log(date);
 
     const { runningScore, roundWins } = computeDerivedStats(scores);
 
@@ -129,13 +135,64 @@ const Scoresheet: React.FC = () => {
             return;
         setValue('teamHome', parts[0]);
         setValue('teamAway', parts[1]);
+        // Using placeholder values until we get SQL connection working:
+        if (parts[0] == "TH3") {
+            setAllPlayersHome(["Matti", "Ville", "Joonas", "Jesse", "Aleksi"]);
+            setAllPlayersAway(["Kaisa", "Emmi", "Anne", "Päivi", "Leena"]);
+        } else {
+            setAllPlayersHome(["Pekka", "Rauno", "Pöde", "Tuomas", "Pete S."]);
+            setAllPlayersAway(["Erika", "Kati", "Sanna T", "Tytti", "Ulla"]);
+        }
+        setValue('playersHome', ['', '', '']);
+        setValue('playersAway', ['', '', '']);
+    };
+
+    /**
+     * Creates a team selection label and select box.
+     */
+    const teamSelection = (team: "home" | "away") => {
+        const teamName = (team == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
+        const allTeamPlayers = (team == "home") ? allPlayersHome : allPlayersAway;
+        const players = (team == "home") ? "playersHome" : "playersAway";
+        const teamText = (team == "home") ? "Kotijoukkue" : "Vierasjoukkue";
+        const defaultOptionText = (team == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
+        return (<>
+        {/* Kotijoukkueen nimi ja pelaajat */}
+        <div className="team-select-container">
+            {/* Kotijoukkuen nimi */}
+            <label className="team-label">{teamText}&nbsp;
+            {!!teamName ? teamName : "-"}
+            </label>
+
+            {/* Kotijoukkueen pelaajat */}
+            {[0, 1, 2].map((playerIndex) => (
+                <React.Fragment key={`player-${playerIndex}`}>
+                {/* <label className="player-label">Kotipelaaja {playerIndex + 1}</label> */}
+                {/* <input {...register(`playersHome.${playerIndex}` as const)} /> */}
+                <select disabled={!teamName} defaultValue="" 
+                        {...register(`${players}.${playerIndex}` as const)}>
+                    <option value="" disabled hidden>
+                        {`${defaultOptionText} ${playerIndex+1}`}
+                    </option>
+                    {allTeamPlayers.map((playerOption, playerOptionIndex) => (
+                        <option key={`player-option-${playerOptionIndex}`}>
+                            {playerOption}
+                        </option>
+                    ))}
+                    <option value="newPlayer">
+                        Lisää uusi pelaaja
+                    </option>
+                </select>
+                </React.Fragment>))}
+        </div>
+        </>)
     };
 
     return (
         <>
         <Link to="/">Back</Link>
         <form className="scoresheet" onSubmit={handleSubmit(onSubmit)}>
-            
+
             {/* Päivämäärä */}
             <label>
             Ottelun päivämäärä:
@@ -161,35 +218,13 @@ const Scoresheet: React.FC = () => {
 
             <br></br>
 
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '10px'}}>
-                <div style={{display: 'flex', flexDirection: 'column', padding: '10px'}}>
+            <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
+                <div style={{display: 'flex', flexDirection: 'column'}}>
                     {/* Kotijoukkueen nimi ja pelaajat */}
-                    <div className="grid-container">
-                        {/* Kotijoukkuen nimi */}
-                        <label className="team-label">Kotijoukkue:</label>
-                        {!!allFormValues.teamHome ? allFormValues.teamHome : "-"}
-
-                        {/* Kotijoukkueen pelaajat */}
-                        {playersHome.map((_player, playerIndex) => (
-                            <React.Fragment key={`player-${playerIndex}`}>
-                            <label className="player-label">Kotipelaaja {playerIndex + 1}</label>
-                            <input {...register(`playersHome.${playerIndex}` as const)} />
-                            </React.Fragment>))}
-                    </div>
+                    {teamSelection("home")}
 
                     {/* Vierasjoukkueen nimi ja pelaajat */}
-                    <div className="grid-container">
-                        {/* Vierasjoukkuen nimi */}
-                        <label className="team-label">Vierasjoukkue:</label>
-                        {!!allFormValues.teamAway ? allFormValues.teamAway : "-"}
-
-                        {/* Vierasjoukkueen pelaajat */}
-                        {playersAway.map((_player, playerIndex) => (
-                            <React.Fragment key={`player-${playerIndex}`}>
-                            <label className="player-label">Vieraspelaaja {playerIndex + 1}</label>
-                            <input {...register(`playersAway.${playerIndex}` as const)} />
-                            </React.Fragment>))}
-                    </div>
+                    {teamSelection("away")}
                 </div>
 
                 {/* Tuloslaatikko */}

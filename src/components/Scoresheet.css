@@ -96,6 +96,14 @@
     grid-template-columns: minmax(min-content, 150px) min-content;
 }
 
+/* Players to be selected into the teams are placed here */
+.team-select-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 5px;
+}
+
 .result-box {
     display: grid;
     grid-template-columns: repeat(4, min-content);
