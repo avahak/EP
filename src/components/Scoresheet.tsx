@@ -107,17 +107,17 @@ const Scoresheet: React.FC = () => {
         console.log("useEffect called");
     }, []);
 
-    // for AddPlayerModal
+    // opens the AddPlayerModal
     const handleOpenAddPlayerModal = () => {
         setIsAddPlayerModalOpen(true);
     }
 
-    // for AddPlayerModal
+    // closes the AddPlayerModal
     const handleCloseAddPlayerModal = () => {
         setIsAddPlayerModalOpen(false);
     }
 
-    // function for AddPlayerModal
+    // callback for adding player with AddPlayerModal
     const handleAddPlayer = () => {
         console.log("handleAddPlayer");
     } 
