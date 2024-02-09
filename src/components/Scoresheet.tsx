@@ -7,6 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
 import './Scoresheet.css';
+import AddPlayerModal from './AddPlayerModal';
 
 // Possible outcomes of rounds
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -75,6 +76,8 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 // };
 
 const Scoresheet: React.FC = () => {
+    // isAddPlayerModalOpen tracks if the player add modal is open on top of the form:
+    const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
     const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
@@ -103,6 +106,21 @@ const Scoresheet: React.FC = () => {
     useEffect(() => {
         console.log("useEffect called");
     }, []);
+
+    // for AddPlayerModal
+    const handleOpenAddPlayerModal = () => {
+        setIsAddPlayerModalOpen(true);
+    }
+
+    // for AddPlayerModal
+    const handleCloseAddPlayerModal = () => {
+        setIsAddPlayerModalOpen(false);
+    }
+
+    // function for AddPlayerModal
+    const handleAddPlayer = () => {
+        console.log("handleAddPlayer");
+    } 
 
     // This function is called on submit:
     const onSubmit: SubmitHandler<FormFields> = (_data) => {
@@ -147,9 +165,28 @@ const Scoresheet: React.FC = () => {
         setValue('playersAway', ['', '', '']);
     };
 
-    // const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    //     console.log(event);
-    // };
+    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        if (event.target.value == "newPlayer") {
+            console.log("newPlayer selected");
+            handleOpenAddPlayerModal();
+        }
+    };
+
+    /**
+     * creates modal to add new players to a team
+     */
+    const createAddPlayerModal = () => {
+        return (<>
+            <button onClick={handleOpenAddPlayerModal}>Add New Player</button>
+
+            {/* Render the AddPlayerModal */}
+            <AddPlayerModal
+                isOpen={isAddPlayerModalOpen}
+                onClose={handleCloseAddPlayerModal}
+                onAddPlayer={handleAddPlayer}
+            />
+        </>);
+    }
 
     /**
      * Creates a team selection label and select box.
@@ -173,7 +210,8 @@ const Scoresheet: React.FC = () => {
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
                 <select disabled={!teamName} defaultValue="" 
-                        {...register(`${playersText}.${playerIndex}` as const)}>
+                        {...register(`${playersText}.${playerIndex}` as const)}
+                        onChange={(event) => handleSelectPlayer(event)}>
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
@@ -272,6 +310,7 @@ const Scoresheet: React.FC = () => {
     return (
         <>
         <Link to="/">Back</Link>
+        {createAddPlayerModal()}
         <div id="container">
         <div id="scoresheet">
         <form onSubmit={handleSubmit(onSubmit)}>
