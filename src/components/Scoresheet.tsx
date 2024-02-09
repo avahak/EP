@@ -13,12 +13,17 @@ import AddPlayerModal from './AddPlayerModal';
 const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
+type Team = {
+    teamName: string;
+    teamRole: "home" | "away";
+    allPlayers: string[];
+    selectedPlayers: string[];
+}
+
 type FormFields = {
-    teamHome: string;
-    teamAway: string;
+    teamHome: Team;
+    teamAway: Team;
     date: Date | undefined;
-    playersHome: string[];
-    playersAway: string[];
     scores: string[][][];   // indexing: scores[game][player][round]
 }
 
@@ -78,28 +83,25 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 const Scoresheet: React.FC = () => {
     // isAddPlayerModalOpen tracks if the player add modal is open on top of the form:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
+    const emptyTeam: Team = {
+        teamName: '',
+        teamRole: "home",
+        allPlayers: [''],
+        selectedPlayers: ['', '', ''],
+    };
     const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
-            teamHome: '',
-            teamAway: '',
+            teamHome: {...emptyTeam, teamRole: "home"},
+            teamAway: {...emptyTeam, teamRole: "away"},
             date: undefined,
-            playersHome: ['', '', ''],
-            playersAway: ['', '', ''],
             scores: [...scoresDefaultValue],
         },
     });
-    // List of all players (including ones not currently playing) in Home team:
-    const [allPlayersHome, setAllPlayersHome] = useState<string[]>([]);
-    // List of all players (including ones not currently playing) in Away team:
-    const [allPlayersAway, setAllPlayersAway] = useState<string[]>([]);
 
     const scores = watch('scores');
     // const date = watch('date');
-    const playersHome = watch('playersHome');
-    const playersAway = watch('playersAway');
     const allFormValues = watch();
-    // console.log(date);
 
     const navigate = useNavigate();
 
@@ -151,18 +153,35 @@ const Scoresheet: React.FC = () => {
         // parts should always have 2 elements:
         if (parts.length != 2)
             return;
-        setValue('teamHome', parts[0]);
-        setValue('teamAway', parts[1]);
         // Using placeholder values until we get SQL connection working:
         if (parts[0] == "TH3") {
-            setAllPlayersHome(["Matti", "Ville", "Joonas", "Jesse", "Aleksi"]);
-            setAllPlayersAway(["Kaisa", "Emmi", "Anne", "Päivi", "Leena"]);
+            setValue("teamHome", {
+                teamName: parts[0],
+                teamRole: "home",
+                allPlayers: ["Matti", "Ville", "Joonas", "Jesse", "Aleksi"],
+                selectedPlayers: ['', '', '']
+            });
+            setValue("teamAway", {
+                teamName: parts[1],
+                teamRole: "away",
+                allPlayers: ["Kaisa", "Emmi", "Anne", "Päivi", "Leena"],
+                selectedPlayers: ['', '', '']
+            });
         } else {
-            setAllPlayersHome(["Pekka", "Rauno", "Pöde", "Tuomas", "Pete S."]);
-            setAllPlayersAway(["Erika", "Kati", "Sanna T", "Tytti", "Ulla"]);
+            setValue("teamHome", {
+                teamName: parts[0],
+                teamRole: "home",
+                allPlayers: ["Pekka", "Rauno", "Pöde", "Tuomas", "Pete S."],
+                selectedPlayers: ['', '', '']
+            });
+            setValue("teamAway", {
+                teamName: parts[1],
+                teamRole: "away",
+                allPlayers: ["Erika", "Kati", "Sanna T", "Tytti", "Ulla"],
+                selectedPlayers: ['', '', '']
+            });
         }
-        setValue('playersHome', ['', '', '']);
-        setValue('playersAway', ['', '', '']);
+        console.log("handleSelectMatch", allFormValues);
     };
 
     const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -191,39 +210,36 @@ const Scoresheet: React.FC = () => {
     /**
      * Creates a team selection label and select box.
      */
-    const teamSelection = (team: "home" | "away") => {
-        const teamName = (team == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
-        const allTeamPlayers = (team == "home") ? allPlayersHome : allPlayersAway;
-        const playersText = (team == "home") ? "playersHome" : "playersAway";
-        const players = (team == "home") ? playersHome : playersAway;
-        const teamText = (team == "home") ? "Kotijoukkue" : "Vierasjoukkue";
-        const defaultOptionText = (team == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
-        console.log("players", players);
+    const teamSelection = (teamRole: "home" | "away") => {
+        const team = (teamRole == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
+        const teamString = (teamRole == "home") ? "teamHome" : "teamAway";
+        const teamText = (teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
+        const defaultOptionText = (teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
+        console.log("team", team);
         return (<>
         {/* Joukkueen nimi ja pelaajat */}
         <div className="team-select-container">
             {/* Joukkuen nimi */}
             <label className="team-label">{teamText}&nbsp;
-            {!!teamName ? teamName : "-"}
+            {!!team.teamName ? team.teamName : "-"}
             </label>
 
             {/* Joukkueen pelaajat */}
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
-                <select disabled={!teamName} defaultValue="" 
-                        {...register(`${playersText}.${playerIndex}` as const)}
+                <select disabled={!team.teamName} defaultValue="" 
+                        {...register(`${teamString}.selectedPlayers.${playerIndex}` as const)}
                         onChange={(event) => {
                             // if React Hook Form implements onChange, run it first: 
-                            if (register(`${playersText}.${playerIndex}`).onChange)
-                                register(`${playersText}.${playerIndex}`).onChange(event);
+                            if (register(`${teamString}.selectedPlayers.${playerIndex}`).onChange)
+                                register(`${teamString}.selectedPlayers.${playerIndex}`).onChange(event);
                             handleSelectPlayer(event);
                         }}>
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
-                    {players}
-                    {allTeamPlayers.map((playerOption, playerOptionIndex) => (
-                        <option disabled={players.includes(playerOption)} key={`player-option-${playerOptionIndex}`}>
+                    {team.allPlayers.map((playerOption, playerOptionIndex) => (
+                        <option disabled={team.selectedPlayers.includes(playerOption)} key={`player-option-${playerOptionIndex}`}>
                             {playerOption}
                         </option>
                     ))}
@@ -270,8 +286,8 @@ const Scoresheet: React.FC = () => {
                 {/* Pelaaja */}
                 <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
                     {playerIndex == 0 ? 
-                        playerName(playersHome, gameIndex % 3, "Kotipelaaja")
-                        : playerName(playersAway, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
+                        playerName(allFormValues.teamHome.selectedPlayers, gameIndex % 3, "Kotipelaaja")
+                        : playerName(allFormValues.teamAway.selectedPlayers, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
                 </td>
 
                 {/* Erätulokset */}
@@ -358,7 +374,7 @@ const Scoresheet: React.FC = () => {
 
                     {/* Tuloslaatikko */}
                     <div className="score-table">
-                        <ScoreTable roundWins={roundWins} playersHome={playersHome} playersAway={playersAway}></ScoreTable>
+                        <ScoreTable roundWins={roundWins} playersHome={allFormValues.teamHome.selectedPlayers} playersAway={allFormValues.teamAway.selectedPlayers}></ScoreTable>
                     </div>
                 </div>
 
