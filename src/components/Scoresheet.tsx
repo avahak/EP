@@ -165,12 +165,13 @@ const Scoresheet: React.FC = () => {
         setValue('playersAway', ['', '', '']);
     };
 
-    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        if (event.target.value == "newPlayer") {
-            console.log("newPlayer selected");
-            handleOpenAddPlayerModal();
-        }
-    };
+    // const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    //     console.log(event);
+    //     if (event.target.value == "newPlayer") {
+    //         console.log("newPlayer selected");
+    //         handleOpenAddPlayerModal();
+    //     }
+    // };
 
     /**
      * creates modal to add new players to a team
@@ -198,6 +199,7 @@ const Scoresheet: React.FC = () => {
         const players = (team == "home") ? playersHome : playersAway;
         const teamText = (team == "home") ? "Kotijoukkue" : "Vierasjoukkue";
         const defaultOptionText = (team == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
+        console.log("players", players);
         return (<>
         {/* Joukkueen nimi ja pelaajat */}
         <div className="team-select-container">
@@ -210,11 +212,12 @@ const Scoresheet: React.FC = () => {
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
                 <select disabled={!teamName} defaultValue="" 
-                        {...register(`${playersText}.${playerIndex}` as const)}
-                        onChange={(event) => handleSelectPlayer(event)}>
+                        {...register(`${playersText}.${playerIndex}` as const)}>
+                        {/* onChange={(event) => handleSelectPlayer(event)}> */}
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
+                    {players}
                     {allTeamPlayers.map((playerOption, playerOptionIndex) => (
                         <option disabled={players.includes(playerOption)} key={`player-option-${playerOptionIndex}`}>
                             {playerOption}
