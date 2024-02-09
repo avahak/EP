@@ -165,21 +165,20 @@ const Scoresheet: React.FC = () => {
         setValue('playersAway', ['', '', '']);
     };
 
-    // const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    //     console.log(event);
-    //     if (event.target.value == "newPlayer") {
-    //         console.log("newPlayer selected");
-    //         handleOpenAddPlayerModal();
-    //     }
-    // };
+    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        console.log(event);
+        if (event.target.value == "newPlayer") {
+            console.log("newPlayer selected");
+            handleOpenAddPlayerModal();
+            event.target.value = "";
+        }
+    };
 
     /**
      * creates modal to add new players to a team
      */
     const createAddPlayerModal = () => {
         return (<>
-            <button onClick={handleOpenAddPlayerModal}>Add New Player</button>
-
             {/* Render the AddPlayerModal */}
             <AddPlayerModal
                 isOpen={isAddPlayerModalOpen}
@@ -212,8 +211,13 @@ const Scoresheet: React.FC = () => {
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
                 <select disabled={!teamName} defaultValue="" 
-                        {...register(`${playersText}.${playerIndex}` as const)}>
-                        {/* onChange={(event) => handleSelectPlayer(event)}> */}
+                        {...register(`${playersText}.${playerIndex}` as const)}
+                        onChange={(event) => {
+                            // if React Hook Form implements onChange, run it first: 
+                            if (register(`${playersText}.${playerIndex}`).onChange)
+                                register(`${playersText}.${playerIndex}`).onChange(event);
+                            handleSelectPlayer(event);
+                        }}>
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
