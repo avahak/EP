@@ -4,13 +4,22 @@ import Modal from 'react-modal';
 
 Modal.setAppElement('#root'); // Set the root element for accessibility
 
+type Team = {
+    teamName: string;
+    teamRole: "home" | "away";
+    allPlayers: string[];
+    selectedPlayers: string[];
+};
+
 type AddPlayerModalProps = {
     isOpen: boolean;
+    team: Team;
     onClose: () => void;
     onAddPlayer: (newPlayerName: string) => void;
-}
+};
 
-const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAddPlayer }) => {
+
+const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
     const [newPlayerName, setNewPlayerName] = useState('');
     
     const handleAddPlayer = () => {
@@ -24,6 +33,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAddP
     return (
         <Modal isOpen={isOpen} onRequestClose={onClose}>
             <h2>Add New Player (TODO)</h2>
+            <h2>{`Team: ${team.teamName}, ${team.teamRole}`}</h2>
             <label>
                 Player Name:
                 <input

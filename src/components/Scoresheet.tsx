@@ -10,7 +10,7 @@ import './Scoresheet.css';
 import AddPlayerModal from './AddPlayerModal';
 
 // Possible outcomes of rounds
-const OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
+const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
 type Team = {
@@ -18,14 +18,14 @@ type Team = {
     teamRole: "home" | "away";
     allPlayers: string[];
     selectedPlayers: string[];
-}
+};
 
 type FormFields = {
     teamHome: Team;
     teamAway: Team;
     date: Date | undefined;
     scores: string[][][];   // indexing: scores[game][player][round]
-}
+};
 
 /**
  * Counts and returns the running score and number of rounds won for each game.
@@ -89,6 +89,8 @@ const Scoresheet: React.FC = () => {
         allPlayers: [''],
         selectedPlayers: ['', '', ''],
     };
+    // currentTeam is only for the addPlayerModal so that it knows what team to modify:
+    const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
     const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
@@ -120,8 +122,15 @@ const Scoresheet: React.FC = () => {
     }
 
     // callback for adding player with AddPlayerModal
-    const handleAddPlayer = () => {
-        console.log("handleAddPlayer");
+    const handleAddPlayer = (playerName: string, team: Team, slot: number) => {
+        console.log("handleAddPlayer", playerName, team);
+        const isHome = (team == allFormValues.teamHome);
+        // const baseTeam = isHome ? allFormValues.teamHome : allFormValues.teamAway;
+        setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, playerName]);
+        setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, playerName);
+        console.log("handleAddPlayer isHome", isHome);
+        console.log("handleAddPlayer allPlayers", isHome ? allFormValues.teamHome.allPlayers : allFormValues.teamAway.allPlayers);
+        console.log("handleAddPlayer selectedPlayers", isHome ? allFormValues.teamHome.selectedPlayers : allFormValues.teamAway.selectedPlayers);
     } 
 
     // This function is called on submit:
@@ -184,12 +193,12 @@ const Scoresheet: React.FC = () => {
         console.log("handleSelectMatch", allFormValues);
     };
 
-    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
         console.log(event);
         if (event.target.value == "newPlayer") {
-            console.log("newPlayer selected");
+            setCurrentPlayerSlot({team, slot});
+            console.log("newPlayer selected", slot);
             handleOpenAddPlayerModal();
-            event.target.value = "";
         }
     };
 
@@ -201,8 +210,9 @@ const Scoresheet: React.FC = () => {
             {/* Render the AddPlayerModal */}
             <AddPlayerModal
                 isOpen={isAddPlayerModalOpen}
+                team={currentPlayerSlot.team}
                 onClose={handleCloseAddPlayerModal}
-                onAddPlayer={handleAddPlayer}
+                onAddPlayer={(playerName) => handleAddPlayer(playerName, currentPlayerSlot.team, currentPlayerSlot.slot)}
             />
         </>);
     }
@@ -227,19 +237,22 @@ const Scoresheet: React.FC = () => {
             {/* Joukkueen pelaajat */}
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
-                <select disabled={!team.teamName} defaultValue="" 
+                <select disabled={!team.teamName}
+                        value={team.selectedPlayers[playerIndex]} 
                         {...register(`${teamString}.selectedPlayers.${playerIndex}` as const)}
                         onChange={(event) => {
-                            // if React Hook Form implements onChange, run it first: 
+                            // if React Hook Form implements onChange, run it: 
                             if (register(`${teamString}.selectedPlayers.${playerIndex}`).onChange)
                                 register(`${teamString}.selectedPlayers.${playerIndex}`).onChange(event);
-                            handleSelectPlayer(event);
+                            handleSelectPlayer(event, team, playerIndex);
                         }}>
                     <option value="" disabled hidden>
                         {`${defaultOptionText} ${playerIndex+1}`}
                     </option>
                     {team.allPlayers.map((playerOption, playerOptionIndex) => (
-                        <option disabled={team.selectedPlayers.includes(playerOption)} key={`player-option-${playerOptionIndex}`}>
+                        <option 
+                            disabled={team.selectedPlayers.includes(playerOption)}
+                            key={`player-option-${playerOptionIndex}`}>
                             {playerOption}
                         </option>
                     ))}
@@ -299,7 +312,7 @@ const Scoresheet: React.FC = () => {
                         )}
                         onChange={(event) => handleSelectChange(event, gameIndex, playerIndex, roundIndex)}
                     >
-                        {OUTCOMES.map((outcome, outcomeIndex) => (
+                        {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
                         <option key={outcomeIndex} value={outcome}>
                             {outcome}
                         </option>

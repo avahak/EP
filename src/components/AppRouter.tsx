@@ -25,6 +25,7 @@ const AppRouter = () => {
               <Route path="/homography" element={<HomographyDemo />} />
               <Route path="/vision" element={<VisionExample />} />
               <Route path="/upload" element={<FileUpload />} />
+              {/* <Route path="/debug" element={<></>} /> */}
               <Route path="/" element={<App />} />
             </Routes>
         </Router>
