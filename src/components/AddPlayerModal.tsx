@@ -1,4 +1,7 @@
-// AddPlayerModal.js
+/** 
+ * AddPlayerModal is a modal that opens on top of Scoresheet when adding 
+ * a new player is selected.
+ */
 import { useState } from 'react';
 import Modal from 'react-modal';
 
@@ -36,10 +39,11 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, 
         onRequestClose={onClose}
         style={{
             overlay: {
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
             },
             content: {
             width: '300px',
+            height: '300px',
             margin: 'auto',
             borderRadius: '8px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',

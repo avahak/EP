@@ -196,6 +196,9 @@ const Scoresheet: React.FC = () => {
     const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
         console.log(event);
         if (event.target.value == "newPlayer") {
+            const isHome = (team == allFormValues.teamHome);
+            // Reset the selected value
+            setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, '');
             setCurrentPlayerSlot({team, slot});
             console.log("newPlayer selected", slot);
             handleOpenAddPlayerModal();
