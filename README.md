@@ -1,7 +1,7 @@
 Express.js ja React koodia biljardiliigan verkkosivuille.  
   
 ---  
-  
+```
 Tiedostojen ja hakemistojen tarkoitukset:  
   
 index.html - Reactin lataava html  
@@ -47,3 +47,4 @@ src/utils/apiUtils.ts - Apufunktio api rajapinnan osoitteelle
   
 src/types/ - TypeScript-tyyppien käytössä tarvittavia moduulilaajennuksia.  
         Nämä voi jättää huomioimatta ja tarvitaan vain teknisistä syistä.  
+``` 
