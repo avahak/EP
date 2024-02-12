@@ -1,16 +1,18 @@
-/**
- * Displays Google Vision API result visually.
- */
-
 import axios from 'axios';
 import { useEffect, useRef } from "react";
 import { getApiUrl } from "../utils/apiUtils";
 import { Link } from 'react-router-dom';
 
 const apiUrl = getApiUrl();
+// Google Vision API palauttama json-tiedosto, tämä korvataan varsinaisessa käytössä
+// api-kutsun vastauksella
 const exampleName = `google_vision_api_IMG-20231128-WA0002.json`;
+// Esimerkkinä oleva kuva:
 const imageName = `IMG-20231128-WA0002.jpg`;
 
+/**
+ * Piirretään esimerkki pöytäkirjan lukemisesta Google Vision API:lla.
+ */
 const VisionExample: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 

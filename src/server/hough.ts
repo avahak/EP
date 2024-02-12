@@ -1,17 +1,18 @@
-// import jsfeat from 'jsfeat';
 import sharp from 'sharp';       // https://sharp.pixelplumbing.com/
 import { GrayscaleImage } from "./imageTools.js";
 
 /**
- * Constructs Hough transform from a given GrayscaleImage object.
+ * Luokka Hough-muunnoksien laskemisksi annetusta mustavalkoisesta kuvasta.
+ * Hough-muunnos löytää viivat kuvasta.
+ * Hough-muunnos Wikipediassa: https://en.wikipedia.org/wiki/Hough_transform
  */
 class HoughTransform {
 
     public votes: Int32Array;       // indexing: buffer[r*sizeAngle+theta]
     public source: GrayscaleImage;
-    public sizeAngle: number;       // size of angle dimension in houghMap
-    public sizeRadius: number;      // size of radius dimension in houghMap
-    public deltaRadius: number;     // distance between two adjacent radii
+    public sizeAngle: number;       // kulma dimensio suuruus houghMap:ssa
+    public sizeRadius: number;      // radius dimension suuruus houghMap:ssa
+    public deltaRadius: number;     // etäisyys kahden peräkkäisen radius välillä
 
     private constructor(source: GrayscaleImage) {
         this.source = source;
@@ -22,7 +23,7 @@ class HoughTransform {
     }
 
     /**
-     * Counts all the votes in the accumulator (votes).
+     * Kirjaa kaikki annetut äänet (votes).
      */
     private countVotes() {
         for (let k = 0; k < this.votes.length; k++)
@@ -31,10 +32,11 @@ class HoughTransform {
             for (let kx = 0; kx < this.source.width; kx++) {
                 if (this.source.buffer[ky*this.source.width+kx] < 128)
                     continue;
-                // Could use optimization here - just allow votes that agree with 
-                // local gradient at the point.
+                // Tässä tulisi käyttää optimointia, missä ainoastaan
+                // sellaiset pixelit voivat äänestää, joiden lokaali gradientti on
+                // lähellä kulmaa angle.
                 for (let angle = 0; angle < this.sizeAngle; angle++) {
-                    // We use Hesse normal form: r = x*cos(theta) + y*sin(theta)
+                    // Hesse normaalimuoto: r = x*cos(theta) + y*sin(theta)
                     const theta = Math.PI*angle/this.sizeAngle;
                     const r = kx*Math.cos(theta) + ky*Math.sin(theta);
                     this.votes[(this.sizeRadius+Math.round(r/this.deltaRadius))*this.sizeAngle+angle] += 1;
@@ -44,7 +46,7 @@ class HoughTransform {
     }
 
     /**
-     * Smoothens the votes array.
+     * Sumentaa äänitaulukkoa tuloksen parantamiseksi. 
      */
     private smoothen() {
         // const kernel = [1];
@@ -78,20 +80,20 @@ class HoughTransform {
     }
 
     /**
-     * Finds peaks in the votes array using non-maximal suppression.
+     * Löytää piikit votes taulukosta käyttäen "non-maximal suppression" menetelmää.
      * Idea: 
-     * 1) select all votes above a fixed threshold that are also local maxima. 
-     * 2) sort remaining votes based on the number of votes. 
-     * 3) select highest element in the votes array. 
-     * 4) remove all votes near the peak selected at step 3)
-     * 5) repeat steps 3) and 4) until no peaks are found.
+     * 1) etsi kaikki äänet, jotka ovat tietyn rajan yläpuolella ja ovat lokaalisti maksimaalisia
+     * 2) järjestä äänet niiden lukumäärän perusteella
+     * 3) valitse suurimman äänimäärän elementti
+     * 4) poista äänet kohdassa 3) valitun elementin ympärillä
+     * 5) toista kohtia 3) ja 4) kunnes piikkejä ei enää löydy.
      */
     private findPeaks() {
         const threshold = 100;
         const overlapRadius = 20;
-        const candidatePeaks = [];   // elements: [r, angle, numberOfVotes]
+        const candidatePeaks = [];   // elementit: [r, angle, numberOfVotes]
 
-        // Populate the candidatePeaks array
+        // täytä candidatePeaks:
         for (let angle = 0; angle < this.sizeAngle; angle++) {
             for (let r = 0; r < 2*this.sizeRadius+1; r++) {
                 const value = this.votes[r*this.sizeAngle+angle];
@@ -114,10 +116,10 @@ class HoughTransform {
             }
         }
 
-        // Sort the peaks array based on the third element (value) in descending order
+        // Järjestä candidatePeaks kolmannen kohdan (value) perusteella vähenevään järjestykseen
         candidatePeaks.sort((a, b) => b[2] - a[2]);
 
-        // select peaks from candidatePeaks that are not too close to already selected peaks
+        // valitse peaks candidatePeaks joukosta, jotka eivät ole lähellä jo valittuja piikkejä
         const peaks: any[] = [];
         for (let k = 0; k < candidatePeaks.length; k++) {
             let isOverlapping = false;
@@ -141,7 +143,7 @@ class HoughTransform {
     }
 
     /**
-     * Visualize peaks found by the algorithm.
+     * Visualisoi algoritmin lopputuloksen.
      */
     public async visualize(peaks: any[], maxNum=16) {
         const buffer = Buffer.alloc(this.source.buffer.length);
@@ -177,10 +179,10 @@ class HoughTransform {
     }
 
     /**
-     * Performs the Hough transform.
+     * Käy läpi kaikki askeleet Hough-muunnoksessa.
      */
     static async hough(imgPath: string) {
-        // grayscale, gaussian blur, threshold, invert, dilate
+        // operaatiot: grayscale, gaussian blur, threshold, invert, dilate
         const image = sharp(imgPath);
 
         let gsi = await (await GrayscaleImage.load(image)).resize(800);

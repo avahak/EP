@@ -5,9 +5,9 @@ import Container from "@mui/material/Container";
 // import ThumbnailSelector from "./ThumbnailSelector";
 // import { Scoresheet } from './Scoresheet';
 
-// const port = (window.location.hostname == "localhost") ? ":3001" : "";
-// const backendUrl = `${window.location.protocol}//${window.location.hostname}${port}`;
-
+/**
+ * Näkymä reitille '/'. Tämä on käytännössä verkkosivun etusivu.
+ */
 const App = () => {
     return (
         <Container sx={{backgroundColor: (theme) => theme.palette.common.white}}>

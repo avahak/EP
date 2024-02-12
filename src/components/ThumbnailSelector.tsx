@@ -1,6 +1,6 @@
 /**
- * ThumbnailSelector is a scrollable container of thumbnails that can be clicked.
- * TODO The thumbnails should be loaded lazily.
+ * ThumbnailSelector on vieritettävä esikatselukuvien osio, jossa kuvia voi klikata.
+ * TODO Esikatselukuvat tulisi ladata tarpeen mukaan, ei kaikkia kerralla.
  */
 
 import React, { useState, useEffect } from 'react';

@@ -1,4 +1,4 @@
-// OpenCV testing, NOT USED
+// OpenCV testausta, ei käytössä
 
 // import sharp from 'sharp';
 // import * as cv from 'opencv.js';

@@ -1,5 +1,6 @@
 /**
- * Express backend for serving the React app, SQL queries, etc.
+ * Express.js serveri Reactille ja SQL-kyselyille. Api-rajapinnan 
+ * reittien esiliitteenä on /api.
  */
 
 import util from 'util';
@@ -10,7 +11,7 @@ import cors from 'cors';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import { Homography } from './homography.js';
-import { test } from './test.js';
+// import { test } from './test.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
@@ -31,21 +32,19 @@ const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const __dirname = process.cwd();
 
-// Serve static files from the 'dist' directory
+// Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve static files from the 'public' directory
-// app.use('public', express.static(path.join(__dirname, 'public')));
-
-// Enable CORS for all routes
+// Kaikki reitit käyttävät CORS-politiikkaa:
 app.use(cors());
-// Middleware to parse JSON bodies
+// Määritetään middleware JSON-parsija.
 app.use(express.json());
 
+// Tiedojen lataukseen serverille tarvitaan alustaa multer:
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Promisify fs.writeFile
+// Muodostetaan lupaus fs.writeFile:sta:
 const writeFileAsync = util.promisify(fs.writeFile);
 
 // @ts-ignore
@@ -66,36 +65,8 @@ const poolEP = mysql.createPool({
     database: process.env.EP_DB_NAME
 });
 
-// app.get('/api/anecdotes', (_req: Request, res: Response) => {
-//     try {
-//         // Load anecdotes from data.json
-//         const data = fs.readFileSync(path.join(__dirname, 'data.json'), 'utf-8');
-//         const anecdotes = JSON.parse(data);
-//         res.json(anecdotes);
-//     } catch (error: any) {
-//         console.error('Error reading data.json:', error.message);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//     }
-// });
-
-// app.get('/api/users', async (_req: Request, res: Response) => {
-//     try {
-//         const [rows] = await pool.query<User[]>('SELECT * FROM users');
-
-//         const userListHtml = rows.map(user => {
-//             return `<li>${user.id}: ${user.email}</li>`;
-//         }).join('');
-
-//         const html = `<ul>${userListHtml}</ul>`;
-//         res.send(html);
-//     } catch (error) {
-//         console.error('Error executing query:', error);
-//         res.status(500).send('Internal Server Error');
-//     }
-// });
-
 /**
- * Used to test homography calculations.
+ * Reitti homografian testaukseen.
  */
 app.post('/api/homography', async (req: Request, res: Response) => {
     try {
@@ -119,13 +90,8 @@ app.post('/api/homography', async (req: Request, res: Response) => {
     }
 });
 
-// Does nothing
-app.get("/api/opencv", async (_req: Request, _res: Response) => {
-    test();
-});
-
 /**
- * Used to test Hough transform calculations.
+ * Reitti Hough-muunnoksen testaamiseksi.
  */
 app.post("/api/hough",  async (req: Request, res: Response) => {
     try {
@@ -134,11 +100,11 @@ app.post("/api/hough",  async (req: Request, res: Response) => {
         console.log("imgPath", imgPath);
         const hough = await HoughTransform.hough(imgPath);
 
-        // Encode the images as base64 data URLs
+        // Koodaa kuvat base64-datana URL-osoitteiksi:
         const image1 = `data:image/png;base64,${hough[0].toString('base64')}`;
         const image2 = `data:image/png;base64,${hough[1].toString('base64')}`;
 
-        // Send the images as JSON in the response
+        // Lähetä kuvat JSON-muodossa vastauksessa:
         res.json({ images: [image1, image2] });
     } catch (error) {
         console.error('Hough transform failed.', error);
@@ -147,8 +113,8 @@ app.post("/api/hough",  async (req: Request, res: Response) => {
 });
 
 /**
- * Upload an image to the server. It creates a thumbnail of the image
- * and stores both the image and the thumbnail on the file system.
+ * Lataa tiedoston serverille. Jos tiedosto on kuva, muodostetaan myös
+ * esikatselukuva ja tallennetaan molemmat.
  */
 app.post('/api/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
@@ -157,13 +123,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         return;
     }
 
-    // Directory to save the file in:
+    // Tallennushakemistot:
     const imagePath = path.join(imageDirectory, file.originalname);
     const thumbnailPath = path.join(thumbnailDirectory, `thumbnail_${file.originalname}.jpeg`);
     const miscPath = path.join(miscDirectory, file.originalname);
     console.log("BASE_UPLOAD_DIRECTORY", process.env.BASE_UPLOAD_DIRECTORY);
     console.log("miscDirectory", miscDirectory);
-    // Check if the target directory exists
+    // Tarkistetaan, että kaikki hakemistot ovat olemassa:
     if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory) || !fs.existsSync(miscDirectory)) {
         const errorMessage = `Upload directory does not exist.`;
         console.error(errorMessage);
@@ -174,11 +140,11 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     try {
         const thumbnailBuffer = await createThumbnail(file.buffer);
         if (thumbnailBuffer) {
-            // File is an image
+            // Tiedosto on kuva:
             await writeFileAsync(imagePath, file.buffer);
             await writeFileAsync(thumbnailPath, thumbnailBuffer);
         } else {
-            // File is not an image
+            // Tiedosto ei ole kuva:
             await writeFileAsync(miscPath, file.buffer);
         }
         console.log(`File saved to: ${thumbnailBuffer ? imagePath : miscPath}`);
@@ -189,12 +155,12 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// List all thumbnails
+// Palauttaa listan esikatselukuvista:
 app.get('/api/thumbnails', (_req, res) => {
     try {
         if (!fs.existsSync(thumbnailDirectory))
             throw Error("No thumbnail directory");
-        // Read the contents of the thumbnails directory
+        // Luetaan thumbnailDirectory hakemiston sisältö:
         const thumbnailFiles = fs.readdirSync(thumbnailDirectory);
         res.json({ thumbnails: thumbnailFiles });
     } catch (error) {
@@ -203,12 +169,14 @@ app.get('/api/thumbnails', (_req, res) => {
     }
 });
 
-// Serve a file
+/**
+ * Palvelee tiedoston pyynnön perusteella baseDirectory hakemistosta.
+ */
 const serveFile = (req: Request, res: Response, baseDirectory: string) => {
     const filename = req.params.filename;
     const filePath = path.join(baseDirectory, filename);
     try {
-        // If the file exists, serve it:
+        // Jos tiedosto on olemassa, välitetään se:
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
@@ -220,15 +188,15 @@ const serveFile = (req: Request, res: Response, baseDirectory: string) => {
     }
 };
 
-// Serve images
+// Välitetään kuvia:
 app.get('/api/images/:filename', (req, res) => serveFile(req, res, imageDirectory));
-// Serve thumbnails
+// Välitetään esikatselukuvia:
 app.get('/api/thumbnails/:filename', (req, res) => serveFile(req, res, thumbnailDirectory));
-// Serve misc files
+// Välitetään muita tiedostoja:
 app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory));
 
 /**
- * Queries the SQL database for a schema and serves it.
+ * SQL-tietokannan testausta (ei käytössä)
  */
 app.get('/api/schema', async (_req, res) => {
     // res.json({ 
@@ -250,12 +218,15 @@ app.get('/api/schema', async (_req, res) => {
     }
 });
 
-// For any other routes, serve the React app
+/**
+ * Muissa reiteissä käytetään Reactin omaa reititystä.
+ */
 app.get('*', (_req, res) => {
     console.log("*:", _req.url);
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+// Käynnistetään express.js serveri:
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

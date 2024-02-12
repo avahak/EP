@@ -1,23 +1,28 @@
 import { useRef, useEffect } from 'react';
 
+/**
+ * Muodostaa ImageData olion annetun mustavalkoisen kuvan pohjalta.
+ */
 function rgbaFromGrayscale(imgData: any): ImageData {
-    // Create an array for RGBA data
+    // Taulukko RGBA datalle
     const grayscaleData = new Uint8Array(Object.values(imgData.data));
     const rgbaData = new Uint8ClampedArray(imgData.cols*imgData.rows * 4);
     console.log(imgData.cols, imgData.rows);
 
-    // Replicate grayscale values into RGBA
     for (let i = 0; i < imgData.cols*imgData.rows; i++) {
         const value = grayscaleData[i];
 
-        rgbaData[i*4 + 0] = value; // Red channel
-        rgbaData[i*4 + 1] = value; // Green channel
-        rgbaData[i*4 + 2] = value; // Blue channel
-        rgbaData[i*4 + 3] = 255;   // Alpha channel (fully opaque)
+        rgbaData[i*4 + 0] = value; // Red
+        rgbaData[i*4 + 1] = value; // Green
+        rgbaData[i*4 + 2] = value; // Blue
+        rgbaData[i*4 + 3] = 255;   // Alpha
     }
     return new ImageData(rgbaData, imgData.cols);
 }
 
+/**
+ * Komponentti, joka piirtää homografia-esimerkin.
+ */
 const Draw: React.FC<{ data: any }> = ({ data }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     
@@ -69,27 +74,3 @@ const Draw: React.FC<{ data: any }> = ({ data }) => {
 };
 
 export default Draw;
-
-
-        // const img = new Image();
-        // img.src = imgUrl;
-        
-        // img.onload = () => {
-        //     // Set canvas size to match the image size
-        //     canvas.width = img.width;
-        //     canvas.height = img.height;
-        //     console.log(`Image size: ${img.width} x ${img.height}`);
-            
-        //     // Draw the image
-        //     ctx.drawImage(img, 0, 0, img.width, img.height);
-            
-            // Draw circles for each feature
-            // features.forEach(feature => {
-            //     ctx.beginPath();
-            //     console.log(feature.x, feature.y);
-            //     ctx.arc(feature.x, feature.y, 5, 0, 2*Math.PI);
-            //     ctx.strokeStyle = 'red';
-            //     ctx.stroke();
-            //     ctx.closePath();
-            // });
-        // };

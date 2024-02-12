@@ -1,12 +1,12 @@
-/**
- * File upload tool for internal use only.
- */
-
 import { Link } from 'react-router-dom';
 import React, { ChangeEvent, FormEvent, useState } from 'react';
 import axios from 'axios';
 import { getApiUrl } from "../utils/apiUtils";
 
+/**
+ * Komponentti tiedostojen lataamiseen palvelimelle käyttäen server.ts /api/uload
+ * reittiä.
+ */
 const FileUpload: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [message, setMessage] = useState('');

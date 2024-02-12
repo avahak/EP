@@ -1,19 +1,16 @@
 /**
- * Handles routes for the React app.
+ * AppRouter määrittelee kaikki React App käytössä olevat reitit.
+ * Reitiyksessä express.js serverin määrittelemät reitit käytetään
+ * ennen tässä määriteltyjä reittejä.
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import { Typography } from "@mui/material";
-import FileUpload from "./FileUpload";
-// import ThumbnailSelector from "./ThumbnailSelector";
-import { Scoresheet } from './Scoresheet';
-import { App } from './App';
-import HoughDemo from './HoughDemo';
-import HomographyDemo from './HomographyDemo';
-import VisionExample from './VisionExample';
-
-// const port = (window.location.hostname == "localhost") ? ":3001" : "";
-// const backendUrl = `${window.location.protocol}//${window.location.hostname}${port}`;
+import FileUpload from "../components/FileUpload";
+import { Scoresheet } from '../components/Scoresheet';
+import { App } from '../components/App';
+import HoughDemo from '../components/HoughDemo';
+import HomographyDemo from '../components/HomographyDemo';
+import VisionExample from '../components/VisionExample';
 
 const AppRouter = () => {
     return (

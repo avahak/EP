@@ -1,5 +1,5 @@
 /**
-* Helper function to construct the backend url.
+* Apufunktio palvelimen osoitteen muodostamiseksi.
 */
 const getApiUrl = () => {
     const port = window.location.hostname === 'localhost' ? ':3001' : '';
@@ -7,17 +7,18 @@ const getApiUrl = () => {
 };
 
 /**
- * Takes in a name for thumbnail and strips it into the corresponding image name.
+ * Muuttaa esikatselukuvan nimen varsinaisen kuvan nimeksi poistamalle siitä
+ * etu- ja jälkiliitteet.
  */
 function thumbnailToImageName(thumbnailName: string) {
-    // Extract the part of the thumbnail name between 'thumbnail_' and the file extension
+    // Regex, joka poistaa alusta "thumbnail_" ja lopusta viimeisen "." jälkeen tulevan osan.
     const regex = /^thumbnail_(.+)\.[a-zA-Z0-9]+$/;
     const match = thumbnailName.match(regex);
     
     if (match && match[1]) {
         return match[1];
     } else {
-        // If the regex doesn't match, return the original name
+        // Regex ei osunut - palauta alkuperäinen nimi.
         return thumbnailName;
     }
 }

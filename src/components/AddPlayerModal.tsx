@@ -1,11 +1,12 @@
 /** 
- * AddPlayerModal is a modal that opens on top of Scoresheet when adding 
- * a new player is selected.
+ * AddPlayerModal on modaalinen ikkuna, joka avataan Scoresheet päälle
+ * pelaajan lisäämiseksi joukkueeseen.
  */
 import { useState } from 'react';
 import Modal from 'react-modal';
 
-Modal.setAppElement('#root'); // Set the root element for accessibility
+// Asetetaan juurielementti käytettävyyttä varten:
+Modal.setAppElement('#root');
 
 type Team = {
     teamName: string;
@@ -20,7 +21,6 @@ type AddPlayerModalProps = {
     onClose: () => void;
     onAddPlayer: (newPlayerName: string) => void;
 };
-
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
     const [newPlayerName, setNewPlayerName] = useState('');
@@ -76,4 +76,3 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, 
 };
     
 export default AddPlayerModal;
-    

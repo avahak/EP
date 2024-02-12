@@ -2,8 +2,8 @@ import sharp from 'sharp';
 // import jsfeat from 'jsfeat';
 
 /**
- * GrayscaleImage holds a grayscale image for image processing and provides 
- * various means to modify or process it. Uses sharp as basis for image manipulation.
+ * GrayscaleImage on luokka mustavalkoisten kuvien tallentamiseen ja käsittelemiseen.
+ * Pohjana käytetään sharp-kirjastoa tätä laajentaen omiin tarpeisiin.
  */
 class GrayscaleImage {
     buffer: Buffer;
@@ -17,7 +17,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Creates a GrayscaleImage from a Sharp image.
+     * Luo GrayscaleImage Sharp-kuvasta.
      */
     static async load(img: sharp.Sharp): Promise<GrayscaleImage> {
         try {
@@ -33,7 +33,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Creates a 1-channel Sharp image from the GrayscaleImage.
+     * Luo 1-kanavaisen Sharp-kuvan GrayscaleImage pohjalta.
      */
     async asSharp(): Promise<sharp.Sharp> {
         const sharpImage = sharp(this.buffer, {
@@ -47,7 +47,8 @@ class GrayscaleImage {
     }
 
     /**
-     * Creates a colored Sharp image from the GrayscaleImage.
+     * Luo värillisen Sharp-kuvan GrayscaleImage pohjalta. Parametrit määrittelevät
+     * värikuvassa käytetyn värin.
      */
     async asColoredSharp(red: number, green: number, blue: number, alpha: number | null=null): Promise<sharp.Sharp> {
         const channels = alpha == null ? 3 : 4;
@@ -69,7 +70,7 @@ class GrayscaleImage {
     }
     
     /**
-     * Resize the image.
+     * Muuttaa kuvan koon.
      */
     async resize(newWidth: number): Promise<GrayscaleImage> {
         try {
@@ -87,7 +88,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Returns image as PNG.
+     * Palauttaa kuvan .png muodossa.
      */
     toPNG(): Promise<Buffer> {
         const bufferPNG = sharp(this.buffer, { 
@@ -101,7 +102,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Inverts the colors of the image.
+     * Kääntää kuvan värit.
      */
     invert() {
         let buffer = Buffer.alloc(this.buffer.length);
@@ -111,7 +112,8 @@ class GrayscaleImage {
     }
 
     /**
-     * Thresholds the image with the resulting image having only two colors, 0 and 255.
+     * Palauttaa kynnystetyn kuvan (adaptive threshold). Tuloksena olevassa kuvassa
+     * käytetään vain arvoja 0 ja 255.
      */
     async adaptiveThreshold() {
         const OFFSET = 30;
@@ -125,7 +127,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Convolves the image with a 3x3 matrix of 1s.
+     * Palauttaa kuvan konvoluution vai ykkösiä sisältävän 3x3-matriisin kanssa.
      */
     async dilate() {
         const kernel = Array(9).fill(1);
@@ -146,7 +148,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Operates Gaussian blur on the image with given radius.
+     * Palauttaa Gaussisesti sumennetun kuvan, missä on käytetty annettua sädettä.
      */
     async blur(radius: number) {
         const sigma = 1 + radius / 2;
@@ -156,7 +158,7 @@ class GrayscaleImage {
     }
 
     /**
-     * Counts the number of pixels above a given threshold.
+     * Laskee kuvassa olevien pixelien määrän, jotka ovat annetun kynnyksen yläpuolella.
      */
     countAboveThreshold(threshold: number) {
         return this.buffer.reduce((count, pixelValue) => 
@@ -169,12 +171,12 @@ class GrayscaleImage {
 }
 
 /**
- * Attempts to load the buffer as an image and returns a thumbnail of it if
- * successfull. Otherwise returns null.
+ * Lataa kuvan buffer pohjalta ja palauttaa esikatselukuvan jos mahdollista.
+ * Jos operaatio epäonnistuu, palauttaa null.
  */
 async function createThumbnail(buffer: Buffer, thumbnailSize = 200) {
     try {
-        // Resize the image to create a thumbnail
+        // Muutetaan koko ja tallennetaan .jpeg bufferina.
         const thumbnailBuffer = await sharp(buffer)
             .resize(thumbnailSize, thumbnailSize)
             .jpeg()

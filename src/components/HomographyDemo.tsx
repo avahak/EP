@@ -3,6 +3,12 @@ import Draw from './DrawHomography.js';
 import { getApiUrl } from "../utils/apiUtils";
 import { Link } from 'react-router-dom';
 
+/**
+ * Sivu homografian esittelemiseen. Palvelin laskee homografian kahden kuvan 
+ * välille ja esittää sen graafisesti. Tässä käytetään OpenCV esimerkkikuvia
+ * https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
+ * mutta ei OpenCV:tä.
+ */
 function Homography() {
     const [homography, setHomography] = useState<any>(null);
 

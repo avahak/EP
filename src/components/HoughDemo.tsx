@@ -4,7 +4,12 @@ import { getApiUrl } from "../utils/apiUtils";
 import ThumbnailSelector from './ThumbnailSelector';
 import { Link } from 'react-router-dom';
 
-const Hough = () => {
+/**
+ * Sivu Hough-muunnoksen esittämiseksi. Käyttäjä valitsee 
+ * ThumbnailSelector avulla kuvan ja palvelin laskee Hough-muunnoksen ja
+ * piirtää sen DrawHough.tsx avulla.
+ */
+const Hough: React.FC = () => {
     const [imageName, setImageName] = useState<string>("card.png");
     const [images, setImages] = useState<any[]>([]);
     
@@ -65,7 +70,7 @@ const Hough = () => {
             </div>
         </div>
         </>
-        );
+    );
 };
     
 export default Hough;

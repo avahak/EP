@@ -1,5 +1,5 @@
 /**
- * Trying out layouts for the frontpage.
+ * Ei käytössä.
  */
 // import { Link, useNavigate } from 'react-router-dom';
 

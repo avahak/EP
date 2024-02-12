@@ -1,5 +1,9 @@
 import "./ScoreTable.css";
 
+/**
+ * Yksi laatikko pelin lopputuloksen esittämiseksi. Tässä on kummankin
+ * pelaajan voittamien pelien määrät (left, right).
+ */
 const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) => {
     const textLeft = left.toString();
     const textRight = right.toString();
@@ -12,6 +16,9 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
     );
 }
 
+/**
+ * Laatikko pelaajan nimelle.
+ */
 const NameBox: React.FC<{ text: string; orientation: "horizontal" | "vertical" }> = ({text, orientation}) => {
     return (
         <div className={`underline-box ${orientation == "vertical" ? orientation : ""}`}>
@@ -21,7 +28,9 @@ const NameBox: React.FC<{ text: string; orientation: "horizontal" | "vertical" }
 }
 
 /**
- * Score box.
+ * ScoreTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
+ * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
+ * pöytäkirjassa.
  */
 const ScoreTable: React.FC<{ roundWins: number[][]; playersHome: string[]; playersAway: string[] }> = ({roundWins, playersHome, playersAway}) => {
     return (

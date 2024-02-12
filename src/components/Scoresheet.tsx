@@ -1,6 +1,13 @@
 /**
- * Scoresheet form.
- * NOTE: ottelu=match, peli=game, erä=round
+ * Lomake ottelun tulosten kirjaamiseksi. Käyttäjä valitsee ensin ottelun. Tämän
+ * jälkeen käyttäjä voi molempien joukkueiden pelaajat listalta.
+ * Pelien tulokset valitaan myös select-elementin avulla ja kirjatut tulokset
+ * näkyvät tulostaulussa (ScoreTable.tsx) välittömästi.
+ * 
+ * TODO: Otteluiden ja pelaajien hakeminen SQL-tietokannasta.
+ * TODO: Vierasjoukkue tulee hyväksyä kirjatut tulokset ja tämän jälkeen admin vielä.
+ * 
+ * Suomennokset: ottelu=match, peli=game, erä=round.
  */
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -9,7 +16,7 @@ import { ScoreTable } from "./ScoreTable";
 import './Scoresheet.css';
 import AddPlayerModal from './AddPlayerModal';
 
-// Possible outcomes of rounds
+// Erän mahdolliset lopputulokset pelaajalle:
 const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
@@ -24,11 +31,12 @@ type FormFields = {
     teamHome: Team;
     teamAway: Team;
     date: Date | undefined;
-    scores: string[][][];   // indexing: scores[game][player][round]
+    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
 };
 
 /**
- * Counts and returns the running score and number of rounds won for each game.
+ * Laskee juoksevan tuloksen "runningScore" ja voitettujen erien lukumäärän "roundWins"
+ * erien tulosten perusteella.
  */
 const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], roundWins: number[][] } => {
     const runningScore = Array.from({ length: 9 }, () => [0, 0]);
@@ -44,8 +52,8 @@ const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], 
             }
             roundWins[gameIndex][playerIndex] = playerRoundWins;
         }
-        // Check if games up to this point have been fully completed, 
-        // otherwise do try to compute running score.
+        // Lasketaan juokseva tulos ainoastaan jos pelit tähän asti on 
+        // kirjattu täysin valmiiksi.
         const gamesCompleteUpToThis = (runningScore[gameIndex][0] >= 0) && (Math.max(...roundWins[gameIndex]) >= 3);
         if (gamesCompleteUpToThis) {
             if (roundWins[gameIndex][0] > roundWins[gameIndex][1])
@@ -60,7 +68,7 @@ const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], 
 }
 
 /**
- * Returns player name playerNames[index] if not empty and defaultName othwise.
+ * Palauttaa pelaajan nimen playerNames[index] jos ei tyhjä ja defaultName muutoin.
  */
 const playerName = (playerNames: string[], index: number, defaultName: string) => {
     const name = playerNames[index];
@@ -70,7 +78,7 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 }
 
 /**
- * Helper function to get today's date in the format YYYY-MM-DD.
+ * Palauttaa tämän päivän päivämäärän muodossa YYYY-MM-DD.
  */
 // const getTodayDateString = () => {
 //     const today = new Date();
@@ -80,8 +88,11 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 //     return `${year}-${month}-${day}`;
 // };
 
+/**
+ * React komponentti tuloslomakkeelle.
+ */
 const Scoresheet: React.FC = () => {
-    // isAddPlayerModalOpen tracks if the player add modal is open on top of the form:
+    // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
     const emptyTeam: Team = {
         teamName: '',
@@ -89,9 +100,12 @@ const Scoresheet: React.FC = () => {
         allPlayers: [''],
         selectedPlayers: ['', '', ''],
     };
-    // currentTeam is only for the addPlayerModal so that it knows what team to modify:
+    // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
+    // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
+    // uusi pelaaja lisätään modaalin avulla:
     const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
     const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
+    // Lomakkeen kenttien tila:
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
             teamHome: {...emptyTeam, teamRole: "home"},
@@ -102,7 +116,6 @@ const Scoresheet: React.FC = () => {
     });
 
     const scores = watch('scores');
-    // const date = watch('date');
     const allFormValues = watch();
 
     const navigate = useNavigate();
@@ -111,17 +124,17 @@ const Scoresheet: React.FC = () => {
         console.log("useEffect called");
     }, []);
 
-    // opens the AddPlayerModal
+    // avaa AddPlayerModal
     const handleOpenAddPlayerModal = () => {
         setIsAddPlayerModalOpen(true);
     }
 
-    // closes the AddPlayerModal
+    // sulkee AddPlayerModal
     const handleCloseAddPlayerModal = () => {
         setIsAddPlayerModalOpen(false);
     }
 
-    // callback for adding player with AddPlayerModal
+    // Takaisinkutsufunktio AddPlayerModal varten:
     const handleAddPlayer = (playerName: string, team: Team, slot: number) => {
         console.log("handleAddPlayer", playerName, team);
         const isHome = (team == allFormValues.teamHome);
@@ -133,7 +146,7 @@ const Scoresheet: React.FC = () => {
         console.log("handleAddPlayer selectedPlayers", isHome ? allFormValues.teamHome.selectedPlayers : allFormValues.teamAway.selectedPlayers);
     } 
 
-    // This function is called on submit:
+    // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<FormFields> = (_data) => {
         navigate("/");
     }
@@ -141,28 +154,28 @@ const Scoresheet: React.FC = () => {
     const { runningScore, roundWins } = computeDerivedStats(scores);
 
     /**
-     * Updates the scores when a selection is made.
+     * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
      */
-    const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
+    const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
         const selectValue = event.target.value;
         const updatedScores = [...scores];
         updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
-        // If we selected a win, then the opponent win is reset:
+        // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
         if (selectValue !== " ")
             updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
         setValue('scores', updatedScores);
     };
 
     /**
-     * Updates the teams in the match.
+     * Kutsutaan kun käyttäjä valitsee joukkueen.
      */
     const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectValue = event.target.value;
         const parts = selectValue.split("-", 2);
-        // parts should always have 2 elements:
+        // parts tulee olla taulukko, jossa on 2 alkiota:
         if (parts.length != 2)
             return;
-        // Using placeholder values until we get SQL connection working:
+        // Käytetään kovakoodattuja väliaikaisia arvoja kunnes SQL-kyselyt toiminnassa:
         if (parts[0] == "TH3") {
             setValue("teamHome", {
                 teamName: parts[0],
@@ -193,6 +206,10 @@ const Scoresheet: React.FC = () => {
         console.log("handleSelectMatch", allFormValues);
     };
 
+    /**
+     * Kutsutaan kun käyttäjä valitsee pelaajan. Jos pelaaja on "newPlayer", 
+     * avataan modaali pelaajan lisäämiseksi.
+     */
     const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
         console.log(event);
         if (event.target.value == "newPlayer") {
@@ -206,7 +223,7 @@ const Scoresheet: React.FC = () => {
     };
 
     /**
-     * creates modal to add new players to a team
+     * Luo modaalin pelaajan lisäämiseksi.
      */
     const createAddPlayerModal = () => {
         return (<>
@@ -221,7 +238,8 @@ const Scoresheet: React.FC = () => {
     }
 
     /**
-     * Creates a team selection label and select box.
+     * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
+     * ja pelaajien valintaan käytettävät select-elementit.
      */
     const teamSelection = (teamRole: "home" | "away") => {
         const team = (teamRole == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
@@ -230,7 +248,6 @@ const Scoresheet: React.FC = () => {
         const defaultOptionText = (teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
         console.log("team", team);
         return (<>
-        {/* Joukkueen nimi ja pelaajat */}
         <div className="team-select-container">
             {/* Joukkuen nimi */}
             <label className="team-label">{teamText}&nbsp;
@@ -269,7 +286,7 @@ const Scoresheet: React.FC = () => {
     };
 
     /**
-     * Creates a table for selecting results.
+     * Luo taulukon (html table) erien tulosten kirjaamiseksi.
      */
     const makeTable = () => {
         return (
@@ -313,7 +330,7 @@ const Scoresheet: React.FC = () => {
                         {...register(
                         `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
                         )}
-                        onChange={(event) => handleSelectChange(event, gameIndex, playerIndex, roundIndex)}
+                        onChange={(event) => handleSelectOutcome(event, gameIndex, playerIndex, roundIndex)}
                     >
                         {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
                         <option key={outcomeIndex} value={outcome}>
