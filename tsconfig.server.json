@@ -5,5 +5,5 @@
         "allowImportingTsExtensions": false,
         "outDir": "./dist"
     },
-    "include": ["types/*.ts", "src/server/*.ts"]  // Adjust the path accordingly
+    "include": ["src/server", "src/shared"]
 }
