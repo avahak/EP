@@ -24,8 +24,8 @@ const App = () => {
             <div style={{padding: "2em"}}>
                 <Typography variant="h6">Työkalut</Typography>
                 <Link to="/upload">Upload</Link>
-                {/* <br />
-                <Link to="/debug">Debug</Link> */}
+                <br />
+                <Link to="/db">DB Testaus</Link>
             </div>
         </Container>
     );

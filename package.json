@@ -37,6 +37,7 @@
         "sharp": "^0.33.2"
     },
     "devDependencies": {
+        "@faker-js/faker": "^8.4.1",
         "@types/cors": "^2.8.17",
         "@types/parse-multipart": "^1.0.2",
         "@types/react": "^18.2.43",

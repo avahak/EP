@@ -21,6 +21,7 @@ src/server/ - Palvelinpuolen koodin hakemisto
 
 src/shared/ - Yhteinen kansio Express.js ja Reactille
         dbTypes.ts - Typescript tyypit tietokannan tauluille
+        dbFaker.ts - Testitietokannan luonti ja testidatan generointi
         types/ - TypeScript-tyyppien käytössä tarvittavia moduulilaajennuksia.  
                 Nämä voi jättää huomioimatta ja tarvitaan vain teknisistä syistä.  
   
@@ -45,6 +46,7 @@ src/client/components/ - Hakemisto React komponenttien koodille
         ThumbnailSelector.tsx - Yksinkertainen valintalaatikko 
                 esikatselukuvien esittämiseen  
         VisionExample.tsx - Esimerkki Google Vision API tuloksesta  
+        DBTest.tsx - Testaa shared/dbFaker.ts
   
 src/client/utils/ - Hakemisto React App apufunktioille eri komponenttien käyttöön  
         apiUtils.ts - Apufunktio api rajapinnan osoitteelle  

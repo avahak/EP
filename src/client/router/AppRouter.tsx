@@ -11,6 +11,7 @@ import { App } from '../components/App';
 import HoughDemo from '../components/HoughDemo';
 import HomographyDemo from '../components/HomographyDemo';
 import VisionExample from '../components/VisionExample';
+import { DBTest } from '../components/DBTest';
 
 const AppRouter = () => {
     return (
@@ -22,7 +23,7 @@ const AppRouter = () => {
               <Route path="/homography" element={<HomographyDemo />} />
               <Route path="/vision" element={<VisionExample />} />
               <Route path="/upload" element={<FileUpload />} />
-              {/* <Route path="/debug" element={<></>} /> */}
+              <Route path="/db" element={<DBTest />} />
               <Route path="/" element={<App />} />
             </Routes>
         </Router>
