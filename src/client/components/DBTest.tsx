@@ -47,6 +47,8 @@ const DBTest: React.FC = () => {
             <br />
             Email: {email}
             <br />
+            DB name: {!!data ? data.DB_NAME : "-"}
+            <br />
             Result: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema) : "No data" }}>
             </pre>
