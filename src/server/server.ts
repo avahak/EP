@@ -198,7 +198,7 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
 /**
  * SQL-tietokannan testausta (ei käytössä)
  */
-app.get('/api/schema', async (_req, res) => {
+app.get('/api/db/recreate', async (_req, res) => {
     // res.json({ 
     //     DB_HOST: process.env.DB_HOST,
     //     DB_PORT: process.env.DB_PORT,
@@ -209,9 +209,16 @@ app.get('/api/schema', async (_req, res) => {
     // });
 
     try {
-        const [rows] = await poolEP.query<any>('SHOW TABLES');
+        const schema = fs.readFileSync('src/server/testaus_ep.sql', 'utf-8');
+        // Replace \r characters with an empty string
+        const sanitizedSchema = schema.replace(/\r/g, '').replace(/\n/g, '<br>');
+        // const [rows] = await poolEP.query<any>('SHOW TABLES');
 
-        res.json({ rows });
+        // res.json({ rows });
+        res.json({ 
+            DB_NAME: process.env.DB_NAME,
+            schema: sanitizedSchema
+        });
     } catch (error) {
         console.error('Error executing query:', error);
         res.status(500).send('Internal Server Error');
