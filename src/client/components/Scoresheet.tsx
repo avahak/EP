@@ -34,6 +34,13 @@ type FormFields = {
     scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
 };
 
+const emptyTeam: Team = {
+    teamName: '',
+    teamRole: "home",
+    allPlayers: [''],
+    selectedPlayers: ['', '', ''],
+};
+
 /**
  * Laskee juoksevan tuloksen "runningScore" ja voitettujen erien lukumäärän "roundWins"
  * erien tulosten perusteella.
@@ -78,28 +85,11 @@ const playerName = (playerNames: string[], index: number, defaultName: string) =
 }
 
 /**
- * Palauttaa tämän päivän päivämäärän muodossa YYYY-MM-DD.
- */
-// const getTodayDateString = () => {
-//     const today = new Date();
-//     const year = today.getFullYear();
-//     const month = String(today.getMonth() + 1).padStart(2, '0');
-//     const day = String(today.getDate()).padStart(2, '0');
-//     return `${year}-${month}-${day}`;
-// };
-
-/**
  * React komponentti tuloslomakkeelle.
  */
 const Scoresheet: React.FC = () => {
     // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
-    const emptyTeam: Team = {
-        teamName: '',
-        teamRole: "home",
-        allPlayers: [''],
-        selectedPlayers: ['', '', ''],
-    };
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
     // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
     // uusi pelaaja lisätään modaalin avulla:

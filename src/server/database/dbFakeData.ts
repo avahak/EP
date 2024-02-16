@@ -6,6 +6,7 @@
 
 import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
+import { pickRandomDistinctElements } from "../../shared/generalUtils.js";
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
@@ -193,20 +194,6 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
 }
 
 /**
- * Apufunktio, valitsee count erillistä alkiota taulukosta.
- */
-function getRandomDistinctElements(arr: any[], count: number) {
-    const shuffledArray = [...arr];
-    // sekoitetaaan shuffledArray täysin satunnaiseen järjestykseen:
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-    }
-    // palautetaan count ensimmäistä:
-    return shuffledArray.slice(0, count);
-}
-
-/**
  * Luodaan testauksessa käytettävää sisältöä ep_peli, ep_erat tauluihin.
  */
 function generate_pelit(ottelut: any[], pelaajat: any[]) {
@@ -222,8 +209,8 @@ function generate_pelit(ottelut: any[], pelaajat: any[]) {
     const erat: any[] = [];
     ottelut.forEach((ottelu) => {
         // valitaa 3 pelaajaa kummankin joukkueen pelaajista:
-        const kotiPelaajat = getRandomDistinctElements(joukkuePelaajaMap.get(ottelu.koti)!, 3);
-        const vierasPelaajat = getRandomDistinctElements(joukkuePelaajaMap.get(ottelu.vieras)!, 3);
+        const kotiPelaajat = pickRandomDistinctElements(joukkuePelaajaMap.get(ottelu.koti)!, 3);
+        const vierasPelaajat = pickRandomDistinctElements(joukkuePelaajaMap.get(ottelu.vieras)!, 3);
         for (let k = 0; k < 9; k++) {
             const kp = kotiPelaajat[Math.floor(k/3)];
             const vp = vierasPelaajat[k%3];

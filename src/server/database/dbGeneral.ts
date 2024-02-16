@@ -19,8 +19,16 @@ function parseSqlFileContent(sqlFileContent: string): string[] {
 async function myQuery(pool: mysql.Pool, query: string) {
     console.log("myQuery", query);
     try {
-        const [rows] = await pool.query(query);
-        return rows;
+        const connection = await pool.getConnection();
+        try {
+            const [rows] = await pool.query(query);
+            return rows;
+        } catch (error) {
+            console.error("myQuery error:", error);
+        } finally {
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            // connection.release();
+        }
     } catch (err) {
         console.error("myQuery error:", err);
     }
@@ -46,8 +54,9 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
         } catch (error) {
             console.error("recreateDatabase error:", error);
         } finally {
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // Vapautetaan yhteys takaisin altaaseen:
-            connection.release();
+            // connection.release();
         }
 
         console.log(queries);

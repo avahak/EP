@@ -35,8 +35,6 @@ const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const __dirname = process.cwd();
 
-console.log(`Express.js PORT: ${PORT}.`);
-
 // Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -59,6 +57,8 @@ const pool = mysql.createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    // idleTimeout: 20000,
+    // connectTimeout: 5000,
 });
 
 // @ts-ignore
@@ -66,7 +66,9 @@ const poolNoDatabase = mysql.createPool({
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
+    password: process.env.DB_PASSWORD,
+    // idleTimeout: 20000,
+    // connectTimeout: 5000
 });
 
 /**
@@ -203,6 +205,7 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
  * SQL-tietokannan testausta
 */
 app.get('/api/db/schema', async (_req, res) => {
+    console.log(new Date(), "/api/db/schema requested")
     try {
         const sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
         const commands = parseSqlFileContent(sqlFile);
@@ -214,7 +217,6 @@ app.get('/api/db/schema', async (_req, res) => {
 
         const matches = await getMatches(pool);
         
-        // res.json({ rows });
         res.json({ 
             DB_NAME: process.env.DB_NAME,
             dbList: dbList,

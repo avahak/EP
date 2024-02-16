@@ -23,8 +23,8 @@ src/server/database/ - Hakemisto SQL-tietokantaan liittyvälle koodille
         dbSpecific.ts - Kokoelma tätä tiettyä tietokantaa käsitteleviä funktioita
         dbFakeData.ts - Tietokannan testidatan generointia
         testaus_ep.sql - Testaustietokannan taulut määrittelevä kaavio
-        testaus_ep_aggregation.sql - Idea näkymille (materialized view), jotka ovat
-                koosteita/johdettu varsinaisita tauluista
+        testaus_ep_aggregation.sql - Idea tulosten automaattiselle laskulle
+                käyttäen pelkästään ep_erat dataa ja johtaen/laskien muut näistä.
 
 src/shared/ - Yhteinen kansio Express.js ja Reactille
         dbTypes.ts - Typescript tyypit tietokannan tauluille
@@ -52,8 +52,9 @@ src/client/components/ - Hakemisto React komponenttien koodille
         ThumbnailSelector.tsx - Yksinkertainen valintalaatikko 
                 esikatselukuvien esittämiseen  
         VisionExample.tsx - Esimerkki Google Vision API tuloksesta  
-        DBTest.tsx - Testaa shared/dbFaker.ts
+        DBTest.tsx - Tietokannan testausta
   
 src/client/utils/ - Hakemisto React App apufunktioille eri komponenttien käyttöön  
-        apiUtils.ts - Apufunktio api rajapinnan osoitteelle  
+        apiUtils.ts - Apufunktio api rajapinnan osoitteelle
+        generalUtils.ts - Yleisiä apufunktioita
 ``` 
