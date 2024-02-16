@@ -35,7 +35,7 @@ const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const __dirname = process.cwd();
 
-console.log(`Express.js PORT: ${PORT}`);
+console.log(`Express.js PORT: ${PORT}.`);
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(express.static(path.join(__dirname, 'dist')));
