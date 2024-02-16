@@ -1,4 +1,4 @@
-Express.js ja React koodia biljardiliigan verkkosivuille.  
+Express.js, React, ja MySQL koodia biljardiliigan verkkosivuille.  
   
 ---  
 ```
@@ -19,9 +19,15 @@ src/server/ - Palvelinpuolen koodin hakemisto
                 vastaavan homografian löytämiseen  
         test.ts - ei käytössä  
 
+src/server/database/ - Hakemisto SQL-tietokantaan liittyvälle koodille
+        dbOperations.ts - Kokoelma tietokantaa käsitteleviä funktioita
+        dbFakeData.ts - Tietokannan testidatan generointia
+        testaus_ep.sql - Testaustietokannan taulut määrittelevä kaavio
+        testaus_ep_aggregation.sql - Idea näkymille (materialized view), jotka ovat
+                koosteita/johdettu varsinaisita tauluista
+
 src/shared/ - Yhteinen kansio Express.js ja Reactille
         dbTypes.ts - Typescript tyypit tietokannan tauluille
-        dbFaker.ts - Testitietokannan luonti ja testidatan generointi
         types/ - TypeScript-tyyppien käytössä tarvittavia moduulilaajennuksia.  
                 Nämä voi jättää huomioimatta ja tarvitaan vain teknisistä syistä.  
   

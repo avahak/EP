@@ -15,6 +15,8 @@ import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
+import { myQuery, recreateDatabase } from './database/dbOperations.js';
+import { generateFakeData, insertToDatabase } from './database/dbFakeData.js';
 
 dotenv.config();
 
@@ -57,12 +59,11 @@ const pool = mysql.createPool({
 });
 
 // @ts-ignore
-const poolEP = mysql.createPool({
-    host: process.env.EP_DB_HOST,
-    port: parseInt(process.env.EP_DB_PORT || '3306'),
-    user: process.env.EP_DB_USER,
-    password: process.env.EP_DB_PASSWORD,
-    database: process.env.EP_DB_NAME
+const poolNoDatabase = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD
 });
 
 /**
@@ -196,29 +197,55 @@ app.get('/api/thumbnails/:filename', (req, res) => serveFile(req, res, thumbnail
 app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory));
 
 /**
- * SQL-tietokannan testausta (ei käytössä)
+ * SQL-tietokannan testausta
  */
 app.get('/api/db/recreate', async (_req, res) => {
-    // res.json({ 
-    //     DB_HOST: process.env.DB_HOST,
-    //     DB_PORT: process.env.DB_PORT,
-    //     DB_NAME: process.env.DB_NAME,
-    //     EP_DB_HOST: process.env.EP_DB_HOST,
-    //     EP_DB_PORT: process.env.EP_DB_PORT,
-    //     EP_DB_NAME: process.env.EP_DB_NAME,
-    // });
-
     try {
-        const schema = fs.readFileSync('src/server/testaus_ep.sql', 'utf-8');
+        recreateDatabase(poolNoDatabase, "testaus_ep");
+        console.log("/api/db/recreate done")
+    } catch (error) {
+        console.error('Error executing query:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+/**
+ * SQL-tietokannan testausta
+ */
+app.get('/api/db/schema', async (_req, res) => {
+    try {
+        const sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
+        const commands = sqlFile.split(';').map(query => query.trim().replace(/^\s*--.*$/gm, ''));
+        // const commands = sqlFile.split(/\r\n/);
         // Replace \r characters with an empty string
-        const sanitizedSchema = schema.replace(/\r/g, '').replace(/\n/g, '<br>');
+        const sanitizedSchema = sqlFile.replace(/\r\n/g, '<br>');
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
+        const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
 
         // res.json({ rows });
         res.json({ 
             DB_NAME: process.env.DB_NAME,
+            dbList: dbList,
+            commands: commands,
             schema: sanitizedSchema
         });
+    } catch (error) {
+        console.error('Error executing query:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+/**
+ * Generoi rivejä tietokantaan.
+ */
+app.get('/api/db/fake_data', async (_req, res) => {
+    try {
+        const data = generateFakeData();
+        insertToDatabase(pool);
+        const filePath = path.join(miscDirectory, `fake_data.json`);
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
+        console.log("/api/db/fake_data success");
+        res.send("success!");
     } catch (error) {
         console.error('Error executing query:', error);
         res.status(500).send('Internal Server Error');
