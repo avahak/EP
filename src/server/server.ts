@@ -27,13 +27,15 @@ dotenv.config();
 // }
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT;
 const baseUploadDirectory = process.env.BASE_UPLOAD_DIRECTORY || "/home/userdata";
 const imageDirectory = `${baseUploadDirectory}/images`;
 const thumbnailDirectory = `${baseUploadDirectory}/images/thumbnails`;
 const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const __dirname = process.cwd();
+
+console.log(`Express.js PORT: ${PORT}`);
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(express.static(path.join(__dirname, 'dist')));
