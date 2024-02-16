@@ -40,9 +40,12 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
         const connection = await pool.getConnection();
         try {
             await connection.query(`DROP DATABASE IF EXISTS ${databaseName}`);
-            queries.forEach(async (query) => {
+            for (const query of queries) {
+                console.log("query: ", query);
                 await connection.query(query);
-            });
+            }
+        } catch (error) {
+            console.error("recreateDatabase error:", error);
         } finally {
             // Vapautetaan yhteys takaisin altaaseen:
             connection.release();
@@ -50,8 +53,8 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
 
         console.log(queries);
         console.log("recreateDatabase done");
-    } catch (err) {
-        console.error("recreateDatabase error!", err);
+    } catch (error) {
+        console.error("recreateDatabase error:", error);
     }
 }
 

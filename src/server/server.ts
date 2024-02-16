@@ -16,7 +16,7 @@ import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
 import { myQuery, recreateDatabase } from './database/dbOperations.js';
-import { generateFakeData, insertToDatabase } from './database/dbFakeData.js';
+import { generateAndInsertToDatabase, generateFakeData } from './database/dbFakeData.js';
 
 dotenv.config();
 
@@ -55,7 +55,7 @@ const pool = mysql.createPool({
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
 });
 
 // @ts-ignore
@@ -198,20 +198,7 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
 
 /**
  * SQL-tietokannan testausta
- */
-app.get('/api/db/recreate', async (_req, res) => {
-    try {
-        recreateDatabase(poolNoDatabase, "testaus_ep");
-        console.log("/api/db/recreate done")
-    } catch (error) {
-        console.error('Error executing query:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-/**
- * SQL-tietokannan testausta
- */
+*/
 app.get('/api/db/schema', async (_req, res) => {
     try {
         const sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
@@ -221,7 +208,7 @@ app.get('/api/db/schema', async (_req, res) => {
         const sanitizedSchema = sqlFile.replace(/\r\n/g, '<br>');
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
         const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
-
+        
         // res.json({ rows });
         res.json({ 
             DB_NAME: process.env.DB_NAME,
@@ -236,19 +223,22 @@ app.get('/api/db/schema', async (_req, res) => {
 });
 
 /**
- * Generoi rivejä tietokantaan.
+ * Poistaa testaus_ep tietokannan ja luo sen uudelleen kaavion perusteella.
+ * Sitten generoi ja lisää testidataa sen tauluihin.
+ * HUOM: Poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
-app.get('/api/db/fake_data', async (_req, res) => {
+app.get('/api/db/recreate', async (_req, res) => {
     try {
+        await recreateDatabase(poolNoDatabase, process.env.DB_NAME || "testaus_ep");
         const data = generateFakeData();
-        insertToDatabase(pool);
-        const filePath = path.join(miscDirectory, `fake_data.json`);
+        await generateAndInsertToDatabase(pool);
+        const filePath = path.join(miscDirectory, `testaus_ep_data.json`);
         fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
-        console.log("/api/db/fake_data success");
+        console.log("/api/db/recreate done");
         res.send("success!");
     } catch (error) {
-        console.error('Error executing query:', error);
-        res.status(500).send('Internal Server Error');
+        console.error('Error in /api/db/recreate:', error);
+        res.status(500).send('Internal Server Error.');
     }
 });
 

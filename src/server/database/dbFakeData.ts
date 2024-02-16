@@ -1,18 +1,15 @@
 /**
  * Testauksessa käytettävän tietokannan luonti ja testidatan generointi.
  * Apuna käytetään faker-kirjastoa (https://fakerjs.dev/).
- * NOTE: Älä käytä faker-kirjastoa tuotantoversiossa, se vie paljon tilaa.
+ * HUOM: Älä käytä faker-kirjastoa tuotantoversiossa, se vie paljon tilaa.
  */
 
 import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
 
-// function testFaker() {
-//     const name = faker.person.fullName();
-//     const email = faker.internet.email();
-//     return { name, email };
-// }
-
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
+ */
 function generate_raflat() {
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
@@ -33,6 +30,9 @@ function generate_raflat() {
     return raflat;
 }
 
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_kausi tauluun.
+ */
 function generate_kaudet() {
     let kaudet: any[] = [];
     for (let k = /*1*/34; k <= 36; k++) {
@@ -48,6 +48,9 @@ function generate_kaudet() {
     return kaudet;
 }
 
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_lohko tauluun.
+ */
 function generate_lohkot(kaudet: any[]) {
     const lohkot: any[] = [];
     kaudet.forEach((kausi) => {
@@ -61,6 +64,9 @@ function generate_lohkot(kaudet: any[]) {
     return lohkot;
 }
 
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_joukkue tauluun.
+ */
 function generate_joukkueet(raflat: any[], lohkot: any[]) {
     const joukkueet: any[] = [];
     lohkot.forEach((lohko) => {
@@ -88,7 +94,10 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
     return joukkueet;
 }
 
-// NOTE: tässä pelaajat, jasenet taulukot vastaavat 1-1 toisiansa
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_pelaaja, ep_jasen tauluihin.
+ * HUOM: Tässä pelaajat, jasenet taulukot vastaavat 1-1 toisiansa.
+ */
 function generate_pelaajat_jasenet(joukkueet: any[]) {
     const pelaajat: any[] = [];
     const jasenet: any[] = [];
@@ -122,6 +131,9 @@ function generate_pelaajat_jasenet(joukkueet: any[]) {
     return [pelaajat, jasenet];
 }
 
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_ottelu tauluun.
+ */
 function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
     // Idea: ryhmitetään joukkueet lohkon mukaan. Lohkon sisällä kaikki
     // pelaavat toisiansa vastaan kaksi kertaa
@@ -174,6 +186,9 @@ function getRandomDistinctElements(arr: any[], count: number) {
     return shuffledArray.slice(0, count);
 }
 
+/**
+ * Luodaan testauksessa käytettävää sisältöä ep_peli, ep_erat tauluihin.
+ */
 function generate_pelit(ottelut: any[], pelaajat: any[]) {
 
     // kuvaus joukkueen indeksistä sen pelaajiin
@@ -241,6 +256,9 @@ function generate_pelit(ottelut: any[], pelaajat: any[]) {
     return [pelit, erat];
 }
 
+/**
+ * Luodaan testidata ja kootaan se yhteen olioon.
+ */
 function generateFakeData() {
     const raflat = generate_raflat();
     const kaudet = generate_kaudet();
@@ -261,8 +279,9 @@ function generateFakeData() {
  * alkaa ykkösestä ja etenee yksi kerrallaan. Lisäksi oletetaan,
  * että jokaisen rivin lisäys onnistuu. Nämä oletukset tarvitaan
  * siihen, että taulujen viittaukset toisiinsa kirjautuvat oikein.
+ * Tähän on varmaan olemassa parempi ratkaisu.
  */
-async function insertToDatabase(pool: mysql.Pool) {
+async function generateAndInsertToDatabase(pool: mysql.Pool) {
     const data = generateFakeData();
     try {
         const connection = await pool.getConnection();
@@ -388,14 +407,17 @@ async function insertToDatabase(pool: mysql.Pool) {
 
             // console.log("batch:", batch);
             await connection.commit();
-            console.log("insertToDatabase success");
+            console.log("generateAndInsertToDatabase success");
+        } catch (error) {
+            console.error("Error during generateAndInsertToDatabase:", error);
+            // await connection.rollback();
         } finally {
             connection.release();
         }
     } catch (error) {
-        console.error("Error during insertToDatabase.", error);
+        console.error("Error during generateAndInsertToDatabase.", error);
         return;
     }
 }
 
-export { generateFakeData, insertToDatabase };
+export { generateFakeData, generateAndInsertToDatabase };
