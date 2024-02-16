@@ -17,10 +17,10 @@ src/server/ - Palvelinpuolen koodin hakemisto
         hough.ts - Hough-muunnoksen koodi  
         homography.ts - Koodi kahden kuvan yhteisten piirteiden löytämiseen ja  
                 vastaavan homografian löytämiseen  
-        test.ts - ei käytössä  
 
 src/server/database/ - Hakemisto SQL-tietokantaan liittyvälle koodille
-        dbOperations.ts - Kokoelma tietokantaa käsitteleviä funktioita
+        dbGeneral.ts - Kokoelma yleisiä tietokantaa käsitteleviä funktioita
+        dbSpecific.ts - Kokoelma tätä tiettyä tietokantaa käsitteleviä funktioita
         dbFakeData.ts - Tietokannan testidatan generointia
         testaus_ep.sql - Testaustietokannan taulut määrittelevä kaavio
         testaus_ep_aggregation.sql - Idea näkymille (materialized view), jotka ovat

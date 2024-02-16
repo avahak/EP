@@ -1,7 +1,7 @@
 /**
  * Testauksessa käytettävän tietokannan luonti ja testidatan generointi.
  * Apuna käytetään faker-kirjastoa (https://fakerjs.dev/).
- * HUOM: Älä käytä faker-kirjastoa tuotantoversiossa, se vie paljon tilaa.
+ * HUOM: Älä käytä faker-kirjastoa React puolella, se vie paljon tilaa.
  */
 
 import mysql from 'mysql2/promise';
@@ -133,6 +133,12 @@ function generate_pelaajat_jasenet(joukkueet: any[]) {
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_ottelu tauluun.
+ * HUOM:
+ *      T = Tuleva 
+ *      K = Kotijoukkueen ilmoittama,
+ *      V = Vierasjoukkueen korjaama,
+ *      M = Molempien hyväksymä
+ *      H = Tulosvastaavan hyväksymä (lopullinen tulos)
  */
 function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
     // Idea: ryhmitetään joukkueet lohkon mukaan. Lohkon sisällä kaikki
@@ -146,6 +152,9 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
     });
 
     const ottelut: any[] = [];
+    const currentDate = new Date();
+    const currentDateMinusHalfYear = new Date();
+    currentDateMinusHalfYear.setMonth(currentDate.getMonth()-6);
 
     // käydään kaikki lohkot läpi:
     for (let [lohko, lohkonJoukkueet] of lohkoJoukkueMap.entries()) {
@@ -156,14 +165,25 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
             lohkonJoukkueet.forEach((vieras) => {
                 if (koti == vieras)
                     return;
-                const randomDate = new Date(startDate.getTime()+Math.random()*(endDate.getTime()-startDate.getTime()));
+                // Asetetaan status tuleville otteluille 'T', vanhoille 'H' 
+                // ja viimeaikaisille satunnaisesti M, V, K:
+                const matchDate = new Date(startDate.getTime()+Math.random()*(endDate.getTime()-startDate.getTime()));
+                let status = 'T';
+                if (matchDate < currentDate) {
+                    if (matchDate < currentDateMinusHalfYear)
+                        status = 'H';
+                    else 
+                        status = ['M', 'V', 'K'][Math.floor(3*Math.random())];
+                }
+                // ['H', 'M', 'V', 'K', 'T'][Math.floor(5*Math.random())]
+
                 const ottelu = {
                     index: ottelut.length,
                     lohko: lohko,
-                    paiva: randomDate, 
+                    paiva: matchDate, 
                     koti: koti.index, 
                     vieras: vieras.index,
-                    status: ['H', 'M', 'V', 'K', 'T'][Math.floor(5*Math.random())]
+                    status: status
                 };
                 ottelut.push(ottelu);
             });

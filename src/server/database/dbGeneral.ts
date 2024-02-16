@@ -20,7 +20,6 @@ async function myQuery(pool: mysql.Pool, query: string) {
     console.log("myQuery", query);
     try {
         const [rows] = await pool.query(query);
-        console.log("myQuery rows:", rows);
         return rows;
     } catch (err) {
         console.error("myQuery error:", err);

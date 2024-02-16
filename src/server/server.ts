@@ -15,8 +15,9 @@ import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
-import { myQuery, parseSqlFileContent, recreateDatabase } from './database/dbOperations.js';
+import { myQuery, parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 import { generateAndInsertToDatabase, generateFakeData } from './database/dbFakeData.js';
+import { getMatches } from './database/dbSpecific.js';
 
 dotenv.config();
 
@@ -208,12 +209,15 @@ app.get('/api/db/schema', async (_req, res) => {
         const sanitizedSchema = sqlFile.replace(/\r/g, '').replace(/\n/g, '<br>');
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
         const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
+
+        const matches = await getMatches(pool);
         
         // res.json({ rows });
         res.json({ 
             DB_NAME: process.env.DB_NAME,
             dbList: dbList,
             commands: commands,
+            matches: matches,
             schema: sanitizedSchema
         });
     } catch (error) {
@@ -229,6 +233,8 @@ app.get('/api/db/schema', async (_req, res) => {
  */
 app.get('/api/db/recreate', async (_req, res) => {
     try {
+        if (process.env.ENVIRONMENT != 'LOCALHOST')
+            throw new Error('Wrong environment.')
         await recreateDatabase(poolNoDatabase, process.env.DB_NAME || "testaus_ep");
         const data = generateFakeData();
         await generateAndInsertToDatabase(pool);

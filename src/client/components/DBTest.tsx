@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { getApiUrl } from '../utils/apiUtils';
 import { Link } from 'react-router-dom';
+import DataTable from './DBDataTable';
 
 const DBTest: React.FC = () => {
     const [data, setData] = useState<any>(null);
@@ -54,15 +55,21 @@ const DBTest: React.FC = () => {
             <br />
             <button onClick={fetchRecreate}>Luo tietokanta</button>
             <br />
-            DB lista: {!!data ? JSON.stringify(data.dbList) : "-"}
+            DB lista: 
+            {!!data ? JSON.stringify(data.dbList) : "-"}
             <br />
-            DB nimi: {!!data ? data.DB_NAME : "-"}
+            DB nimi: 
+            {!!data ? data.DB_NAME : "-"}
+            <br />
+            Ottelut: 
+            {!!data ? <DataTable data={data.matches} />: "-"}
             <br />
             Kaavio: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema) : "No data" }}>
             </pre>
             <br />
-            Kyselyt: {!!data ? data.commands.map((query: string, queryIndex: number) => (
+            Tietokannan luonti: 
+            {!!data ? data.commands.map((query: string, queryIndex: number) => (
                 <li key={queryIndex}>{query}</li>
             ))
              : "-"}
