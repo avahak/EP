@@ -58,4 +58,4 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
     }
 }
 
-export { myQuery, recreateDatabase };
+export { myQuery, recreateDatabase, parseSqlFileContent };

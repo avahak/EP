@@ -58,9 +58,14 @@ const DBTest: React.FC = () => {
             <br />
             DB nimi: {!!data ? data.DB_NAME : "-"}
             <br />
-            Tulos: 
+            Kaavio: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema) : "No data" }}>
             </pre>
+            <br />
+            Kyselyt: {!!data ? data.commands.map((query: string, queryIndex: number) => (
+                <li key={queryIndex}>{query}</li>
+            ))
+             : "-"}
         </div>
     </>);
 }

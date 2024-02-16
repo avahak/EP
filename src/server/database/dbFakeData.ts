@@ -35,7 +35,7 @@ function generate_raflat() {
  */
 function generate_kaudet() {
     let kaudet: any[] = [];
-    for (let k = /*1*/34; k <= 36; k++) {
+    for (let k = /*1*/36; k <= 38; k++) {
         const vuosi = Math.ceil(k/2);
         const kausi = {
             index: kaudet.length,

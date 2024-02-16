@@ -15,7 +15,7 @@ import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
-import { myQuery, recreateDatabase } from './database/dbOperations.js';
+import { myQuery, parseSqlFileContent, recreateDatabase } from './database/dbOperations.js';
 import { generateAndInsertToDatabase, generateFakeData } from './database/dbFakeData.js';
 
 dotenv.config();
@@ -202,10 +202,10 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
 app.get('/api/db/schema', async (_req, res) => {
     try {
         const sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
-        const commands = sqlFile.split(';').map(query => query.trim().replace(/^\s*--.*$/gm, ''));
+        const commands = parseSqlFileContent(sqlFile);
         // const commands = sqlFile.split(/\r\n/);
         // Replace \r characters with an empty string
-        const sanitizedSchema = sqlFile.replace(/\r\n/g, '<br>');
+        const sanitizedSchema = sqlFile.replace(/\r/g, '').replace(/\n/g, '<br>');
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
         const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
         
