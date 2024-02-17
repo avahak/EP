@@ -1,5 +1,6 @@
 /**
  * Typescript tyypit SQL-tauluille. Vastaavuus ei ole yksi yhteen.
+ * HUOM: Ei käytössä tällä hetkellä
  */
 
 /** SQL:

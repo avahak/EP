@@ -1,0 +1,192 @@
+import { Link, useNavigate } from "react-router-dom";
+// import { SubmitHandler, useForm } from "react-hook-form";
+import { getApiUrl } from "../utils/apiUtils";
+import { useEffect, useState } from "react";
+import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../shared/generalUtils";
+import './MatchChooser.css';
+import { SubmitHandler, useForm } from "react-hook-form";
+
+type FormFields = {
+    selectionCategory: string;
+    selectionIndex: number;
+    date: string;
+};
+
+type SubmitFields = {
+    match: any;
+    date: string;
+}
+
+/**
+ * Komponentti ilmoitettavan tuloksen ottelun valintaan
+ */
+const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFields) => void }> = ({ userTeam, submitCallback }) => {
+    const [matches, setMatches] = useState<any[]>([]);
+    // Lomakkeen kenttien tila:
+    const { setValue, handleSubmit, watch } = useForm<FormFields>({
+        defaultValues: {
+            selectionCategory: '',
+            selectionIndex: 0,
+            date: ''
+        },
+    });
+
+    const allFormValues = watch();
+    const navigate = useNavigate();
+
+    // Funktio, joka kutsutaan kun lomake lähetetään:
+    const onSubmit: SubmitHandler<any> = (data: FormFields) => {
+        const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
+        if (match.status == 'T')
+            navigate("/scoresheet", { state: { match, date: data.date } });
+        else if (match.status == 'K')
+            navigate("/scoresheet", { state: { match, date: data.date } });
+        else
+            navigate("/");
+    }
+
+    // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
+    const fetchMatches = async () => {
+        try {
+            const apiUrl = `${getApiUrl()}/db/report_result/get_matches`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            setMatches(jsonData.rows);
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchMatches();
+    }, []);
+
+    /**
+     * Palauttaa valitun ottelun tai null.
+     */
+    const getSelectedMatch = (category: string, index: number) => {
+        let selectedMatch = null;
+        if (category == 'home')
+            selectedMatch = homeMatches[index];
+        else if (category == 'away')
+            selectedMatch = awayMatches[index];
+        else if (category == 'other')
+            selectedMatch = otherMatches[index];
+        return selectedMatch;
+    }
+
+    /**
+     * Kutsutaan kun käyttäjä valitsee joukkueen.
+     */
+    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: string) => {
+        console.log("selected", event.target.value, "category", category);
+        setValue(`selectionCategory`, category);
+        const index = parseInt(event.target.value);
+        setValue(`selectionIndex`, index);
+        setValue(`date`, dateToISOString(new Date(getSelectedMatch(category, index).paiva)));
+    };
+
+    const homeMatches = matches.filter((match) => (match.koti == userTeam) && (match.status == 'T'));
+    const awayMatches = matches.filter((match) => (match.vieras == userTeam) && (match.status == 'K'));
+    const otherMatches = matches.filter((match) => (match.koti != userTeam) && (match.vieras != userTeam) 
+            && (match.status == 'T' || match.status == 'K'));
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return `${getDayOfWeekStrings(date).short} ${toDDMMYYYY(date)}`;
+    };
+
+    let selectedMatch = getSelectedMatch(allFormValues.selectionCategory, allFormValues.selectionIndex);
+
+    return (
+        <>
+        <Link to="/">Back</Link>
+        &nbsp;Tällä sivulla oletetaan, että käyttäjä on kirjautuneena sisään pelaajana,
+        jonka joukkue on {userTeam}. (Sisäänkirjautumista ei ole vielä)
+        <div id="container">
+        <form onSubmit={handleSubmit(onSubmit)}>
+        <div id="formContainer">
+        <h1>Ilmoita tulos</h1>
+        <div className="selectDiv">
+            <label>
+            Omat kotiottelut:
+            </label>
+            {homeMatches.length == 0 ? "-" :
+            <select value={allFormValues.selectionCategory == 'home' ? allFormValues.selectionIndex : ''} 
+                    onChange={(event) => handleSelectMatch(event, 'home')}>
+                <option value="" disabled hidden>
+                    Valitse kotiottelu
+                </option>
+                {homeMatches.map((match, matchIndex) => (
+                    <option key={`home-${matchIndex}`} value={matchIndex}>
+                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                </option>
+                ))}
+            </select>}
+        </div>
+        <div className="selectDiv">
+            <label>
+            Omat vierasottelut:
+            </label>
+            {awayMatches.length == 0 ? "-" :
+            <select value={allFormValues.selectionCategory == 'away' ? allFormValues.selectionIndex : ''} 
+                     onChange={(event) => handleSelectMatch(event, 'away')}>
+                <option value="" disabled hidden>
+                    Valitse vierasottelu
+                </option>
+                {awayMatches.map((match, matchIndex) => (
+                    <option key={`away-${matchIndex}`} value={matchIndex}>
+                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                </option>
+                ))}
+            </select>}
+        </div>
+        <div className="selectDiv">
+            <label>
+            Muut ottelut:
+            </label>
+            {otherMatches.length == 0 ? "-" :
+            <select value={allFormValues.selectionCategory == 'other' ? allFormValues.selectionIndex : ''} 
+                    onChange={(event) => handleSelectMatch(event, 'other')}>
+                <option value="" disabled hidden>
+                    Valitse muu ottelu
+                </option>
+                {otherMatches.map((match, matchIndex) => (
+                    <option key={`other-${matchIndex}`} value={matchIndex}>
+                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                </option>
+                ))}
+            </select>}
+        </div>
+
+        {selectedMatch == null ? <></> :
+        <div className="selectionDiv">
+            <div>
+                <p className="selectedMatch">
+                {selectedMatch.koti}-{selectedMatch.vieras}
+                </p>
+                <div className="dateDiv">
+                <label>Muuta päivämäärää tarvittaessa:</label>
+                {getDayOfWeekStrings(new Date(allFormValues.date)).long}
+                <input
+                    type="date"
+                    id="datePicker"
+                    name="datePicker"
+                    value={allFormValues.date}
+                    onChange={(event) => setValue("date", event.target.value)}
+                />
+                </div>
+            </div>
+            <button id="submitButton" type="submit">Valitse</button>
+        </div>}
+
+        </div>
+        </form>
+        </div>
+        </>
+    );
+}
+
+export { MatchChooser };

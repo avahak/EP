@@ -9,12 +9,15 @@
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
 import './Scoresheet.css';
 import AddPlayerModal from './AddPlayerModal';
+import { getApiUrl } from '../utils/apiUtils';
+import { getDayOfWeekStrings, toDDMMYYYY } from '../../shared/generalUtils';
+// import { toDDMMYYYY } from "../../shared/generalUtils";
 
 // Erän mahdolliset lopputulokset pelaajalle:
 const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -30,7 +33,7 @@ type Team = {
 type FormFields = {
     teamHome: Team;
     teamAway: Team;
-    date: Date | undefined;
+    date: string;
     scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
 };
 
@@ -100,7 +103,7 @@ const Scoresheet: React.FC = () => {
         defaultValues: {
             teamHome: {...emptyTeam, teamRole: "home"},
             teamAway: {...emptyTeam, teamRole: "away"},
-            date: undefined,
+            date: '',
             scores: [...scoresDefaultValue],
         },
     });
@@ -109,9 +112,63 @@ const Scoresheet: React.FC = () => {
     const allFormValues = watch();
 
     const navigate = useNavigate();
+    const location = useLocation();
 
+    /**
+     * Kun sivu ladataan ensimmäisen kerran, luetaan ottelu location.state tilasta
+     * ja haetaan tietokantakyseleyillä ottelun joukkueiden pelaajat.
+     */
     useEffect(() => {
         console.log("useEffect called");
+        console.log("state", location.state);
+        if (!location.state) {   // ottelu tulee olla valittuna
+            navigate("/");
+            return;
+        }
+        const match = location.state.match;
+        setValue(`date`, location.state.date);
+
+        const fetchPlayers = async (teamAbbr: string) => {
+            try {
+                const apiUrl = `${getApiUrl()}/db/get_players_in_team`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ teamAbbr }),
+                });
+                if (!response.ok) 
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                const jsonData = await response.json();
+                return jsonData.rows;
+            } catch(error) {
+                console.error('Error:', error);
+            }
+        };
+
+        const fetchData = async () => {
+            const playersHome = await fetchPlayers(match.koti);
+            const playersAway = await fetchPlayers(match.vieras);
+
+            console.log("playerHome fetch: ", playersHome);
+            console.log("playerAway fetch: ", playersAway);
+
+            setValue("teamHome", {
+                teamName: match.koti,
+                teamRole: "home",
+                allPlayers: playersHome.map((player: any) => player.nimi),
+                selectedPlayers: ['', '', '']
+            });
+            setValue("teamAway", {
+                teamName: match.vieras,
+                teamRole: "away",
+                allPlayers: playersAway.map((player: any) => player.nimi),
+                selectedPlayers: ['', '', '']
+            });
+        };
+
+        fetchData();
     }, []);
 
     // avaa AddPlayerModal
@@ -154,46 +211,6 @@ const Scoresheet: React.FC = () => {
         if (selectValue !== " ")
             updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
         setValue('scores', updatedScores);
-    };
-
-    /**
-     * Kutsutaan kun käyttäjä valitsee joukkueen.
-     */
-    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectValue = event.target.value;
-        const parts = selectValue.split("-", 2);
-        // parts tulee olla taulukko, jossa on 2 alkiota:
-        if (parts.length != 2)
-            return;
-        // Käytetään kovakoodattuja väliaikaisia arvoja kunnes SQL-kyselyt toiminnassa:
-        if (parts[0] == "TH3") {
-            setValue("teamHome", {
-                teamName: parts[0],
-                teamRole: "home",
-                allPlayers: ["Matti", "Ville", "Joonas", "Jesse", "Aleksi"],
-                selectedPlayers: ['', '', '']
-            });
-            setValue("teamAway", {
-                teamName: parts[1],
-                teamRole: "away",
-                allPlayers: ["Kaisa", "Emmi", "Anne", "Päivi", "Leena"],
-                selectedPlayers: ['', '', '']
-            });
-        } else {
-            setValue("teamHome", {
-                teamName: parts[0],
-                teamRole: "home",
-                allPlayers: ["Pekka", "Rauno", "Pöde", "Tuomas", "Pete S."],
-                selectedPlayers: ['', '', '']
-            });
-            setValue("teamAway", {
-                teamName: parts[1],
-                teamRole: "away",
-                allPlayers: ["Erika", "Kati", "Sanna T", "Tytti", "Ulla"],
-                selectedPlayers: ['', '', '']
-            });
-        }
-        console.log("handleSelectMatch", allFormValues);
     };
 
     /**
@@ -360,30 +377,10 @@ const Scoresheet: React.FC = () => {
         <div id="container">
         <div id="scoresheet">
         <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Ottelun valinta (TODO) */}
-            <label>
-            Ottelu (TODO):
-            <select onChange={handleSelectMatch} defaultValue="">
-                <option value="" disabled hidden>
-                    Valitse ottelu
-                </option>
-                {["TH3-RT4", "OT2-JI3"].map((match, matchIndex) => (
-                    <option key={matchIndex} value={match}>
-                    {match}
-                </option>
-                ))}
-            </select>
-            </label>
-
-            <br />
-
-            {/* Päivämäärä */}
-            <label>
-            Ottelun päivämäärä:
-            <input type="date" {...register('date')} />
-            </label>
-
-            <br />
+            {/* Ottelu ja päivämäärä */}
+            <h2 style={{textAlign: 'center'}}>{allFormValues.teamHome.teamName}-{allFormValues.teamAway.teamName},
+                    &nbsp;{!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
+                    &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}</h2>
 
             <div id="table-box-outer">
                 <div id="table-box-outer-top">

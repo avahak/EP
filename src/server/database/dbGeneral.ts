@@ -16,21 +16,25 @@ function parseSqlFileContent(sqlFileContent: string): string[] {
 /**
  * Wrapperi tietokantakyselylle
  */
-async function myQuery(pool: mysql.Pool, query: string) {
+async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|null=null) {
     console.log("myQuery", query);
     try {
         const connection = await pool.getConnection();
         try {
-            const [rows] = await pool.query(query);
+            const [rows] = (substitutions == null) ? 
+                await pool.query(query) : 
+                await pool.query(query, substitutions);
             return rows;
         } catch (error) {
             console.error("myQuery error:", error);
+            return [];
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();
         }
     } catch (err) {
         console.error("myQuery error:", err);
+        return [];
     }
 }
 

@@ -17,7 +17,7 @@ import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
 import { myQuery, parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 import { generateAndInsertToDatabase, generateFakeData } from './database/dbFakeData.js';
-import { getMatches } from './database/dbSpecific.js';
+import { getAllMatches, getMatchesToReport, getPlayersInTeam } from './database/dbSpecific.js';
 
 dotenv.config();
 
@@ -215,7 +215,7 @@ app.get('/api/db/schema', async (_req, res) => {
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
         const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
 
-        const matches = await getMatches(pool);
+        const matches = await getAllMatches(pool);
         
         res.json({ 
             DB_NAME: process.env.DB_NAME,
@@ -249,6 +249,37 @@ app.get('/api/db/recreate', async (_req, res) => {
     } catch (error) {
         console.error('Error in /api/db/recreate:', error);
         res.status(500).send('Internal Server Error.');
+    }
+});
+
+/**
+ * Hakee tietokannasta joukkueen kaikki pelaajat.
+ */
+app.post('/api/db/get_players_in_team', async (req, res) => {
+    const teamAbbr = req.body.teamAbbr;
+    if (!teamAbbr)
+        return res.status(400).send("Missing parameter teamAbbr.");
+    try {
+        const rows = await getPlayersInTeam(pool, teamAbbr);
+        res.json({ rows });
+        console.log("/api/db/get_players_in_team done");
+    } catch (error) {
+        console.error('Error in /api/get_players_in_team:', error);
+        res.status(500).send(`Error: ${error}`);
+    }
+});
+
+/**
+ * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
+ */
+app.get('/api/db/report_result/get_matches', async (_req, res) => {
+    try {
+        const rows = await getMatchesToReport(pool);
+        res.json({ rows });
+        console.log("/api/db/record_result/get_matches done");
+    } catch (error) {
+        console.error('Error in /api/db/record_result/get_matches:', error);
+        res.status(500).send(`Error: ${error}`);
     }
 });
 

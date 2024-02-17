@@ -13,7 +13,8 @@ import { pickRandomDistinctElements } from "../../shared/generalUtils.js";
  */
 function generate_raflat() {
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
-    const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
+    // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
+    const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG']];
     const raflat: any[] = [];
     names.forEach(([name, shortName]) => {
         const rafla = { 
@@ -72,7 +73,7 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
     const joukkueet: any[] = [];
     lohkot.forEach((lohko) => {
         raflat.forEach((rafla) => {
-            let count = Math.round(5 * Math.random()**2);
+            let count = Math.round(6 * Math.random()**2);
             for (let k = 1; k <= count; k++) {
                 const joukkue = {
                     index: joukkueet.length,
@@ -167,14 +168,14 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
                 if (koti == vieras)
                     return;
                 // Asetetaan status tuleville otteluille 'T', vanhoille 'H' 
-                // ja viimeaikaisille satunnaisesti M, V, K:
+                // ja viimeaikaisille satunnaisesti T, M, V, K:
                 const matchDate = new Date(startDate.getTime()+Math.random()*(endDate.getTime()-startDate.getTime()));
                 let status = 'T';
                 if (matchDate < currentDate) {
                     if (matchDate < currentDateMinusHalfYear)
                         status = 'H';
                     else 
-                        status = ['M', 'V', 'K'][Math.floor(3*Math.random())];
+                        status = ['T', 'M', 'V', 'K'][Math.floor(4*Math.random())];
                 }
                 // ['H', 'M', 'V', 'K', 'T'][Math.floor(5*Math.random())]
 

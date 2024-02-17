@@ -12,23 +12,31 @@ import HoughDemo from '../components/HoughDemo';
 import HomographyDemo from '../components/HomographyDemo';
 import VisionExample from '../components/VisionExample';
 import { DBTest } from '../components/DBTest';
+// import { MatchChooser } from '../components/MatchChooser';
+import { ResultSubmission } from '../components/ResultSubmission';
 
 const AppRouter = () => {
-    return (
-        <>
+    return (<>
         <Router>
             <Routes>
-              <Route path="/scoresheet" element={<Scoresheet />} />
-              <Route path="/hough" element={<HoughDemo />} />
-              <Route path="/homography" element={<HomographyDemo />} />
-              <Route path="/vision" element={<VisionExample />} />
-              <Route path="/upload" element={<FileUpload />} />
-              <Route path="/db" element={<DBTest />} />
-              <Route path="/" element={<App />} />
+                {/* Verkkosivuja tai komponentteja */}
+                <Route path="/report" element={<ResultSubmission />} />
+                {/* <Route path="/scoresheet" element={<Scoresheet />} /> */}
+
+                {/* Konenäkö */}
+                <Route path="/hough" element={<HoughDemo />} />
+                <Route path="/homography" element={<HomographyDemo />} />
+                <Route path="/vision" element={<VisionExample />} />
+
+                {/* Kehitystyökaluja */}
+                <Route path="/upload" element={<FileUpload />} />
+                <Route path="/db" element={<DBTest />} />
+
+                {/* Juuri */}
+                <Route path="/" element={<App />} />
             </Routes>
         </Router>
-        </>
-    );
+    </>);
 }
 
 export { AppRouter };

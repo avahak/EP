@@ -12,9 +12,14 @@ const App = () => {
     return (
         <Container sx={{backgroundColor: (theme) => theme.palette.common.white}}>
             <div style={{padding: "2em"}}>
-                <Typography variant="h3">Demot</Typography>
-                <Link to="/scoresheet">Scoresheet</Link> 
+                <Typography variant="h3">Sivut</Typography>
+                <Link to="/report">Ottelun ilmoitus</Link> 
                 <br />
+                {/* <Link to="/scoresheet">Scoresheet</Link> 
+                <br /> */}
+            </div>
+            <div style={{padding: "2em"}}>
+                <Typography variant="h3">Konenäkö</Typography>
                 <Link to="/vision">Google Vision API esimerkki</Link> 
                 <br />
                 <Link to="/hough">Hough-muunnos</Link> 
