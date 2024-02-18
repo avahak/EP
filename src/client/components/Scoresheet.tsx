@@ -335,9 +335,10 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = 
         <div id="scoresheet">
         <form onSubmit={handleSubmit(onSubmit)}>
             {/* Ottelu ja päivämäärä */}
-            <h2 style={{textAlign: 'center'}}>{allFormValues.teamHome.teamName}-{allFormValues.teamAway.teamName},
+            <h2 style={{textAlign: 'center'}}>{allFormValues.teamHome.teamName} - {allFormValues.teamAway.teamName},
                     &nbsp;{!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
-                    &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}</h2>
+                    &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}
+            {mode == "verify" && <><br />Tulos {runningScore[8][0]} - {runningScore[8][1]}</>}</h2>
 
             {mode == 'verify' && 
             <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
