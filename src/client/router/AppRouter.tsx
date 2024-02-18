@@ -6,7 +6,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FileUpload from "../components/FileUpload";
-import { Scoresheet } from '../components/Scoresheet';
+// import { Scoresheet } from '../components/Scoresheet';
 import { App } from '../components/App';
 import HoughDemo from '../components/HoughDemo';
 import HomographyDemo from '../components/HomographyDemo';

@@ -9,13 +9,13 @@
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
 import './Scoresheet.css';
 import AddPlayerModal from './AddPlayerModal';
-import { getApiUrl } from '../utils/apiUtils';
+// import { getApiUrl } from '../utils/apiUtils';
 import { getDayOfWeekStrings, toDDMMYYYY } from '../../shared/generalUtils';
 // import { toDDMMYYYY } from "../../shared/generalUtils";
 
@@ -23,11 +23,16 @@ import { getDayOfWeekStrings, toDDMMYYYY } from '../../shared/generalUtils';
 const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
+type Player = {
+    id: number;
+    name: string;
+};
+
 type Team = {
     teamName: string;
     teamRole: "home" | "away";
-    allPlayers: string[];
-    selectedPlayers: string[];
+    allPlayers: (Player | null)[];
+    selectedPlayers: (Player | null)[];
 };
 
 type FormFields = {
@@ -40,8 +45,8 @@ type FormFields = {
 const emptyTeam: Team = {
     teamName: '',
     teamRole: "home",
-    allPlayers: [''],
-    selectedPlayers: ['', '', ''],
+    allPlayers: [],
+    selectedPlayers: [null, null, null],
 };
 
 /**
@@ -78,97 +83,37 @@ const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], 
 }
 
 /**
- * Palauttaa pelaajan nimen playerNames[index] jos ei tyhjä ja defaultName muutoin.
+ * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
  */
-const playerName = (playerNames: string[], index: number, defaultName: string) => {
-    const name = playerNames[index];
-    if (!!name)
-        return name;
+const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
+    const player = players[index];
+    if (!!player)
+        return player.name;
     return `${defaultName} ${index+1}`;
 }
 
 /**
  * React komponentti tuloslomakkeelle.
  */
-const Scoresheet: React.FC = () => {
+const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = ({initialValues, mode}) => {
     // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
     // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
     // uusi pelaaja lisätään modaalin avulla:
     const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
-    const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
     // Lomakkeen kenttien tila:
     const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
-        defaultValues: {
-            teamHome: {...emptyTeam, teamRole: "home"},
-            teamAway: {...emptyTeam, teamRole: "away"},
-            date: '',
-            scores: [...scoresDefaultValue],
-        },
+        defaultValues: initialValues
     });
 
     const scores = watch('scores');
     const allFormValues = watch();
 
     const navigate = useNavigate();
-    const location = useLocation();
 
-    /**
-     * Kun sivu ladataan ensimmäisen kerran, luetaan ottelu location.state tilasta
-     * ja haetaan tietokantakyseleyillä ottelun joukkueiden pelaajat.
-     */
     useEffect(() => {
-        console.log("useEffect called");
-        console.log("state", location.state);
-        if (!location.state) {   // ottelu tulee olla valittuna
-            navigate("/");
-            return;
-        }
-        const match = location.state.match;
-        setValue(`date`, location.state.date);
-
-        const fetchPlayers = async (teamAbbr: string) => {
-            try {
-                const apiUrl = `${getApiUrl()}/db/get_players_in_team`;
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ teamAbbr }),
-                });
-                if (!response.ok) 
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                const jsonData = await response.json();
-                return jsonData.rows;
-            } catch(error) {
-                console.error('Error:', error);
-            }
-        };
-
-        const fetchData = async () => {
-            const playersHome = await fetchPlayers(match.koti);
-            const playersAway = await fetchPlayers(match.vieras);
-
-            console.log("playerHome fetch: ", playersHome);
-            console.log("playerAway fetch: ", playersAway);
-
-            setValue("teamHome", {
-                teamName: match.koti,
-                teamRole: "home",
-                allPlayers: playersHome.map((player: any) => player.nimi),
-                selectedPlayers: ['', '', '']
-            });
-            setValue("teamAway", {
-                teamName: match.vieras,
-                teamRole: "away",
-                allPlayers: playersAway.map((player: any) => player.nimi),
-                selectedPlayers: ['', '', '']
-            });
-        };
-
-        fetchData();
+        console.log("Scoresheet useEffect called");
     }, []);
 
     // avaa AddPlayerModal
@@ -182,12 +127,12 @@ const Scoresheet: React.FC = () => {
     }
 
     // Takaisinkutsufunktio AddPlayerModal varten:
-    const handleAddPlayer = (playerName: string, team: Team, slot: number) => {
+    const handleAddPlayer = (player: Player, team: Team, slot: number) => {
         console.log("handleAddPlayer", playerName, team);
         const isHome = (team == allFormValues.teamHome);
         // const baseTeam = isHome ? allFormValues.teamHome : allFormValues.teamAway;
-        setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, playerName]);
-        setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, playerName);
+        setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, player]);
+        setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, player);
         console.log("handleAddPlayer isHome", isHome);
         console.log("handleAddPlayer allPlayers", isHome ? allFormValues.teamHome.allPlayers : allFormValues.teamAway.allPlayers);
         console.log("handleAddPlayer selectedPlayers", isHome ? allFormValues.teamHome.selectedPlayers : allFormValues.teamAway.selectedPlayers);
@@ -218,14 +163,17 @@ const Scoresheet: React.FC = () => {
      * avataan modaali pelaajan lisäämiseksi.
      */
     const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
-        console.log(event);
+        console.log("handleSelectPlayer", event.target.value);
+        const isHome = (team == allFormValues.teamHome);
         if (event.target.value == "newPlayer") {
-            const isHome = (team == allFormValues.teamHome);
             // Reset the selected value
-            setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, '');
+            setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);
             setCurrentPlayerSlot({team, slot});
             console.log("newPlayer selected", slot);
             handleOpenAddPlayerModal();
+        } else {
+            setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 
+                team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(event.target.value))]);
         }
     };
 
@@ -250,7 +198,7 @@ const Scoresheet: React.FC = () => {
      */
     const teamSelection = (teamRole: "home" | "away") => {
         const team = (teamRole == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
-        const teamString = (teamRole == "home") ? "teamHome" : "teamAway";
+        // const teamString = (teamRole == "home") ? "teamHome" : "teamAway";
         const teamText = (teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
         const defaultOptionText = (teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
         console.log("team", team);
@@ -262,15 +210,16 @@ const Scoresheet: React.FC = () => {
             </label>
 
             {/* Joukkueen pelaajat */}
+            {mode == "modify" ? <>
             {[0, 1, 2].map((playerIndex) => (
                 <React.Fragment key={`player-${playerIndex}`}>
                 <select disabled={!team.teamName}
-                        value={team.selectedPlayers[playerIndex]} 
-                        {...register(`${teamString}.selectedPlayers.${playerIndex}` as const)}
+                        value={team.selectedPlayers[playerIndex]?.id ?? ''} 
+                        // {...register(`${teamString}.selectedPlayers.${playerIndex}.id` as const)}
                         onChange={(event) => {
                             // if React Hook Form implements onChange, run it: 
-                            if (register(`${teamString}.selectedPlayers.${playerIndex}`).onChange)
-                                register(`${teamString}.selectedPlayers.${playerIndex}`).onChange(event);
+                            // if (register(`${teamString}.selectedPlayers.${playerIndex}.id`).onChange)
+                            //     register(`${teamString}.selectedPlayers.${playerIndex}.id`).onChange(event);
                             handleSelectPlayer(event, team, playerIndex);
                         }}>
                     <option value="" disabled hidden>
@@ -278,16 +227,22 @@ const Scoresheet: React.FC = () => {
                     </option>
                     {team.allPlayers.map((playerOption, playerOptionIndex) => (
                         <option 
-                            disabled={team.selectedPlayers.includes(playerOption)}
+                            value={playerOption?.id ?? ''}
+                            disabled={team.selectedPlayers.map((player) => player?.id).includes(playerOption?.id)}
                             key={`player-option-${playerOptionIndex}`}>
-                            {playerOption}
+                            {playerOption?.name ?? ''}
                         </option>
                     ))}
                     <option value="newPlayer">
                         Lisää uusi pelaaja
                     </option>
                 </select>
-                </React.Fragment>))}
+                </React.Fragment>))} </>
+                : <>
+                {[0, 1, 2].map((playerIndex) => (
+                    <label key={`label-${playerIndex}`}>{playerIndex+1}. {team.selectedPlayers[playerIndex]?.name ?? ''}</label>
+                ))}
+                </> }
         </div>
         </>)
     };
@@ -320,8 +275,7 @@ const Scoresheet: React.FC = () => {
                 {playerIndex == 0 &&
                     <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
                         {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
-                    </td>
-                }
+                    </td>}
 
                 {/* Pelaaja */}
                 <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
@@ -331,7 +285,7 @@ const Scoresheet: React.FC = () => {
                 </td>
 
                 {/* Erätulokset */}
-                {Array.from({ length: 5 }, (_, roundIndex) => (
+                {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
                     <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
                     <select className={scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
                         {...register(
@@ -345,6 +299,10 @@ const Scoresheet: React.FC = () => {
                         </option>
                         ))}
                     </select>
+                    </td>
+                )) : Array.from({ length: 5 }, (_, roundIndex) => (
+                    <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                    <div style={{width: '25px', textAlign: 'center'}}>{scores[gameIndex][playerIndex][roundIndex]}</div>
                     </td>
                 ))}
 
@@ -362,8 +320,7 @@ const Scoresheet: React.FC = () => {
                 </td>
                 : <></>}
 
-                </tr>
-            ))
+                </tr>))
             ))}
         </tbody>
         </table>
@@ -381,6 +338,12 @@ const Scoresheet: React.FC = () => {
             <h2 style={{textAlign: 'center'}}>{allFormValues.teamHome.teamName}-{allFormValues.teamAway.teamName},
                     &nbsp;{!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
                     &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}</h2>
+
+            {mode == 'verify' && 
+            <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
+                <button type="submit" style={{fontSize: "1.3em", background: '#ccffcc'}}>Hyväksy</button>
+                <button type="submit" style={{fontSize: "1.3em", background: '#ffcccc'}}>Muokkaa</button>
+            </div>}
 
             <div id="table-box-outer">
                 <div id="table-box-outer-top">
@@ -402,7 +365,8 @@ const Scoresheet: React.FC = () => {
                 {makeTable()}
             </div>
 
-            <button type="submit">Lähetä</button>
+            {mode == 'modify' &&
+            <button type="submit">Lähetä</button>}
         </form>
         </div>
         </div>

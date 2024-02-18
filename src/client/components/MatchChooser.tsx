@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { getApiUrl } from "../utils/apiUtils";
 import { useEffect, useState } from "react";
@@ -32,17 +32,11 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     });
 
     const allFormValues = watch();
-    const navigate = useNavigate();
 
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<any> = (data: FormFields) => {
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
-        if (match.status == 'T')
-            navigate("/scoresheet", { state: { match, date: data.date } });
-        else if (match.status == 'K')
-            navigate("/scoresheet", { state: { match, date: data.date } });
-        else
-            navigate("/");
+        submitCallback({ match, date: data.date });
     }
 
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
@@ -85,12 +79,12 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
         setValue(`selectionCategory`, category);
         const index = parseInt(event.target.value);
         setValue(`selectionIndex`, index);
-        setValue(`date`, dateToISOString(new Date(getSelectedMatch(category, index).paiva)));
+        setValue(`date`, dateToISOString(new Date(getSelectedMatch(category, index).date)));
     };
 
-    const homeMatches = matches.filter((match) => (match.koti == userTeam) && (match.status == 'T'));
-    const awayMatches = matches.filter((match) => (match.vieras == userTeam) && (match.status == 'K'));
-    const otherMatches = matches.filter((match) => (match.koti != userTeam) && (match.vieras != userTeam) 
+    const homeMatches = matches.filter((match) => (match.home == userTeam) && (match.status == 'T'));
+    const awayMatches = matches.filter((match) => (match.away == userTeam) && (match.status == 'K'));
+    const otherMatches = matches.filter((match) => (match.home != userTeam) && (match.away != userTeam) 
             && (match.status == 'T' || match.status == 'K'));
 
     const formatDate = (dateString: string) => {
@@ -121,7 +115,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                 </option>
                 {homeMatches.map((match, matchIndex) => (
                     <option key={`home-${matchIndex}`} value={matchIndex}>
-                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                    {match.home}-{match.away}, {formatDate(match.date)}
                 </option>
                 ))}
             </select>}
@@ -138,12 +132,12 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                 </option>
                 {awayMatches.map((match, matchIndex) => (
                     <option key={`away-${matchIndex}`} value={matchIndex}>
-                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                    {match.home}-{match.away}, {formatDate(match.date)}
                 </option>
                 ))}
             </select>}
         </div>
-        <div className="selectDiv">
+        {/* <div className="selectDiv">
             <label>
             Muut ottelut:
             </label>
@@ -155,17 +149,17 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                 </option>
                 {otherMatches.map((match, matchIndex) => (
                     <option key={`other-${matchIndex}`} value={matchIndex}>
-                    {match.koti}-{match.vieras}, {formatDate(match.paiva)}
+                    {match.home}-{match.away}, {formatDate(match.date)}
                 </option>
                 ))}
             </select>}
-        </div>
+        </div> */}
 
         {selectedMatch == null ? <></> :
         <div className="selectionDiv">
             <div>
                 <p className="selectedMatch">
-                {selectedMatch.koti}-{selectedMatch.vieras}
+                {selectedMatch.home}-{selectedMatch.away}
                 </p>
                 <div className="dateDiv">
                 <label>Muuta päivämäärää tarvittaessa:</label>

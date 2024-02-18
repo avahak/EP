@@ -8,18 +8,23 @@ import Modal from 'react-modal';
 // Asetetaan juurielementti käytettävyyttä varten:
 Modal.setAppElement('#root');
 
+type Player = {
+    id: number;
+    name: string;
+};
+
 type Team = {
     teamName: string;
     teamRole: "home" | "away";
-    allPlayers: string[];
-    selectedPlayers: string[];
+    allPlayers: (Player | null)[];
+    selectedPlayers: (Player | null)[];
 };
 
 type AddPlayerModalProps = {
     isOpen: boolean;
     team: Team;
     onClose: () => void;
-    onAddPlayer: (newPlayerName: string) => void;
+    onAddPlayer: (newPlayer: Player) => void;
 };
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
@@ -29,7 +34,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, 
         if (newPlayerName.trim() === '') {
             return;
         }
-        onAddPlayer(newPlayerName);
+// TODO Korjaa!!! Tietokantalisäys ja saat oikean id.
+        onAddPlayer({id: -1, name: newPlayerName});
         onClose();
     };
     

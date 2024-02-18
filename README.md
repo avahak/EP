@@ -53,6 +53,11 @@ src/client/components/ - Hakemisto React komponenttien koodille
                 esikatselukuvien esittämiseen  
         VisionExample.tsx - Esimerkki Google Vision API tuloksesta  
         DBTest.tsx - Tietokannan testausta
+        MatchChooser.tsx - Komponentti ottelun valintaan (koti/vieras) 
+                tulosten ilmoittamista varten.
+        MatchChooser.css - Tyylitiedosto MatchChooser.tsx käyttöön.
+        ResultSubmission.tsx - Sivu tulosten ilmoittamiselle, käyttää 
+                MatchChooser ja Scoresheet komponentteja.
   
 src/client/utils/ - Hakemisto React App apufunktioille eri komponenttien käyttöön  
         apiUtils.ts - Apufunktio api rajapinnan osoitteelle

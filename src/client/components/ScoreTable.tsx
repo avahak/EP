@@ -1,5 +1,10 @@
 import "./ScoreTable.css";
 
+type Player = {
+    id: number;
+    name: string;
+};
+
 /**
  * Yksi laatikko pelin lopputuloksen esittämiseksi. Tässä on kummankin
  * pelaajan voittamien pelien määrät (left, right).
@@ -32,17 +37,17 @@ const NameBox: React.FC<{ text: string; orientation: "horizontal" | "vertical" }
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const ScoreTable: React.FC<{ roundWins: number[][]; playersHome: string[]; playersAway: string[] }> = ({roundWins, playersHome, playersAway}) => {
+const ScoreTable: React.FC<{ roundWins: number[][]; playersHome: (Player | null)[]; playersAway: (Player | null)[] }> = ({roundWins, playersHome, playersAway}) => {
     return (
         <div className="result-box">
             <>
             <div></div>
             {[0, 1, 2].map((col) => (
-                <NameBox key={`name-box-top-${col}`} text={playersAway[col]} orientation="vertical"></NameBox>
+                <NameBox key={`name-box-top-${col}`} text={playersAway[col]?.name ?? ''} orientation="vertical"></NameBox>
             ))}
-
+            
             {[0, 1, 2].map((row) => [
-                <NameBox key={`name-box-${row}`} text={playersHome[row]} orientation="horizontal"></NameBox>,
+                <NameBox key={`name-box-${row}`} text={playersHome[row]?.name ?? ''} orientation="horizontal"></NameBox>,
                 [0, 1, 2].map((col) => (
                     <DiagonalSplitBox key={`dg-box-${row}-${col}`} left={roundWins[(9-row*2+col*3) % 9][0]} right={roundWins[(9-row*2+col*3) % 9][1]} />
                 )),

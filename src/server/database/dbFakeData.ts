@@ -209,7 +209,10 @@ function generate_pelit(ottelut: any[], pelaajat: any[]) {
     const pelit: any[] = [];
     const erat: any[] = [];
     ottelut.forEach((ottelu) => {
-        // valitaa 3 pelaajaa kummankin joukkueen pelaajista:
+        // Jos status on 'T', ei ottelua ole vielä käyty.
+        if (ottelu.status == 'T')
+            return;
+        // Valitaan 3 pelaajaa kummankin joukkueen pelaajista:
         const kotiPelaajat = pickRandomDistinctElements(joukkuePelaajaMap.get(ottelu.koti)!, 3);
         const vierasPelaajat = pickRandomDistinctElements(joukkuePelaajaMap.get(ottelu.vieras)!, 3);
         for (let k = 0; k < 9; k++) {
