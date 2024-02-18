@@ -9,7 +9,7 @@
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
@@ -95,7 +95,7 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
 /**
  * React komponentti tuloslomakkeelle.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = ({initialValues, mode}) => {
+const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", submitCallback: (data: FormFields) => void, rejectCallback: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
     // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
@@ -109,8 +109,6 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = 
 
     const scores = watch('scores');
     const allFormValues = watch();
-
-    const navigate = useNavigate();
 
     useEffect(() => {
         console.log("Scoresheet useEffect called");
@@ -139,8 +137,9 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = 
     } 
 
     // Funktio, joka kutsutaan kun lomake lähetetään:
-    const onSubmit: SubmitHandler<FormFields> = (_data) => {
-        navigate("/");
+    const onSubmit: SubmitHandler<FormFields> = (data) => {
+        submitCallback(data);
+        return;
     }
 
     const { runningScore, roundWins } = computeDerivedStats(scores);
@@ -343,7 +342,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" }> = 
             {mode == 'verify' && 
             <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
                 <button type="submit" style={{fontSize: "1.3em", background: '#ccffcc'}}>Hyväksy</button>
-                <button type="submit" style={{fontSize: "1.3em", background: '#ffcccc'}}>Muokkaa</button>
+                <button style={{fontSize: "1.3em", background: '#ffcccc'}} onClick={rejectCallback}>Muokkaa</button>
             </div>}
 
             <div id="table-box-outer">

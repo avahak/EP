@@ -10,6 +10,7 @@ import { useState } from "react";
 import { MatchChooser } from "./MatchChooser";
 import { Scoresheet } from "./Scoresheet";
 import { getApiUrl } from "../utils/apiUtils";
+import { useNavigate } from "react-router-dom";
 
 type Player = {
     id: number;
@@ -74,6 +75,24 @@ const ResultSubmission: React.FC = () => {
         scores: [...scoresDefaultValue],
     });
     const [pageState, setPageState] = useState<string>("choose_match");
+
+    const navigate = useNavigate();
+
+    /**
+     * Tätä funktiota kutsutaan kun käyttäjä lähettää täytetyn/muokatun Scoresheet lomakkeen.
+     */
+    const handleSubmit = (_data: ResultFields) => {
+        // Tässä tulisi tehdä INSERT/UPDATE tietokantakyselyitä
+        navigate("/");
+    }
+
+    /**
+     * Tämä kutsutaan kun vierasjoukkueen edustaja hylkää kotijoukkueen antamat tulokset ja
+     * haluaa tehdä niihin muutoksia.
+     */
+    const handleReject = () => {
+        setPageState("scoresheet_modify");
+    }
 
     /**
      * Hakee pelaajat joukkueeseen sen lyhenteen perusteella.
@@ -180,7 +199,7 @@ const ResultSubmission: React.FC = () => {
         await fetchTeamData(match, date);
         console.log("result", result);
         if (match.status == 'T')
-            setPageState("scoresheet_modify");
+            setPageState("scoresheet_fresh");
         else 
             setPageState("scoresheet_verify");
         console.log("callback", match, date);
@@ -191,12 +210,21 @@ const ResultSubmission: React.FC = () => {
 
     return (
         <div>
+        {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 
             <MatchChooser userTeam={"FX1"} submitCallback={matchChooserCallback} />}
-        {pageState == "scoresheet_modify" && 
-            <Scoresheet initialValues={result} mode="modify"/>}
+        {/* Kotijoukkue kirjaa tulokset: */}
+        {pageState == "scoresheet_fresh" && 
+            <Scoresheet initialValues={result} mode="modify" 
+                submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
+        {/* Vierasjoukkue tarkistaa tulokset: */}
         {pageState == "scoresheet_verify" && 
-            <Scoresheet initialValues={result} mode="verify"/>}
+            <Scoresheet initialValues={result} mode="verify" 
+                submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {handleReject()}}/>}
+        {/* Vierasjoukkue haluaa tehdä muutoksia tuloksiin: */}
+        {pageState == "scoresheet_modify" && 
+            <Scoresheet initialValues={result} mode="modify" 
+                submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
         </div>
     );
 }

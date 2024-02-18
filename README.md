@@ -28,6 +28,7 @@ src/server/database/ - Hakemisto SQL-tietokantaan liittyvälle koodille
 
 src/shared/ - Yhteinen kansio Express.js ja Reactille
         dbTypes.ts - Typescript tyypit tietokannan tauluille
+        generalUtils.ts - Geneerisiä apufunktioita
         types/ - TypeScript-tyyppien käytössä tarvittavia moduulilaajennuksia.  
                 Nämä voi jättää huomioimatta ja tarvitaan vain teknisistä syistä.  
   
@@ -47,7 +48,7 @@ src/client/components/ - Hakemisto React komponenttien koodille
         Frontpage.tsx - ei käytössä  
         ScoreTable.tsx - Piirtää tulostaulukon (taulu jokaisen peli lopputuloksesta)  
         ScoreTable.css - tyylitiedosto ScoreTable.tsx käyttöön  
-        Scoresheet.tsx - Lomake ottelun tulosten syöttämiseen  
+        Scoresheet.tsx - Lomake ottelun tulosten syöttämiseen tai vahvistamiseen
         Scoresheet.css - tyylitiedosto Scoresheet.tsx käyttöön  
         ThumbnailSelector.tsx - Yksinkertainen valintalaatikko 
                 esikatselukuvien esittämiseen  
@@ -61,5 +62,5 @@ src/client/components/ - Hakemisto React komponenttien koodille
   
 src/client/utils/ - Hakemisto React App apufunktioille eri komponenttien käyttöön  
         apiUtils.ts - Apufunktio api rajapinnan osoitteelle
-        generalUtils.ts - Yleisiä apufunktioita
+        generalUtils.ts - Yleisiä apufunktioita (esimerkiksi päivämäärien muunnoksia)
 ``` 
