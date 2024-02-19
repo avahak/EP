@@ -1,4 +1,1 @@
-declare module 'jsfeat' {
-    const jsfeat: any;
-    export = jsfeat;
-}
+declare module 'jsfeat';

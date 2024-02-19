@@ -22,15 +22,15 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
         const connection = await pool.getConnection();
         try {
             const [rows] = (substitutions == null) ? 
-                await pool.query(query) : 
-                await pool.query(query, substitutions);
+                await connection.query(query) : 
+                await connection.query(query, substitutions);
             return rows;
         } catch (error) {
             console.error("myQuery error:", error);
             return [];
         } finally {
-            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
-            // connection.release();
+            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            connection.release();
         }
     } catch (err) {
         console.error("myQuery error:", err);
@@ -45,7 +45,7 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
 async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
     console.log("recreateDatabase", databaseName);
     try {
-        let sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
+        let sqlFile = fs.readFileSync(`src/server/database/${databaseName}.sql`, 'utf-8');
         const queries = parseSqlFileContent(sqlFile);
 
         const connection = await pool.getConnection();
@@ -58,9 +58,9 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
         } catch (error) {
             console.error("recreateDatabase error:", error);
         } finally {
-            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // Vapautetaan yhteys takaisin altaaseen:
-            // connection.release();
+            connection.release();
         }
 
         console.log(queries);

@@ -1,4 +1,1 @@
-declare module 'multipart' {
-    const multipart: any;
-    export = multipart;
-}
+declare module 'multipart';

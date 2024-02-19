@@ -1,4 +1,3 @@
-
 import jsfeat from 'jsfeat';
 import sharp from 'sharp';
 
@@ -76,7 +75,7 @@ class Homography {
      * Etsii FAST-piirteitä kuvasta käyttäen jsfeat kirjastoa.
      */
     findKeypoints(image: any) {
-        let corners = [];
+        let corners: any[] = [];
         
         for(let i = 0; i < image.cols*image.rows; i++)
             corners[i] = new jsfeat.keypoint_t(0,0,0,0,-1);
@@ -91,7 +90,7 @@ class Homography {
         console.log("corners count:", count);
         console.log("corners", corners);
         
-        const returns = [];
+        const returns: any[] = [];
         for (let k = 0; k < count; k++)
             returns.push(corners[k]);
         return returns;
@@ -114,7 +113,7 @@ class Homography {
      * Palauttaa listan toisansa vastaavista piirteistä.
      */
     match(descriptors1: any, descriptors2: any) {
-        let matches = [];
+        let matches: any[] = [];
         for (let k1 = 0; k1 < descriptors1.rows; k1++) {
             const row1 = descriptors1.data.subarray(k1*descriptors1.cols, (k1+1)*descriptors1.cols);
 

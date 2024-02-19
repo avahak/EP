@@ -6,7 +6,7 @@
 
 import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
-import { pickRandomDistinctElements } from "../../shared/generalUtils.js";
+import { dateToISOString, pickRandomDistinctElements } from "../../shared/generalUtils.js";
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
@@ -383,7 +383,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             batch = data.ottelut.map((ottelu) => {
                 return [
                     ottelu.lohko+1,
-                    ottelu.paiva.toISOString().split('T')[0],
+                    dateToISOString(ottelu.paiva),
                     ottelu.koti+1,
                     ottelu.vieras+1,
                     ottelu.status
@@ -423,6 +423,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.error("Error during generateAndInsertToDatabase:", error);
             // await connection.rollback();
         } finally {
+            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             connection.release();
         }
     } catch (error) {

@@ -91,7 +91,7 @@ class HoughTransform {
     private findPeaks() {
         const threshold = 100;
         const overlapRadius = 20;
-        const candidatePeaks = [];   // elementit: [r, angle, numberOfVotes]
+        const candidatePeaks: any[] = [];   // elementit: [r, angle, numberOfVotes]
 
         // täytä candidatePeaks:
         for (let angle = 0; angle < this.sizeAngle; angle++) {
