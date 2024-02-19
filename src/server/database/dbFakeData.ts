@@ -423,8 +423,8 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.error("Error during generateAndInsertToDatabase:", error);
             // await connection.rollback();
         } finally {
-            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
-            connection.release();
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            // connection.release();
         }
     } catch (error) {
         console.error("Error during generateAndInsertToDatabase.", error);

@@ -1,3 +1,6 @@
+- VSC uses tsconfig.json so all files should be included in this base configuration
+  "include": ["src"]
+
 Azure
   - For some reason Node 20 does not work on Azure, use Node 18
   - Remember to have PORT environment variable defined on Azure

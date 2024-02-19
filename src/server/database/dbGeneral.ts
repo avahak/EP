@@ -29,8 +29,8 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
             console.error("myQuery error:", error);
             return [];
         } finally {
-            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
-            connection.release();
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            // connection.release();
         }
     } catch (err) {
         console.error("myQuery error:", err);
@@ -58,9 +58,9 @@ async function recreateDatabase(pool: mysql.Pool, databaseName: string) {
         } catch (error) {
             console.error("recreateDatabase error:", error);
         } finally {
-            // connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // Vapautetaan yhteys takaisin altaaseen:
-            connection.release();
+            // connection.release();
         }
 
         console.log(queries);
