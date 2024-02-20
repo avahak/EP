@@ -13,6 +13,8 @@
 --      ep_peli -> ep_sarjat
 --      ep_ottelu -> ep_sarjat
 
+-- NOTE herättimet voisi nimetä tyyliin "trigger_insert_on_peli_modify_ottelu".
+
 DELIMITER //
 
 -- ep_peli päivitys:
@@ -59,8 +61,8 @@ BEGIN
 END //
 
 -- Jos ep_erat lisätään rivi, päivitetään ep_peli taulun ktulos, vtulos:
-DROP TRIGGER IF EXISTS trigger_erat_to_peli_insert_or_insert //
-CREATE TRIGGER trigger_erat_to_peli_insert_or_insert
+DROP TRIGGER IF EXISTS trigger_erat_to_peli_insert //
+CREATE TRIGGER trigger_erat_to_peli_insert
 BEFORE INSERT ON ep_erat
 FOR EACH ROW
 BEGIN
@@ -68,8 +70,8 @@ BEGIN
 END //
 
 -- Jos ep_erat muutetaan riviä, päivitetään ep_peli taulun ktulos, vtulos:
-DROP TRIGGER IF EXISTS trigger_erat_to_peli_insert_or_update //
-CREATE TRIGGER trigger_erat_to_peli_insert_or_update
+DROP TRIGGER IF EXISTS trigger_erat_to_peli_update //
+CREATE TRIGGER trigger_erat_to_peli_update
 BEFORE UPDATE ON ep_erat
 FOR EACH ROW
 BEGIN
@@ -131,10 +133,10 @@ CREATE TRIGGER trigger_peli_to_ottelu_update
 BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
-    DECLARE add_ktulos INT DEFAULT IF(COALESCE(NEW.ktulos, 0) > COALESCE(NEW.vtulos, 0), 1, 0);
-    DECLARE add_vtulos INT DEFAULT IF(COALESCE(NEW.vtulos, 0) > COALESCE(NEW.ktulos, 0), 1, 0);
     DECLARE sub_ktulos INT DEFAULT IF(COALESCE(OLD.ktulos, 0) > COALESCE(OLD.vtulos, 0), 1, 0);
     DECLARE sub_vtulos INT DEFAULT IF(COALESCE(OLD.vtulos, 0) > COALESCE(OLD.ktulos, 0), 1, 0);
+    DECLARE add_ktulos INT DEFAULT IF(COALESCE(NEW.ktulos, 0) > COALESCE(NEW.vtulos, 0), 1, 0);
+    DECLARE add_vtulos INT DEFAULT IF(COALESCE(NEW.vtulos, 0) > COALESCE(NEW.ktulos, 0), 1, 0);
 
     UPDATE ep_ottelu
     SET 
@@ -156,16 +158,17 @@ END //
 -- Toimenpide ep_pelaaja taulun muutoksille kun lisätään (operation_sign = +1) 
 -- tai poistetaan (operation_sign = -1) ep_peli
 DROP PROCEDURE IF EXISTS adjust_ep_pelaaja //
-CREATE PROCEDURE adjust_ep_pelaaja(IN player_id INT, IN games_won INT, IN games_lost INT, IN operation_sign INT)
+CREATE PROCEDURE adjust_ep_pelaaja(IN player_id INT, IN rounds_won INT, IN rounds_lost INT, IN operation_sign INT)
 BEGIN
-    DECLARE player_won INT DEFAULT IF(games_won > games_lost, 1, 0);
+    DECLARE player_won INT DEFAULT IF(rounds_won > rounds_lost, 1, 0);
+    DECLARE player_lost INT DEFAULT IF(rounds_lost > rounds_won, 1, 0);
 
     UPDATE ep_pelaaja
     SET 
-        v_era = COALESCE(v_era, 0) + operation_sign*games_won,
-        h_era = COALESCE(h_era, 0) + operation_sign*games_lost,
+        v_era = COALESCE(v_era, 0) + operation_sign*rounds_won,
+        h_era = COALESCE(h_era, 0) + operation_sign*rounds_lost,
         v_peli = COALESCE(v_peli, 0) + operation_sign*player_won,
-        h_peli = COALESCE(h_peli, 0) + operation_sign*(1 - player_won),
+        h_peli = COALESCE(h_peli, 0) + operation_sign*player_lost,
         pelit = COALESCE(pelit, 0) + operation_sign
     WHERE id = player_id;
 END //
@@ -209,16 +212,17 @@ END //
 -- Päivittää ep_sarjat taulua lisäten (operation_sign = +1) tai poistaen (operation_sign = -1)
 -- yhden ep_peli rivin tulokset:
 DROP PROCEDURE IF EXISTS adjust_ep_sarjat //
-CREATE PROCEDURE adjust_ep_sarjat(IN sarjat_id INT, IN games_won INT, IN games_lost INT, IN operation_sign INT)
+CREATE PROCEDURE adjust_ep_sarjat(IN sarjat_id INT, IN rounds_won INT, IN rounds_lost INT, IN operation_sign INT)
 BEGIN
-    DECLARE player_won INT DEFAULT IF(games_won > games_lost, 1, 0);
+    DECLARE player_won INT DEFAULT IF(rounds_won > rounds_lost, 1, 0);
+    DECLARE player_lost INT DEFAULT IF(rounds_lost > rounds_won, 1, 0);
 
     UPDATE ep_sarjat
     SET 
-        v_era = COALESCE(v_era, 0) + operation_sign*games_won,
-        h_era = COALESCE(h_era, 0) + operation_sign*games_lost,
+        v_era = COALESCE(v_era, 0) + operation_sign*rounds_won,
+        h_era = COALESCE(h_era, 0) + operation_sign*rounds_lost,
         v_peli = COALESCE(v_peli, 0) + operation_sign*player_won,
-        h_peli = COALESCE(h_peli, 0) + operation_sign*(1 - player_won)
+        h_peli = COALESCE(h_peli, 0) + operation_sign*player_lost
     WHERE id = sarjat_id;
 END //
 
@@ -242,7 +246,7 @@ END //
 --     LIMIT 1;
 -- END //
 
--- Hakee ep_sarjat.id mikä vastaa kotijoukkuetta ottelussa, missä id=ottelu_id:
+-- Hakee ep_sarjat.id joka vastaa kotijoukkuetta ottelussa, missä id=ottelu_id:
 DROP PROCEDURE IF EXISTS get_sarjat_home_id //
 CREATE PROCEDURE get_sarjat_home_id(IN ottelu_id INT, OUT sarjat_home_id INT)
 BEGIN
@@ -261,7 +265,7 @@ BEGIN
     LIMIT 1;
 END //
 
--- Hakee ep_sarjat.id mikä vastaa vierasjoukkuetta ottelussa, missä id=ottelu_id:
+-- Hakee ep_sarjat.id joka vastaa vierasjoukkuetta ottelussa, missä id=ottelu_id:
 DROP PROCEDURE IF EXISTS get_sarjat_away_id //
 CREATE PROCEDURE get_sarjat_away_id(IN ottelu_id INT, OUT sarjat_away_id INT)
 BEGIN
@@ -269,7 +273,7 @@ BEGIN
 
     -- CALL get_ottelu_away(ottelu_id, away_team_id);
 
-    SELECT koti INTO away_team_id
+    SELECT vieras INTO away_team_id
     FROM ep_ottelu
     WHERE id = ottelu_id
     LIMIT 1;
@@ -346,11 +350,12 @@ DROP PROCEDURE IF EXISTS adjust_ep_sarjat2 //
 CREATE PROCEDURE adjust_ep_sarjat2(IN sarjat_id INT, IN games_won INT, IN games_lost INT, IN operation_sign INT)
 BEGIN
     DECLARE team_won INT DEFAULT IF(games_won > games_lost, 1, 0);
+    DECLARE team_lost INT DEFAULT IF(games_lost > games_won, 1, 0);
 
     UPDATE ep_sarjat
     SET 
         voitto = COALESCE(voitto, 0) + operation_sign*team_won,
-        tappio = COALESCE(tappio, 0) + operation_sign*(1-team_won),
+        tappio = COALESCE(tappio, 0) + operation_sign*team_lost,
         ottelu = COALESCE(ottelu, 0) + operation_sign
     WHERE id = sarjat_id;
 END //
