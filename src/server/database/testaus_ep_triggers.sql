@@ -15,6 +15,8 @@
 
 DELIMITER //
 
+-- ep_peli päivitys:
+
 -- Lisää kt yhdellä jos era on kotivoitto ja vastaavasti vt yhdellä jos vierasvoitto:
 DROP PROCEDURE IF EXISTS count_round_win //
 CREATE PROCEDURE count_round_win(IN era VARCHAR(2), INOUT kt INT, INOUT vt INT)
@@ -87,6 +89,10 @@ BEGIN
     WHERE id = OLD.peli;
 END //
 
+
+-- ep_ottelu päivitys:
+
+
 -- Jos ep_peli lisätään rivi, päivitetään ep_ottelu taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_peli_to_ottelu_insert //
 CREATE TRIGGER trigger_peli_to_ottelu_insert
@@ -143,7 +149,9 @@ BEGIN
     WHERE id = NEW.ottelu;
 END //
 
--- ep_pelaaja toimenpiteet:
+
+-- ep_pelaaja päivitys:
+
 
 -- Toimenpide ep_pelaaja taulun muutoksille kun lisätään (operation_sign = +1) 
 -- tai poistetaan (operation_sign = -1) ep_peli
@@ -194,21 +202,9 @@ BEGIN
     CALL adjust_ep_pelaaja(NEW.vp, NEW.vtulos, NEW.ktulos, +1);
 END //
 
--- ep_sarjat:
---     `id` smallint(6) NOT NULL DEFAULT '0',
---     `nimi` varchar(15) CHARACTER SET utf8 COLLATE utf8_swedish_ci DEFAULT NULL COMMENT 'kaudella nimi',
---     `joukkue` smallint(6) unsigned NOT NULL,
---     `lyhenne` text NOT NULL,
---     `lohko` tinyint(3) DEFAULT NULL,
---     `ottelu` smallint(4) NOT NULL DEFAULT '0',
---     `voitto` tinyint(4) NOT NULL DEFAULT '0',
---     `tappio` tinyint(4) NOT NULL DEFAULT '0',
---     `v_era` smallint(6) NOT NULL DEFAULT '0',
---     `h_era` smallint(6) NOT NULL DEFAULT '0',
---     `h_peli` smallint(6) NOT NULL DEFAULT '0',
---     `v_peli` smallint(6) NOT NULL DEFAULT '0',
--- Idea: laske v_era, h_era, v_peli, h_peli peli->sarjat triggerinä
--- ja ottelu, voitto, tappio ottelu->sarjat triggerinä
+
+-- ep_sarjat päivitys:
+
 
 -- Päivittää ep_sarjat taulua lisäten (operation_sign = +1) tai poistaen (operation_sign = -1)
 -- yhden ep_peli rivin tulokset:
