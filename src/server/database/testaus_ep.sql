@@ -1,7 +1,7 @@
 -- NOTE: Johdettava:
 -- ep_peli: ktulos, vtulos
 -- ep_ottelu: ktulos, vtulos
--- ep_pelaaja: pelit, v_era, h_era, e_era, h_peli, e_peli, v_peli
+-- ep_pelaaja: pelit, v_era, h_era, e_era, h_peli, e_peli, v_peli, pelit
 
 
 CREATE DATABASE IF NOT EXISTS testaus_ep CHARACTER SET utf8 COLLATE utf8_swedish_ci;
@@ -76,6 +76,11 @@ CREATE TABLE ep_pelaaja (
     nimi VARCHAR(15) DEFAULT NULL COMMENT 'kaudella nimi',
     joukkue INT NOT NULL,
     jasen INT DEFAULT NULL,
+    pelit INT NOT NULL DEFAULT 0,
+    v_era INT NOT NULL DEFAULT 0,
+    h_era INT NOT NULL DEFAULT 0,
+    h_peli INT NOT NULL DEFAULT 0,
+    v_peli INT NOT NULL DEFAULT 0,
     sukupuoli ENUM('-', 'M', 'N') DEFAULT '-',
     FOREIGN KEY (joukkue) REFERENCES ep_joukkue(id) ON DELETE CASCADE,
     FOREIGN KEY (jasen) REFERENCES ep_jasen(id) ON DELETE CASCADE
@@ -89,6 +94,8 @@ CREATE TABLE ep_ottelu (
     paiva DATE DEFAULT NULL,
     koti INT DEFAULT NULL,
     vieras INT DEFAULT NULL,
+    ktulos INT DEFAULT NULL,
+    vtulos INT DEFAULT NULL,
     status ENUM('H', 'M', 'V', 'K', 'T') NOT NULL,
     FOREIGN KEY (lohko) REFERENCES ep_lohko(id) ON DELETE CASCADE,
     FOREIGN KEY (koti) REFERENCES ep_joukkue(id) ON DELETE CASCADE,
@@ -102,6 +109,8 @@ CREATE TABLE ep_peli (
     ottelu INT NOT NULL,
     kp INT DEFAULT NULL,
     vp INT DEFAULT NULL,
+    ktulos INT DEFAULT NULL,
+    vtulos INT DEFAULT NULL,
     FOREIGN KEY (ottelu) REFERENCES ep_ottelu(id) ON DELETE CASCADE,
     FOREIGN KEY (kp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE,
     FOREIGN KEY (vp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE
