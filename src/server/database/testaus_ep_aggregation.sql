@@ -1,3 +1,18 @@
+-- Herättimiä (trigger), jotka automaattisesti päivittävät seuraavia kenttiä kun 
+-- erien tuloksia kirjataan tai muutetaan tai poistetaan:
+
+-- ep_peli: ktulos, vtulos
+-- ep_ottelu: ktulos, vtulos
+-- ep_pelaaja: v_era, h_era, v_peli, h_peli, pelit
+-- ep_sarjat: v_era, h_era, v_peli, h_peli, ottelu, voitto, tappio
+
+-- Herättimiä laukea järjestyksessä: 
+--      ep_erat -> ep_peli
+--      ep_peli -> ep_ottelu,
+--      ep_peli -> ep_pelaaja
+--      ep_peli -> ep_sarjat
+--      ep_ottelu -> ep_sarjat
+
 DELIMITER //
 
 -- Lisää kt yhdellä jos era on kotivoitto ja vastaavasti vt yhdellä jos vierasvoitto:
@@ -44,7 +59,7 @@ END //
 -- Jos ep_erat lisätään rivi, päivitetään ep_peli taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_erat_to_peli_insert_or_insert //
 CREATE TRIGGER trigger_erat_to_peli_insert_or_insert
-AFTER INSERT ON ep_erat
+BEFORE INSERT ON ep_erat
 FOR EACH ROW
 BEGIN
     CALL procedure_erat_to_peli(NEW.era1, NEW.era2, NEW.era3, NEW.era4, NEW.era5, NEW.peli);
@@ -53,7 +68,7 @@ END //
 -- Jos ep_erat muutetaan riviä, päivitetään ep_peli taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_erat_to_peli_insert_or_update //
 CREATE TRIGGER trigger_erat_to_peli_insert_or_update
-AFTER UPDATE ON ep_erat
+BEFORE UPDATE ON ep_erat
 FOR EACH ROW
 BEGIN
     CALL procedure_erat_to_peli(NEW.era1, NEW.era2, NEW.era3, NEW.era4, NEW.era5, NEW.peli);
@@ -62,7 +77,7 @@ END //
 -- Jos ep_erat rivi poistetaan, nollaa vastaavan pelin tulokset
 DROP TRIGGER IF EXISTS trigger_erat_to_peli_delete //
 CREATE TRIGGER trigger_erat_to_peli_delete
-AFTER DELETE ON ep_erat
+BEFORE DELETE ON ep_erat
 FOR EACH ROW
 BEGIN
     UPDATE ep_peli 
@@ -75,7 +90,7 @@ END //
 -- Jos ep_peli lisätään rivi, päivitetään ep_ottelu taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_peli_to_ottelu_insert //
 CREATE TRIGGER trigger_peli_to_ottelu_insert
-AFTER INSERT ON ep_peli
+BEFORE INSERT ON ep_peli
 FOR EACH ROW
 BEGIN
     DECLARE add_ktulos INT DEFAULT IF(COALESCE(NEW.ktulos, 0) > COALESCE(NEW.vtulos, 0), 1, 0);
@@ -91,7 +106,7 @@ END //
 -- Jos ep_peli rivi poistetaan, päivitetään ep_ottelu taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_peli_to_ottelu_delete //
 CREATE TRIGGER trigger_peli_to_ottelu_delete
-AFTER DELETE ON ep_peli
+BEFORE DELETE ON ep_peli
 FOR EACH ROW
 BEGIN
     DECLARE sub_ktulos INT DEFAULT IF(COALESCE(OLD.ktulos, 0) > COALESCE(OLD.vtulos, 0), 1, 0);
@@ -107,7 +122,7 @@ END //
 -- Jos ep_peli muutetaan riviä, päivitetään ep_ottelu taulun ktulos, vtulos:
 DROP TRIGGER IF EXISTS trigger_peli_to_ottelu_update //
 CREATE TRIGGER trigger_peli_to_ottelu_update
-AFTER UPDATE ON ep_peli
+BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
     DECLARE add_ktulos INT DEFAULT IF(COALESCE(NEW.ktulos, 0) > COALESCE(NEW.vtulos, 0), 1, 0);
@@ -150,7 +165,7 @@ END //
 -- Jos ep_peli rivi lisätään, päivitetään v_era ja h_era arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_pelaaja_insert //
 CREATE TRIGGER trigger_peli_to_pelaaja_insert
-AFTER INSERT ON ep_peli
+BEFORE INSERT ON ep_peli
 FOR EACH ROW
 BEGIN
     CALL adjust_ep_pelaaja(NEW.kp, NEW.ktulos, NEW.vtulos, +1);
@@ -160,7 +175,7 @@ END //
 -- Jos ep_peli rivi poistetaan, päivitetään v_era ja h_era arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_pelaaja_delete //
 CREATE TRIGGER trigger_peli_to_pelaaja_delete
-AFTER DELETE ON ep_peli
+BEFORE DELETE ON ep_peli
 FOR EACH ROW
 BEGIN
     CALL adjust_ep_pelaaja(OLD.kp, OLD.ktulos, OLD.vtulos, -1);
@@ -170,7 +185,7 @@ END //
 -- Jos ep_peli rivi päivitetään, päivitetään v_era ja h_era arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_pelaaja_update //
 CREATE TRIGGER trigger_peli_to_pelaaja_update
-AFTER UPDATE ON ep_peli
+BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
     CALL adjust_ep_pelaaja(OLD.kp, OLD.ktulos, OLD.vtulos, -1);
@@ -195,7 +210,8 @@ END //
 -- Idea: laske v_era, h_era, v_peli, h_peli peli->sarjat triggerinä
 -- ja ottelu, voitto, tappio ottelu->sarjat triggerinä
 
--- 
+-- Päivittää ep_sarjat taulua lisäten (operation_sign = +1) tai poistaen (operation_sign = -1)
+-- yhden ep_peli rivin tulokset:
 DROP PROCEDURE IF EXISTS adjust_ep_sarjat //
 CREATE PROCEDURE adjust_ep_sarjat(IN sarjat_id INT, IN games_won INT, IN games_lost INT, IN operation_sign INT)
 BEGIN
@@ -210,14 +226,42 @@ BEGIN
     WHERE id = sarjat_id;
 END //
 
+-- Hakee ep_ottelu.koti ep_ottelu.id perusteella:
+-- DROP PROCEDURE IF EXISTS get_ottelu_home //
+-- CREATE PROCEDURE get_ottelu_home(IN ottelu_id INT, OUT ottelu_home INT)
+-- BEGIN
+--     SELECT koti INTO ottelu_home
+--     FROM ep_ottelu
+--     WHERE id = ottelu_id
+--     LIMIT 1;
+-- END //
+
+-- Hakee ep_ottelu.vieras ep_ottelu.id perusteella:
+-- DROP PROCEDURE IF EXISTS get_ottelu_away //
+-- CREATE PROCEDURE get_ottelu_away(IN ottelu_id INT, OUT ottelu_away INT)
+-- BEGIN
+--     SELECT vieras INTO ottelu_away
+--     FROM ep_ottelu
+--     WHERE id = ottelu_id
+--     LIMIT 1;
+-- END //
+
 -- Hakee ep_sarjat.id mikä vastaa kotijoukkuetta ottelussa, missä id=ottelu_id:
 DROP PROCEDURE IF EXISTS get_sarjat_home_id //
-CREATE PROCEDURE get_sarjat_home_id(IN ottelu_id INT, OUT sarjat_away_id INT)
+CREATE PROCEDURE get_sarjat_home_id(IN ottelu_id INT, OUT sarjat_home_id INT)
 BEGIN
-    SELECT s.id INTO sarjat_away_id 
-    FROM ep_sarjat s
-    JOIN ep_ottelu o ON o.koti = s.joukkue
-    WHERE o.id = ottelu_id 
+    DECLARE home_team_id INT;
+
+    -- CALL get_ottelu_home(ottelu_id, home_team_id);
+
+    SELECT koti INTO home_team_id
+    FROM ep_ottelu
+    WHERE id = ottelu_id
+    LIMIT 1;
+
+    SELECT id INTO sarjat_home_id 
+    FROM ep_sarjat
+    WHERE joukkue = home_team_id
     LIMIT 1;
 END //
 
@@ -225,24 +269,32 @@ END //
 DROP PROCEDURE IF EXISTS get_sarjat_away_id //
 CREATE PROCEDURE get_sarjat_away_id(IN ottelu_id INT, OUT sarjat_away_id INT)
 BEGIN
-    SELECT s.id INTO sarjat_away_id 
-    FROM ep_sarjat s
-    JOIN ep_ottelu o ON o.vieras = s.joukkue
-    WHERE o.id = ottelu_id 
+    DECLARE away_team_id INT;
+
+    -- CALL get_ottelu_away(ottelu_id, away_team_id);
+
+    SELECT koti INTO away_team_id
+    FROM ep_ottelu
+    WHERE id = ottelu_id
+    LIMIT 1;
+
+    SELECT id INTO sarjat_away_id 
+    FROM ep_sarjat
+    WHERE joukkue = away_team_id
     LIMIT 1;
 END //
 
 -- Jos ep_peli rivi lisätään, päivitetään v_era, h_era, v_peli, h_peli arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_sarjat_insert //
 CREATE TRIGGER trigger_peli_to_sarjat_insert
-AFTER INSERT ON ep_peli
+BEFORE INSERT ON ep_peli
 FOR EACH ROW
 BEGIN
     -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
-    CALL get_sarjat_home_id(NEW.ottelu, my_sarjat_home_id);
-    CALL get_sarjat_away_id(NEW.ottelu, my_sarjat_away_id);
+    CALL get_sarjat_home_id(NEW.ottelu, sarjat_home_id);
+    CALL get_sarjat_away_id(NEW.ottelu, sarjat_away_id);
 
     -- Päivitetään v_era, h_era, v_peli, h_peli:
     CALL adjust_ep_sarjat(sarjat_home_id, NEW.ktulos, NEW.vtulos, +1);
@@ -252,14 +304,14 @@ END //
 -- Jos ep_peli rivi poistetaan, päivitetään v_era, h_era, v_peli, h_peli arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_sarjat_delete //
 CREATE TRIGGER trigger_peli_to_sarjat_delete
-AFTER DELETE ON ep_peli
+BEFORE DELETE ON ep_peli
 FOR EACH ROW
 BEGIN
     -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
-    CALL get_sarjat_home_id(OLD.ottelu, my_sarjat_home_id);
-    CALL get_sarjat_away_id(OLD.ottelu, my_sarjat_away_id);
+    CALL get_sarjat_home_id(OLD.ottelu, sarjat_home_id);
+    CALL get_sarjat_away_id(OLD.ottelu, sarjat_away_id);
 
     -- Päivitetään v_era, h_era, v_peli, h_peli:
     CALL adjust_ep_sarjat(sarjat_home_id, OLD.ktulos, OLD.vtulos, -1);
@@ -269,7 +321,7 @@ END //
 -- Jos ep_peli rivi poistetaan, päivitetään v_era, h_era, v_peli, h_peli arvoja:
 DROP TRIGGER IF EXISTS trigger_peli_to_sarjat_update //
 CREATE TRIGGER trigger_peli_to_sarjat_update
-AFTER UPDATE ON ep_peli
+BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
     -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
@@ -277,10 +329,10 @@ BEGIN
     DECLARE sarjat_old_away_id INT;
     DECLARE sarjat_new_home_id INT;
     DECLARE sarjat_new_away_id INT;
-    CALL get_sarjat_home_id(OLD.ottelu, my_sarjat_old_home_id);
-    CALL get_sarjat_away_id(OLD.ottelu, my_sarjat_old_away_id);
-    CALL get_sarjat_home_id(NEW.ottelu, my_sarjat_new_home_id);
-    CALL get_sarjat_away_id(NEW.ottelu, my_sarjat_new_away_id);
+    CALL get_sarjat_home_id(OLD.ottelu, sarjat_old_home_id);
+    CALL get_sarjat_away_id(OLD.ottelu, sarjat_old_away_id);
+    CALL get_sarjat_home_id(NEW.ottelu, sarjat_new_home_id);
+    CALL get_sarjat_away_id(NEW.ottelu, sarjat_new_away_id);
 
     -- Päivitetään v_era, h_era, v_peli, h_peli:
     CALL adjust_ep_sarjat(sarjat_old_home_id, OLD.ktulos, OLD.vtulos, -1);
@@ -291,5 +343,77 @@ END //
 
 -- TODO ottelu, voitto, tappio ottelu->sarjat triggerinä
 -- vai voiko tämänkin tehdä peli->sarjat trigger mukana?
+
+-- Päivittää ep_sarjat taulua lisäten (operation_sign = +1) tai poistaen (operation_sign = -1)
+-- yhden ep_ottelu rivin tulokset:
+DROP PROCEDURE IF EXISTS adjust_ep_sarjat2 //
+CREATE PROCEDURE adjust_ep_sarjat2(IN sarjat_id INT, IN games_won INT, IN games_lost INT, IN operation_sign INT)
+BEGIN
+    DECLARE team_won INT DEFAULT IF(games_won > games_lost, 1, 0);
+
+    UPDATE ep_sarjat
+    SET 
+        voitto = COALESCE(voitto, 0) + operation_sign*team_won,
+        tappio = COALESCE(tappio, 0) + operation_sign*(1-team_won),
+        ottelu = COALESCE(ottelu, 0) + operation_sign
+    WHERE id = sarjat_id;
+END //
+
+-- Jos ep_ottelu rivi lisätään, päivitetään ottelu, voitto, tappio arvoja:
+DROP TRIGGER IF EXISTS trigger_ottelu_to_sarjat_insert //
+CREATE TRIGGER trigger_ottelu_to_sarjat_insert
+BEFORE INSERT ON ep_ottelu
+FOR EACH ROW
+BEGIN
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
+    DECLARE sarjat_home_id INT;
+    DECLARE sarjat_away_id INT;
+    CALL get_sarjat_home_id(NEW.id, sarjat_home_id);    -- epäoptimaalinen
+    CALL get_sarjat_away_id(NEW.id, sarjat_away_id);
+
+    -- Päivitetään ottelu, voitto, tappio:
+    CALL adjust_ep_sarjat2(sarjat_home_id, NEW.ktulos, NEW.vtulos, +1);
+    CALL adjust_ep_sarjat2(sarjat_away_id, NEW.vtulos, NEW.ktulos, +1);
+END //
+
+-- Jos ep_ottelu rivi poistetaan, päivitetään ottelu, voitto, tappio arvoja:
+DROP TRIGGER IF EXISTS trigger_ottelu_to_sarjat_delete //
+CREATE TRIGGER trigger_ottelu_to_sarjat_delete
+BEFORE DELETE ON ep_ottelu
+FOR EACH ROW
+BEGIN
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
+    DECLARE sarjat_home_id INT;
+    DECLARE sarjat_away_id INT;
+    CALL get_sarjat_home_id(OLD.id, sarjat_home_id);    -- epäoptimaalinen
+    CALL get_sarjat_away_id(OLD.id, sarjat_away_id);
+
+    -- Päivitetään ottelu, voitto, tappio:
+    CALL adjust_ep_sarjat2(sarjat_home_id, OLD.ktulos, OLD.vtulos, -1);
+    CALL adjust_ep_sarjat2(sarjat_away_id, OLD.vtulos, OLD.ktulos, -1);
+END //
+
+-- Jos ep_ottelu rivi muutetaan, päivitetään ottelu, voitto, tappio arvoja:
+DROP TRIGGER IF EXISTS trigger_ottelu_to_sarjat_update //
+CREATE TRIGGER trigger_ottelu_to_sarjat_update
+BEFORE UPDATE ON ep_ottelu
+FOR EACH ROW
+BEGIN
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
+    DECLARE sarjat_old_home_id INT;
+    DECLARE sarjat_old_away_id INT;
+    DECLARE sarjat_new_home_id INT;
+    DECLARE sarjat_new_away_id INT;
+    CALL get_sarjat_home_id(OLD.id, sarjat_old_home_id);    -- epäoptimaalinen
+    CALL get_sarjat_away_id(OLD.id, sarjat_old_away_id);
+    CALL get_sarjat_home_id(NEW.id, sarjat_new_home_id);
+    CALL get_sarjat_away_id(NEW.id, sarjat_new_away_id);
+
+    -- Päivitetään ottelu, voitto, tappio:
+    CALL adjust_ep_sarjat2(sarjat_old_home_id, OLD.ktulos, OLD.vtulos, -1);
+    CALL adjust_ep_sarjat2(sarjat_old_away_id, OLD.vtulos, OLD.ktulos, -1);
+    CALL adjust_ep_sarjat2(sarjat_new_home_id, NEW.ktulos, NEW.vtulos, +1);
+    CALL adjust_ep_sarjat2(sarjat_new_away_id, NEW.vtulos, NEW.ktulos, +1);
+END //
 
 DELIMITER ;
