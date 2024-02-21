@@ -1,8 +1,4 @@
--- NOTE: Johdettava:
--- ep_peli: ktulos, vtulos
--- ep_ottelu: ktulos, vtulos
--- ep_pelaaja: pelit, v_era, h_era, e_era, h_peli, e_peli, v_peli, pelit
-
+-- Kaavio tietokannalle testaus_ep
 
 CREATE DATABASE IF NOT EXISTS testaus_ep CHARACTER SET utf8 COLLATE utf8_swedish_ci;
 USE testaus_ep;

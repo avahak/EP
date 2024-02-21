@@ -243,12 +243,12 @@ app.get('/api/db/schema', async (_req, res) => {
  * HUOM: Poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
 app.get('/api/db/recreate/:stage', async (req, res) => {
+    if (process.env.ENVIRONMENT != 'LOCALHOST')
+        return res.status(403).send("Database creation forbidden in this environment.");
     const stage = parseInt(req.params.stage);
     if (isNaN(stage) || stage < 1 || stage > 3)
         return res.status(400).send("Invalid stage.");
     try {
-        if (process.env.ENVIRONMENT != 'LOCALHOST')
-            throw new Error('Wrong environment.')
         await recreateDatabase(pool, poolNoDatabase, process.env.DB_NAME || "testaus_ep", stage);
         // await generateAndInsertToDatabase(pool);
         // const data = generateFakeData();

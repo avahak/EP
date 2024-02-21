@@ -167,7 +167,7 @@ BEGIN
         h_era = COALESCE(h_era, 0) + operation_sign*COALESCE(rounds_lost, 0),
         v_peli = COALESCE(v_peli, 0) + operation_sign*player_won,
         h_peli = COALESCE(h_peli, 0) + operation_sign*player_lost,
-        pelit = COALESCE(pelit, 0) + operation_sign
+        pelit = COALESCE(pelit, 0) + operation_sign*IF(player_won = 1 OR player_lost = 1, 1, 0)
     WHERE id = player_id;
 END //
 
