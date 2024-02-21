@@ -5,7 +5,6 @@
 import React, { useEffect, useState } from 'react';
 import { getApiUrl } from '../utils/apiUtils';
 import { Link } from 'react-router-dom';
-import DataTable from './DBDataTable';
 
 const DBTest: React.FC = () => {
     const [data, setData] = useState<any>(null);
@@ -28,9 +27,9 @@ const DBTest: React.FC = () => {
     };
 
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
-    const fetchRecreate = async () => {
+    const fetchRecreate = async (stage: number) => {
         try {
-            const apiUrl = `${getApiUrl()}/db/recreate`;
+            const apiUrl = `${getApiUrl()}/db/recreate/${stage}`;
             const response = await fetch(apiUrl);
 
             if (!response.ok) 
@@ -53,24 +52,39 @@ const DBTest: React.FC = () => {
             Luo myös taulut allaolevan kaavion mukaisesti ja generoi testidataa tauluihin.
             (Ei käytössä Azuressa.)
             <br />
-            <button onClick={fetchRecreate}>Luo tietokanta</button>
+            <button onClick={() => fetchRecreate(1)}>Luo tietokanta ja taulut</button>
             <br />
-            DB lista: 
+            <button onClick={() => fetchRecreate(2)}>Luo herättimet</button>
+            <br />
+            <button onClick={() => fetchRecreate(3)}>Generoi ja lisää rivit</button>
+            <br />
+            {/* DB lista: 
             {!!data ? JSON.stringify(data.dbList) : "-"}
-            <br />
+            <br /> */}
             DB nimi: 
             {!!data ? data.DB_NAME : "-"}
             <br />
-            Ottelut: 
+            {/* Ottelut: 
             {!!data ? <DataTable data={data.matches} />: "-"}
-            <br />
-            Kaavio: 
-            <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema) : "No data" }}>
+            <br /> */}
+            Kaavio 1: 
+            <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema1) : "No data" }}>
             </pre>
             <br />
+            <hr />
+            Kaavio 2: 
+            <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema2) : "No data" }}>
+            </pre>
+            <br />
+            <hr />
             Tietokannan luonti: 
-            {!!data ? data.commands.map((query: string, queryIndex: number) => (
-                <li key={queryIndex}>{query}</li>
+            {!!data ? data.commands1.map((query: string, queryIndex: number) => (
+                <><li key={queryIndex}>{query}</li><br /></>
+            ))
+            : "-"}
+            <hr />
+            {!!data ? data.commands2.map((query: string, queryIndex: number) => (
+                <><li key={queryIndex}>{query}</li><br /></>
             ))
              : "-"}
         </div>

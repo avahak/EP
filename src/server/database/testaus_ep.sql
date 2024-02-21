@@ -102,6 +102,26 @@ CREATE TABLE ep_ottelu (
     FOREIGN KEY (vieras) REFERENCES ep_joukkue(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ep_sarjat
+-- Nämä ovat tilastoja joukkueelle
+DROP TABLE IF EXISTS ep_sarjat;
+CREATE TABLE ep_sarjat (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nimi VARCHAR(15) DEFAULT NULL COMMENT 'kaudella nimi',
+    joukkue INT NOT NULL,
+    lyhenne VARCHAR(3) NOT NULL,
+    lohko INT DEFAULT NULL,
+    ottelu INT NOT NULL DEFAULT 0,
+    voitto INT NOT NULL DEFAULT 0,
+    tappio INT NOT NULL DEFAULT 0,
+    v_era INT NOT NULL DEFAULT 0,
+    h_era INT NOT NULL DEFAULT 0,
+    h_peli INT NOT NULL DEFAULT 0,
+    v_peli INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (joukkue) REFERENCES ep_joukkue(id) ON DELETE CASCADE,
+    FOREIGN KEY (lohko) REFERENCES ep_lohko(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ep_peli
 DROP TABLE IF EXISTS ep_peli;
 CREATE TABLE ep_peli (

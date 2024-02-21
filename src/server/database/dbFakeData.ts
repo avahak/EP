@@ -59,8 +59,8 @@ function generate_lohkot(kaudet: any[]) {
         lohkot.push({ 
             index: lohkot.length,
             kausi: kausi.index, 
-            tunnus: '?',
-            selite: '?'
+            tunnus: '-',
+            selite: `kauden ${kausi.index+1} lohko`
         });
     });
     return lohkot;
@@ -68,9 +68,11 @@ function generate_lohkot(kaudet: any[]) {
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_joukkue tauluun.
+ * Luodaan jokaisesta joukkueesta myös rivi ep_sarjat tauluun.
  */
 function generate_joukkueet(raflat: any[], lohkot: any[]) {
     const joukkueet: any[] = [];
+    const sarjat: any[] = [];
     lohkot.forEach((lohko) => {
         raflat.forEach((rafla) => {
             let count = Math.round(6 * Math.random()**2);
@@ -90,10 +92,19 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
                     vkpuh: faker.phone.number()
                 };
                 joukkueet.push(joukkue);
+                
+                const sarja = {
+                    index: sarjat.length,
+                    nimi: joukkue.nimi,
+                    joukkue: joukkue.index,
+                    lyhenne: joukkue.lyhenne,
+                    lohko: joukkue.lohko
+                };
+                sarjat.push(sarja);
             }
         });
     });
-    return joukkueet;
+    return [joukkueet, sarjat];
 }
 
 /**
@@ -274,12 +285,12 @@ function generateFakeData() {
     const raflat = generate_raflat();
     const kaudet = generate_kaudet();
     const lohkot = generate_lohkot(kaudet);
-    const joukkueet = generate_joukkueet(raflat, lohkot);
+    const [joukkueet, sarjat] = generate_joukkueet(raflat, lohkot);
     const [pelaajat, jasenet] = generate_pelaajat_jasenet(joukkueet);
     const ottelut = generate_ottelut(joukkueet, kaudet, lohkot);
     const [pelit, erat] = generate_pelit(ottelut, pelaajat);
 
-    const data = { raflat, kaudet, lohkot, joukkueet, pelaajat, jasenet, ottelut, pelit, erat };
+    const data = { raflat, kaudet, lohkot, joukkueet, sarjat, pelaajat, jasenet, ottelut, pelit, erat };
     return data;
 }
 
@@ -296,7 +307,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
     const data = generateFakeData();
     try {
         const connection = await pool.getConnection();
-        await connection.beginTransaction()
+        await connection.beginTransaction();
         try {
             // Lisää tauluun ep_rafla:
             let sql = `INSERT INTO ep_rafla (lyhenne, nimi, osoite, postosoite, kauposa, yhdhenk, yhdpuh) VALUES ?`
@@ -312,6 +323,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_raflat batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_kausi:
             sql = `INSERT INTO ep_kausi (vuosi, kausi, Laji) VALUES ?`
@@ -323,6 +335,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_kausi batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_lohko:
             sql = `INSERT INTO ep_lohko (kausi, tunnus, selite) VALUES ?`
@@ -334,6 +347,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_lohko batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_joukkue:
             sql = `INSERT INTO ep_joukkue (lyhenne, nimi, kausi, lohko, ravintola, yhdhenk, yhdpuh, kapt, kpuh, varakapt, vkpuh) VALUES ?`
@@ -353,6 +367,20 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_joukkue batch n=${batch.length}, first: ${batch[0]}`);
+
+            // Lisää tauluun ep_sarjat:
+            sql = `INSERT INTO ep_sarjat (nimi, joukkue, lyhenne, lohko) VALUES ?`
+            batch = data.sarjat.map((sarja) => {
+                return [
+                    sarja.nimi.slice(0, 15),
+                    sarja.joukkue+1,
+                    sarja.lyhenne.slice(0, 3),
+                    sarja.lohko+1
+                ];
+            });
+            await connection.query(sql, [batch]);
+            console.log(`ep_sarjat batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_jasen:
             sql = `INSERT INTO ep_jasen (jasenno, etunimi, suku, pelaaja) VALUES ?`
@@ -365,6 +393,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_jasen batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_pelaaja:
             sql = `INSERT INTO ep_pelaaja (nimi, joukkue, jasen, sukupuoli) VALUES ?`
@@ -377,6 +406,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_erat pelaaja n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_ottelu:
             sql = `INSERT INTO ep_ottelu (lohko, paiva, koti, vieras, status) VALUES ?`
@@ -390,6 +420,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_ottelu batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_peli:
             sql = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES ?`
@@ -401,6 +432,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
+            console.log(`ep_peli batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_erat:
             sql = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`
@@ -416,7 +448,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             });
             await connection.query(sql, [batch]);
 
-            // console.log("batch:", batch);
+            console.log(`ep_erat batch n=${batch.length}, first: ${batch[0]}`);
             await connection.commit();
             console.log("generateAndInsertToDatabase success");
         } catch (error) {

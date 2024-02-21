@@ -15,9 +15,9 @@ import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
 import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
-import { myQuery, parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
-import { generateAndInsertToDatabase, generateFakeData } from './database/dbFakeData.js';
-import { getAllMatches, getMatchesToReport, getPlayersInTeam, getScores } from './database/dbSpecific.js';
+import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
+// import { generateAndInsertToDatabase } from './database/dbFakeData.js';
+import { /*getAllMatches,*/ getMatchesToReport, getPlayersInTeam, getScores } from './database/dbSpecific.js';
 
 dotenv.config();
 
@@ -209,22 +209,27 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
 app.get('/api/db/schema', async (_req, res) => {
     console.log(new Date(), "/api/db/schema requested")
     try {
-        const sqlFile = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
-        const commands = parseSqlFileContent(sqlFile);
+        const sqlFile1 = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
+        const sqlFile2 = fs.readFileSync('src/server/database/testaus_ep_triggers.sql', 'utf-8');
+        const commands1 = parseSqlFileContent(sqlFile1);
+        const commands2 = parseSqlFileContent(sqlFile2);
         // const commands = sqlFile.split(/\r\n/);
         // Replace \r characters with an empty string
-        const sanitizedSchema = sqlFile.replace(/\r/g, '').replace(/\n/g, '<br>');
+        const sanitizedSchema1 = sqlFile1.replace(/\r/g, '').replace(/\n/g, '<br>');
+        const sanitizedSchema2 = sqlFile2.replace(/\r/g, '').replace(/\n/g, '<br>');
         // const [rows] = await poolEP.query<any>('SHOW TABLES');
-        const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
+        // const dbList = await myQuery(poolNoDatabase, `SHOW DATABASES`);
 
-        const matches = await getAllMatches(pool);
+        // const matches = await getAllMatches(pool);
         
         res.json({ 
             DB_NAME: process.env.DB_NAME,
-            dbList: dbList,
-            commands: commands,
-            matches: matches,
-            schema: sanitizedSchema
+            // dbList: dbList,
+            commands1: commands1,
+            commands2: commands2,
+            // matches: matches,
+            schema1: sanitizedSchema1,
+            schema2: sanitizedSchema2
         });
     } catch (error) {
         console.error('Error executing query:', error);
@@ -237,19 +242,22 @@ app.get('/api/db/schema', async (_req, res) => {
  * Sitten generoi ja lisää testidataa sen tauluihin.
  * HUOM: Poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
-app.get('/api/db/recreate', async (_req, res) => {
+app.get('/api/db/recreate/:stage', async (req, res) => {
+    const stage = parseInt(req.params.stage);
+    if (isNaN(stage) || stage < 1 || stage > 3)
+        return res.status(400).send("Invalid stage.");
     try {
         if (process.env.ENVIRONMENT != 'LOCALHOST')
             throw new Error('Wrong environment.')
-        await recreateDatabase(poolNoDatabase, process.env.DB_NAME || "testaus_ep");
-        const data = generateFakeData();
-        await generateAndInsertToDatabase(pool);
-        const filePath = path.join(miscDirectory, `testaus_ep_data.json`);
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
-        console.log("/api/db/recreate done");
+        await recreateDatabase(pool, poolNoDatabase, process.env.DB_NAME || "testaus_ep", stage);
+        // await generateAndInsertToDatabase(pool);
+        // const data = generateFakeData();
+        // const filePath = path.join(miscDirectory, `testaus_ep_data.json`);
+        // fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
+        console.log(`/api/db/recreate/${stage} done`);
         res.send("success!");
     } catch (error) {
-        console.error('Error in /api/db/recreate:', error);
+        console.error(`Error in /api/db/recreate/${stage}:`, error);
         res.status(500).send('Internal Server Error.');
     }
 });
