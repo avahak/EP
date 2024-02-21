@@ -15,8 +15,10 @@ const App = () => {
                 <Typography variant="h3">Sivut</Typography>
                 <Link to="/report">Ottelun ilmoitus</Link> 
                 <br />
-                {/* <Link to="/scoresheet">Scoresheet</Link> 
-                <br /> */}
+                <Link to="/results_teams">Tuloksia joukkueille</Link> 
+                <br />
+                <Link to="/results_players">Tuloksia pelaajille</Link> 
+                <br />
             </div>
             <div style={{padding: "2em"}}>
                 <Typography variant="h3">Konenäkö</Typography>

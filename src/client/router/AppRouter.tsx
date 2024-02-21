@@ -14,6 +14,8 @@ import VisionExample from '../components/VisionExample';
 import { DBTest } from '../components/DBTest';
 // import { MatchChooser } from '../components/MatchChooser';
 import { ResultSubmission } from '../components/ResultSubmission';
+import { DisplayResultsTeams } from '../components/DisplayResultsTeams';
+import { DisplayResultsPlayers } from '../components/DisplayResultsPlayers';
 
 const AppRouter = () => {
     return (<>
@@ -21,7 +23,8 @@ const AppRouter = () => {
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
                 <Route path="/report" element={<ResultSubmission />} />
-                {/* <Route path="/scoresheet" element={<Scoresheet />} /> */}
+                <Route path="/results_teams" element={<DisplayResultsTeams />} />
+                <Route path="/results_players" element={<DisplayResultsPlayers />} />
 
                 {/* Konenäkö */}
                 <Route path="/hough" element={<HoughDemo />} />

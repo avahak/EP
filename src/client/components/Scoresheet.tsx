@@ -328,7 +328,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
 
     return (
         <>
-        <Link to="/">Back</Link>
+        <Link to="/">Takaisin</Link>
         {createAddPlayerModal()}
         <div id="container">
         <div id="scoresheet">

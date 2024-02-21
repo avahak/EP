@@ -19,7 +19,7 @@ function parseSqlFileContentOld(sqlFileContent: string): string[] {
 /**
  * Tämä on yksinkertainen .sql tiedostojen lukija, joka erottelee tekstin 
  * yksittäisiin kyselyihin.
- * HUOM! VAROITUS! Toimii karkeasti ja saattaa tehdä virheitä. Yleisenmpää käyttöä
+ * HUOM! VAROITUS! Toimii karkeasti ja saattaa tehdä virheitä. Yleisempää käyttöä
  * varten tulee käyttää omistettua kirjastoa, joka tukee monimutkaisempia 
  * SQL-tiedostoja ja toimii varmemmin.
  */

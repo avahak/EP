@@ -17,7 +17,7 @@ import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
 import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
-import { /*getAllMatches,*/ getMatchesToReport, getPlayersInTeam, getScores } from './database/dbSpecific.js';
+import { /*getAllMatches,*/ getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores } from './database/dbSpecific.js';
 
 dotenv.config();
 
@@ -289,6 +289,34 @@ app.get('/api/db/report_result/get_matches', async (_req, res) => {
         console.log("/api/db/record_result/get_matches done");
     } catch (error) {
         console.error('Error in /api/db/record_result/get_matches:', error);
+        res.status(500).send(`Error: ${error}`);
+    }
+});
+
+/**
+ * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
+ */
+app.get('/api/db/get_results_teams', async (_req, res) => {
+    try {
+        const rows = await getResultsTeams(pool);
+        res.json({ rows });
+        console.log("/api/db/get_results_teams done");
+    } catch (error) {
+        console.error('Error in /api/db/get_results_teams:', error);
+        res.status(500).send(`Error: ${error}`);
+    }
+});
+
+/**
+ * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
+ */
+app.get('/api/db/get_results_players', async (_req, res) => {
+    try {
+        const result = await getResultsPlayers(pool);
+        res.json({ result });
+        console.log("/api/db/get_results_players done");
+    } catch (error) {
+        console.error('Error in /api/db/get_results_players:', error);
         res.status(500).send(`Error: ${error}`);
     }
 });

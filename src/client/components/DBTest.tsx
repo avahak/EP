@@ -2,7 +2,7 @@
  * Tietokannan luontia ja testausta.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { getApiUrl } from '../utils/apiUtils';
 import { Link } from 'react-router-dom';
 
@@ -43,8 +43,6 @@ const DBTest: React.FC = () => {
         fetchSchema();
     }, []);
 
-    console.log(!!data ? data.commands : "ei dataa");
-
     return (<>
         <Link to="/">Takaisin</Link>
         <div style={{ padding: '40px' }}>
@@ -67,24 +65,28 @@ const DBTest: React.FC = () => {
             {/* Ottelut: 
             {!!data ? <DataTable data={data.matches} />: "-"}
             <br /> */}
-            Kaavio 1: 
+            Kaavio tauluille: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema1) : "No data" }}>
             </pre>
             <br />
             <hr />
-            Kaavio 2: 
+            Herättimet: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema2) : "No data" }}>
             </pre>
             <br />
             <hr />
             Tietokannan luonti: 
             {!!data ? data.commands1.map((query: string, queryIndex: number) => (
-                <><li key={queryIndex}>{query}</li><br /></>
+                <Fragment key={queryIndex}>
+                <li key={queryIndex}>{query}</li><br />
+                </Fragment>
             ))
             : "-"}
             <hr />
             {!!data ? data.commands2.map((query: string, queryIndex: number) => (
-                <><li key={queryIndex}>{query}</li><br /></>
+                <Fragment key={queryIndex}>
+                <li key={queryIndex}>{query}</li><br />
+                </Fragment>
             ))
              : "-"}
         </div>

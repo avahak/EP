@@ -96,7 +96,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
 
     return (
         <>
-        <Link to="/">Back</Link>
+        <Link to="/">Takaisin</Link>
         &nbsp;Tällä sivulla oletetaan, että käyttäjä on kirjautuneena sisään pelaajana,
         jonka joukkue on {userTeam}. (Sisäänkirjautumista ei ole vielä)
         <div id="container">
