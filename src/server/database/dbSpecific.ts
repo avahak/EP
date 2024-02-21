@@ -95,7 +95,7 @@ async function getResultsPlayers(pool: mysql.Pool) {
         `;
     const queryHome = `
         SELECT
-            p.kp,
+            p.kp AS id,
             SUM((e.era1 = 'K1') + (e.era2 = 'K1') + (e.era3 = 'K1') + (e.era4 = 'K1') + (e.era5 = 'K1')) AS K1,
             SUM((e.era1 = 'K2') + (e.era2 = 'K2') + (e.era3 = 'K2') + (e.era4 = 'K2') + (e.era5 = 'K2')) AS K2,
             SUM((e.era1 = 'K3') + (e.era2 = 'K3') + (e.era3 = 'K3') + (e.era4 = 'K3') + (e.era5 = 'K3')) AS K3,
@@ -114,7 +114,7 @@ async function getResultsPlayers(pool: mysql.Pool) {
         `;
     const queryAway = `
         SELECT
-            p.vp,
+            p.vp AS id,
             SUM((e.era1 = 'V1') + (e.era2 = 'V1') + (e.era3 = 'V1') + (e.era4 = 'V1') + (e.era5 = 'V1')) AS V1,
             SUM((e.era1 = 'V2') + (e.era2 = 'V2') + (e.era3 = 'V2') + (e.era4 = 'V2') + (e.era5 = 'V2')) AS V2,
             SUM((e.era1 = 'V3') + (e.era2 = 'V3') + (e.era3 = 'V3') + (e.era4 = 'V3') + (e.era5 = 'V3')) AS V3,

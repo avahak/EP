@@ -18,19 +18,17 @@ const DisplayResultsPlayers: React.FC = () => {
 
             const [rows1, rows2, rows3] = jsonData.result;
             const newResults = JSON.parse(JSON.stringify(rows1));   // deep copy trikki
-            console.log("newResults", newResults);
             const map: Map<number, any> = new Map();
             rows1.forEach((row: any, index: number) => { 
                 map.set(row.id, index);
             });
-            console.log("map", map);
             rows2.forEach((row: any, _index: number) => { 
-                console.log("row", row);
-                newResults[map.get(row.kp)] = {...newResults[map.get(row.kp)], ...row};
+                newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
             });
             rows3.forEach((row: any, _index: number) => { 
-                newResults[map.get(row.vp)] = {...newResults[map.get(row.vp)], ...row};
+                newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
             });
+
             setResults(newResults);
         } catch(error) {
             console.error('Error:', error);
