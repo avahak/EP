@@ -21,7 +21,7 @@ const App = () => {
                 <br />
             </div>
             <div style={{padding: "2em"}}>
-                <Typography variant="h3">Konenäkö</Typography>
+                <Typography variant="h6">Konenäkö</Typography>
                 <Link to="/vision">Google Vision API esimerkki</Link> 
                 <br />
                 <Link to="/hough">Hough-muunnos</Link> 
@@ -30,6 +30,10 @@ const App = () => {
             </div>
             <div style={{padding: "2em"}}>
                 <Typography variant="h6">Työkalut</Typography>
+                <Link to="/result_table">Taulu</Link> 
+                <br />
+                <Link to="/mui_test">MUI testi</Link> 
+                <br />
                 <Link to="/upload">Upload</Link>
                 <br />
                 <Link to="/db">DB Testaus</Link>

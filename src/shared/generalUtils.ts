@@ -48,4 +48,44 @@ function pickRandomDistinctElements(arr: any[], count: number) {
     return shuffledArray.slice(0, count);
 }
 
-export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, getDayOfWeekStrings, toDDMMYYYY };
+/**
+ * Palauttaa taulukossa annettujen olioiden avaimet ja niiden tyypit.
+ */
+function extractKeys(objectArray: any[]) {
+    const uniqueKeys = new Map<string, string>();
+    for (const obj of objectArray)
+        for (const key in obj)
+            uniqueKeys.set(key, typeof obj[key])
+    return Array.from(uniqueKeys.entries());
+}
+
+/**
+ * Olioiden arvojen vertailufunktio kentän orderBy mukaan.
+ * Lähde: Material UI esimerkkikoodi.
+ */
+function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
+    if (b[orderBy] < a[orderBy]) 
+        return -1;
+    if (b[orderBy] > a[orderBy]) 
+        return 1;
+    return 0;
+}
+
+type Order = 'asc' | 'desc';
+
+/**
+ * Palauttaa vertailufunktion kentän orderBy mukaan järjestyksessä order.
+ * Lähde: Material UI esimerkkikoodi.
+ */
+function getComparator<Key extends keyof any>(order: Order, orderBy: Key): (
+    a: { [key in Key]: number | string },
+    b: { [key in Key]: number | string },
+) => number {
+     return order === 'desc'
+        ? (a, b) => descendingComparator(a, b, orderBy)
+        : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
+    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator };
+export type { Order };

@@ -330,7 +330,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
         <>
         <Link to="/">Takaisin</Link>
         {createAddPlayerModal()}
-        <div id="container">
+        <div id="my_container">
         <div id="scoresheet">
         <form onSubmit={handleSubmit(onSubmit)}>
             {/* Ottelu ja päivämäärä */}

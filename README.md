@@ -59,6 +59,9 @@ src/client/components/ - Hakemisto React komponenttien koodille
         MatchChooser.css - Tyylitiedosto MatchChooser.tsx käyttöön.
         ResultSubmission.tsx - Sivu tulosten ilmoittamiselle, käyttää 
                 MatchChooser ja Scoresheet komponentteja.
+        ResultTable.tsx - Yleiskäyttöinen komponentti taulumuotoisen datan esittämiseen.
+        DisplayResultsTeams.tsx - Sivu joukkueiden tulostaululle.
+        DisplayResultsPlayers.tsx - Sivu pelaajien tulostaululle.
   
 src/client/utils/ - Hakemisto React App apufunktioille eri komponenttien käyttöön  
         apiUtils.ts - Apufunktio api rajapinnan osoitteelle

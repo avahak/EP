@@ -1,13 +1,17 @@
+/**
+ * Testisivu pelaajien tulosten esittämiselle.
+ */
+
 import { useEffect, useState } from "react";
 import { getApiUrl } from "../utils/apiUtils";
 import { Link } from "react-router-dom";
 
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { ResultTable } from "./ResultTable";
 
 const DisplayResultsPlayers: React.FC = () => {
     const [results, setResults] = useState<any[]>([]);
 
-    // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
+    // Suorittaa api-kutsun joukkueiden tulosten hakuun.
     const fetchResults = async () => {
         try {
             const apiUrl = `${getApiUrl()}/db/get_results_players`;
@@ -47,26 +51,7 @@ const DisplayResultsPlayers: React.FC = () => {
     return (
         <>
         <Link to="/">Takaisin</Link>
-        <TableContainer component={Paper}>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        {Object.keys(results[0]).map((key) => (
-                            <TableCell key={key}>{key}</TableCell>
-                        ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {results.map((row: any, index: number) => (
-                        <TableRow key={index}>
-                        {Object.keys(row).map((key) => (
-                            <TableCell key={key}>{(row as any)[key]}</TableCell>
-                        ))}
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <ResultTable rows={results} tableName="Pelaajien tulokset" maxWidth="1300px" />
         </>);
 }
 

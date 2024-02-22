@@ -16,6 +16,8 @@ import { DBTest } from '../components/DBTest';
 import { ResultSubmission } from '../components/ResultSubmission';
 import { DisplayResultsTeams } from '../components/DisplayResultsTeams';
 import { DisplayResultsPlayers } from '../components/DisplayResultsPlayers';
+import { TestResultTable } from '../components/ResultTable';
+import { MUITest } from '../components/MUITest';
 
 const AppRouter = () => {
     return (<>
@@ -32,6 +34,8 @@ const AppRouter = () => {
                 <Route path="/vision" element={<VisionExample />} />
 
                 {/* Kehitystyökaluja */}
+                <Route path="/mui_test" element={<MUITest />} />
+                <Route path="/result_table" element={<TestResultTable />} />
                 <Route path="/upload" element={<FileUpload />} />
                 <Route path="/db" element={<DBTest />} />
 
