@@ -7,6 +7,7 @@ import { getApiUrl } from "../utils/apiUtils";
 import { Link } from "react-router-dom";
 
 import { ResultTable } from "./ResultTable";
+import { extractKeys } from "../../shared/generalUtils";
 
 const DisplayResultsPlayers: React.FC = () => {
     const [results, setResults] = useState<any[]>([]);
@@ -20,6 +21,8 @@ const DisplayResultsPlayers: React.FC = () => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
 
+            console.log("jsonData", jsonData);
+
             const [rows1, rows2, rows3] = jsonData.result;
             const newResults = JSON.parse(JSON.stringify(rows1));   // deep copy trikki
             const map: Map<number, any> = new Map();
@@ -31,6 +34,13 @@ const DisplayResultsPlayers: React.FC = () => {
             });
             rows3.forEach((row: any, _index: number) => { 
                 newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
+            });
+            const keys = extractKeys(newResults);
+            console.log("keys", keys);
+            newResults.forEach((row: any, _index: number) => {
+                for (const [key, _type] of keys) 
+                    if (!row[key])
+                        row[key] = 0;
             });
 
             setResults(newResults);
