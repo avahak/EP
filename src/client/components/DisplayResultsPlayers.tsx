@@ -2,66 +2,57 @@
  * Testisivu pelaajien tulosten esittämiselle.
  */
 
-import { useEffect, useState } from "react";
-import { getApiUrl } from "../utils/apiUtils";
+// import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ResultTable } from "./ResultTable";
 import { extractKeys } from "../../shared/generalUtils";
+import { useInitialServerFetch } from "../utils/apiUtils";
+
+/**
+ * Yhdistää ep_pelaaja (rows1), kotivoitot ep_erat taulussa (rows2), 
+ * ja vierasvoitot ep_erat taulussa (rows3).
+ */
+const playerDataProcessor = (data: any) => {
+    const [rows1, rows2, rows3] = data.rows;
+    const newResults = JSON.parse(JSON.stringify(rows1));   // deep copy trikki
+    const map: Map<number, any> = new Map();
+    rows1.forEach((row: any, index: number) => { 
+        map.set(row.id, index);
+    });
+    rows2.forEach((row: any, _index: number) => { 
+        newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
+    });
+    rows3.forEach((row: any, _index: number) => { 
+        newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
+    });
+    const keys = extractKeys(newResults);
+    console.log("keys", keys);
+    newResults.forEach((row: any, _index: number) => {
+        for (const [key, _type] of keys) 
+            if (!row[key])
+                row[key] = 0;
+    });
+    return newResults;
+};
 
 const DisplayResultsPlayers: React.FC = () => {
-    const [results, setResults] = useState<any[]>([]);
-
-    // Suorittaa api-kutsun joukkueiden tulosten hakuun.
-    const fetchResults = async () => {
-        try {
-            const apiUrl = `${getApiUrl()}/db/get_results_players`;
-            const response = await fetch(apiUrl);
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            const jsonData = await response.json();
-
-            console.log("jsonData", jsonData);
-
-            const [rows1, rows2, rows3] = jsonData.result;
-            const newResults = JSON.parse(JSON.stringify(rows1));   // deep copy trikki
-            const map: Map<number, any> = new Map();
-            rows1.forEach((row: any, index: number) => { 
-                map.set(row.id, index);
-            });
-            rows2.forEach((row: any, _index: number) => { 
-                newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
-            });
-            rows3.forEach((row: any, _index: number) => { 
-                newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
-            });
-            const keys = extractKeys(newResults);
-            console.log("keys", keys);
-            newResults.forEach((row: any, _index: number) => {
-                for (const [key, _type] of keys) 
-                    if (!row[key])
-                        row[key] = 0;
-            });
-
-            setResults(newResults);
-        } catch(error) {
-            console.error('Error:', error);
-        }
-    };
+    const results = useInitialServerFetch({ 
+        route: "/db/specific_query", 
+        method: "POST", 
+        params: { queryName: "get_results_players" },
+        dataProcessor: playerDataProcessor
+    });
     
-    useEffect(() => {
-        fetchResults();
-    }, []);
-
     console.log("results", results);
 
-    if (results.length == 0)
+    if (!results.status.ok)
         return "Ei dataa."
 
     return (
         <>
         <Link to="/">Takaisin</Link>
-        <ResultTable rows={results} tableName="Pelaajien tulokset" maxWidth="1300px" />
+        <ResultTable rows={results.data} tableName="Pelaajien tulokset" maxWidth="1300px" />
         </>);
 }
 

@@ -19,6 +19,9 @@ import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/d
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
 import { /*getAllMatches,*/ getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores } from './database/dbSpecific.js';
 
+// Tämänhetkinen kausi, käytetään tietokantakyselyissä
+const KULUVA_KAUSI = 3;
+
 dotenv.config();
 
 // interface User extends RowDataPacket {
@@ -263,77 +266,35 @@ app.get('/api/db/recreate/:stage', async (req, res) => {
 });
 
 /**
- * Hakee tietokannasta joukkueen kaikki pelaajat.
+ * Yhdistää API-kutsussa annetun parametrin dbSpecific.ts tiedostossa olevaan
+ * funktioon, joka muodostaa SQL-kyselyn ja suorittaa sen. 
  */
-app.post('/api/db/get_players_in_team', async (req, res) => {
-    const teamAbbr = req.body.teamAbbr;
-    if (!teamAbbr)
-        return res.status(400).send("Missing parameter teamAbbr.");
-    try {
-        const rows = await getPlayersInTeam(pool, teamAbbr);
-        res.json({ rows });
-        console.log("/api/db/get_players_in_team done");
-    } catch (error) {
-        console.error('Error in /api/get_players_in_team:', error);
-        res.status(500).send(`Error: ${error}`);
-    }
-});
+const queryFunctions: Record<string, any> = {
+    "get_players_in_team": getPlayersInTeam,
+    "get_matches_to_report": getMatchesToReport,
+    "get_results_teams": getResultsTeams,
+    "get_results_players": getResultsPlayers,
+    "get_scores": getScores
+};
 
 /**
- * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
+ * Tätä reittiä käytetään tarjoamaan tietokannan spesifien kyselyiden 
+ * (src/server/db/dbSpecific.ts) tuloksia.
  */
-app.get('/api/db/report_result/get_matches', async (_req, res) => {
-    try {
-        const rows = await getMatchesToReport(pool);
-        res.json({ rows });
-        console.log("/api/db/record_result/get_matches done");
-    } catch (error) {
-        console.error('Error in /api/db/record_result/get_matches:', error);
-        res.status(500).send(`Error: ${error}`);
-    }
-});
+app.post('/api/db/specific_query', async (req, res) => {
+    const queryName = req.body.queryName;
+    const params = req.body.params || {};
+    params._current_kausi = KULUVA_KAUSI;
 
-/**
- * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
- */
-app.get('/api/db/get_results_teams', async (_req, res) => {
+    const queryFunction = queryFunctions[queryName];
+    if (!queryName || !queryFunction)
+        return res.status(400).send("Invalid or missing queryName.");
     try {
-        const rows = await getResultsTeams(pool);
+        const rows = await queryFunction(pool, params);
         res.json({ rows });
-        console.log("/api/db/get_results_teams done");
+        console.log(`/api/db/specific_query (queryName=${queryName}) done`);
     } catch (error) {
-        console.error('Error in /api/db/get_results_teams:', error);
-        res.status(500).send(`Error: ${error}`);
-    }
-});
-
-/**
- * Hakee tietokannasta menneitä otteluita tuloksen ilmoittamiseen.
- */
-app.get('/api/db/get_results_players', async (_req, res) => {
-    try {
-        const result = await getResultsPlayers(pool);
-        res.json({ result });
-        console.log("/api/db/get_results_players done");
-    } catch (error) {
-        console.error('Error in /api/db/get_results_players:', error);
-        res.status(500).send(`Error: ${error}`);
-    }
-});
-
-/**
- * Hakee tietokannasta ottelun erien tuloksia.
- */
-app.post('/api/db/get_scores', async (req, res) => {
-    const matchId = req.body.matchId;
-    if (!matchId)
-        return res.status(400).send("Missing parameter otteluId.");
-    try {
-        const rows = await getScores(pool, matchId);
-        res.json({ rows });
-        console.log("/api/db/get_scores done");
-    } catch (error) {
-        console.error('Error in /api/get_scores:', error);
+        console.error('Error in /api/specific_query:', error);
         res.status(500).send(`Error: ${error}`);
     }
 });

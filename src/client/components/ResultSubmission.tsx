@@ -9,8 +9,8 @@
 import { useState } from "react";
 import { MatchChooser } from "./MatchChooser";
 import { Scoresheet } from "./Scoresheet";
-import { getApiUrl } from "../utils/apiUtils";
 import { useNavigate } from "react-router-dom";
+import { serverFetch } from "../utils/apiUtils";
 
 type Player = {
     id: number;
@@ -99,13 +99,12 @@ const ResultSubmission: React.FC = () => {
      */
     const fetchPlayers = async (teamAbbr: string) => {
         try {
-            const apiUrl = `${getApiUrl()}/db/get_players_in_team`;
-            const response = await fetch(apiUrl, {
+            const response = await serverFetch("/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ teamAbbr }),
+                body: JSON.stringify({ queryName: "get_players_in_team", params: { teamAbbr: teamAbbr } }),
             });
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -121,13 +120,12 @@ const ResultSubmission: React.FC = () => {
      */
     const fetchScores = async (matchId: number) => {
         try {
-            const apiUrl = `${getApiUrl()}/db/get_scores`;
-            const response = await fetch(apiUrl, {
+            const response = await serverFetch("/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ matchId }),
+                body: JSON.stringify({ queryName: "get_scores", params: { matchId: matchId } }),
             });
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);

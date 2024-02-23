@@ -2,7 +2,7 @@
  * Palauttaa annetun Date olion merkkijonona muodossa YYYY-MM-DD.
  */
 const dateToISOString = (date: Date) => {
-    // return date.toISOString().split('T')[0];
+    // return date.toISOString().split('T')[0];     // ei oikein (aikavyöhykkeet)!
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();

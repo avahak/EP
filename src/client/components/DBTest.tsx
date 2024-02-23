@@ -3,8 +3,8 @@
  */
 
 import React, { Fragment, useEffect, useState } from 'react';
-import { getApiUrl } from '../utils/apiUtils';
 import { Link } from 'react-router-dom';
+import { serverFetch } from '../utils/apiUtils';
 
 const DBTest: React.FC = () => {
     const [data, setData] = useState<any>(null);
@@ -12,8 +12,7 @@ const DBTest: React.FC = () => {
     // Hakee tietokannan kaavion (schema):
     const fetchSchema = async () => {
         try {
-            const apiUrl = `${getApiUrl()}/db/schema`;
-            const response = await fetch(apiUrl);
+            const response = await serverFetch("/db/schema");
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -29,8 +28,7 @@ const DBTest: React.FC = () => {
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
     const fetchRecreate = async (stage: number) => {
         try {
-            const apiUrl = `${getApiUrl()}/db/recreate/${stage}`;
-            const response = await fetch(apiUrl);
+            const response = await serverFetch(`/db/recreate/${stage}`);
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);

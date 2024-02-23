@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 // import { SubmitHandler, useForm } from "react-hook-form";
-import { getApiUrl } from "../utils/apiUtils";
 import { useEffect, useState } from "react";
 import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../shared/generalUtils";
 import './MatchChooser.css';
 import { SubmitHandler, useForm } from "react-hook-form";
+import { serverFetch } from "../utils/apiUtils";
 
 type FormFields = {
     selectionCategory: string;
@@ -42,8 +42,13 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
     const fetchMatches = async () => {
         try {
-            const apiUrl = `${getApiUrl()}/db/report_result/get_matches`;
-            const response = await fetch(apiUrl);
+            const response = await serverFetch("/db/specific_query", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ queryName: "get_matches_to_report" }),
+            });
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();

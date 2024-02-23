@@ -1,41 +1,49 @@
+/**
+ * Kokoelma tietokantaan kohdistuvia kyselyitä, joita React app tarvitsee.
+ * Näitä kutsuu src/server/server.ts funktio specificQuery.
+ */
+
 import mysql from 'mysql2/promise';
 import { myQuery } from './dbGeneral.js';
+import { dateToISOString } from '../../shared/generalUtils.js';
 
 /**
- * Palauttaa erien tuloksia.
+ * Palauttaa ottelun pelaajat ja erien tulokset.
+ * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
-async function getScores(pool: mysql.Pool, matchId: number) {
-    // Valitaan pelaajat, joiden joukkueen lyhenne on teamAbbr:
+async function getScores(pool: mysql.Pool, params: Record<string, any>) {
+    // Valitaan pelaajat ja erätulokset annetulle ottelulle:
     const query = `
         SELECT p.kp, p.vp, e.era1, e.era2, e.era3, e.era4, e.era5
         FROM ep_ottelu o
         JOIN ep_peli p ON p.ottelu=o.id
         JOIN ep_erat e ON e.peli=p.id
         WHERE o.id=?
-        `;
-    return myQuery(pool, query, [matchId]);
+    `;
+    return myQuery(pool, query, [params.matchId]);
 }
 
 /**
  * Palauttaa joukkueen kaikki pelaajat.
+ * @param params - Sisältää ep_joukkue.lyhenne tiedon kentässä teamAbbr.
  */
-async function getPlayersInTeam(pool: mysql.Pool, teamAbbr: string) {
-    // Valitaan pelaajat, joiden joukkueen lyhenne on teamAbbr:
+async function getPlayersInTeam(pool: mysql.Pool, params: Record<string, any>) {
+    // Valitaan kaikki pelaajat, joiden joukkueen lyhenne on teamAbbr:
     const query = `
         SELECT p.id AS id, p.nimi AS name
         FROM ep_joukkue j
         JOIN ep_pelaaja p ON p.joukkue = j.id
         WHERE j.lyhenne=?
-        `;
-    return myQuery(pool, query, [teamAbbr]);
+    `;
+    return myQuery(pool, query, [params.teamAbbr]);
 }
 
 /**
- * Palauttaa ilmoittamattomat (T) tai vahvistamattomat (K) menneet ottelut.
+ * Palauttaa menneet ilmoittamattomat (T) tai vierasjoukkueen hyväksymättömät (K) ottelut.
  */
-async function getMatchesToReport(pool: mysql.Pool) {
+async function getMatchesToReport(pool: mysql.Pool, _params: Record<string, any>) {
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K':
-    const dateNow = new Date().toISOString().split('T')[0];
+    const dateNow = dateToISOString(new Date());
     const query = `
         SELECT o.id, o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -43,40 +51,45 @@ async function getMatchesToReport(pool: mysql.Pool) {
         JOIN ep_joukkue j2 ON o.vieras = j2.id
         WHERE (o.status='T' OR o.status='K') AND (o.paiva <= ?)
         ORDER BY o.paiva
-        `;
+    `;
     return myQuery(pool, query, [dateNow]);
 }
 
 /**
- * Palauttaa taulukon otteluista, yleistä testausta varten.
+ * Palauttaa taulukon kaikista otteluista, yleistä testausta varten.
  */
-async function getAllMatches(pool: mysql.Pool) {
+async function getAllMatches(pool: mysql.Pool, _params: Record<string, any>) {
     const query = `
         SELECT o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
         JOIN ep_joukkue j1 ON o.koti = j1.id
         JOIN ep_joukkue j2 ON o.vieras = j2.id
         ORDER BY o.paiva
-        `;
+    `;
     return myQuery(pool, query);
 }
 
 /**
- * Tuloskysely sarjat
+ * Tuloskysely joukkueiden tilanteesta (ep_sarjat taulu).
+ * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeams(pool: mysql.Pool) {
+async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>) {
     const query = `
-        SELECT *
+        SELECT ep_sarjat.id, ep_sarjat.joukkue, ep_sarjat.nimi, ep_sarjat.lyhenne, 
+            ep_sarjat.ottelu, ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
+            ep_sarjat.h_era, ep_sarjat.v_peli, ep_sarjat.h_peli
         FROM ep_sarjat
-        WHERE lohko = 3
-        `;
-    return myQuery(pool, query);
+        JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
+        WHERE ep_lohko.kausi = ?
+    `;
+    return myQuery(pool, query, [params._current_kausi]);
 }
 
 /**
- * Tuloskysely pelaajille
+ * Tuloskysely pelaajien tilanteesta.
+ * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayers(pool: mysql.Pool) {
+async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -91,8 +104,8 @@ async function getResultsPlayers(pool: mysql.Pool) {
             ep_pelaaja
             JOIN ep_joukkue ON ep_joukkue.id = ep_pelaaja.joukkue
         WHERE 
-            ep_joukkue.kausi = 3
-        `;
+            ep_joukkue.kausi = ?
+    `;
     const queryHome = `
         SELECT
             p.kp AS id,
@@ -108,10 +121,10 @@ async function getResultsPlayers(pool: mysql.Pool) {
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = 3
+            ep_lohko.kausi = ?
         GROUP BY
             p.kp
-        `;
+    `;
     const queryAway = `
         SELECT
             p.vp AS id,
@@ -127,13 +140,13 @@ async function getResultsPlayers(pool: mysql.Pool) {
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = 3
+            ep_lohko.kausi = ?
         GROUP BY
             p.vp
-        `;
-    const resultGeneral = await myQuery(pool, queryGeneral);
-    const resultHome = await myQuery(pool, queryHome);
-    const resultAway = await myQuery(pool, queryAway);
+    `;
+    const resultGeneral = await myQuery(pool, queryGeneral, [params._current_kausi]);
+    const resultHome = await myQuery(pool, queryHome, [params._current_kausi]);
+    const resultAway = await myQuery(pool, queryAway, [params._current_kausi]);
     return [resultGeneral, resultHome, resultAway];
 }
 

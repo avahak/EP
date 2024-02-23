@@ -1,20 +1,10 @@
+/**
+ * Tässä tiedostossa on tietokannan yleiseen käsittelyyn ja luontiin liittyviä funktioita.
+ */
+
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 import { generateAndInsertToDatabase } from './dbFakeData.js';
-
-/**
- * Tulkkaa .sql tiedoston sisällön kyselyt sisältäväksi taulukoksi.
- */
-// @ts-ignore
-function parseSqlFileContentOld(sqlFileContent: string): string[] {
-    // Poistetaan kommentit:
-    let str = sqlFileContent.replace(/(\/\*[\s\S]*?\*\/|--[^\r\n]*)/gm, '');
-    // Korvataan rivinvaihtomerkit välilyönnillä:
-    str = str.replace(/\r?\n/g, ' ');
-    // Jaetaan merkkijono hauiksi välimerkin ; perusteella:
-    const queries = str.split(';').map(query => query.trim()).filter(Boolean);
-    return queries;
-}
 
 /**
  * Tämä on yksinkertainen .sql tiedostojen lukija, joka erottelee tekstin 
@@ -48,7 +38,22 @@ function parseSqlFileContent(sqlFileContent: string): string[] {
 }
 
 /**
- * Wrapperi tietokantakyselylle
+ * Tulkkaa .sql tiedoston sisällön kyselyt sisältäväksi taulukoksi.
+ * HUOM! Vanhentunut, käytä tämän sijaan parseSqlFileContent.
+ */
+// @ts-ignore
+function parseSqlFileContentOld(sqlFileContent: string): string[] {
+    // Poistetaan kommentit:
+    let str = sqlFileContent.replace(/(\/\*[\s\S]*?\*\/|--[^\r\n]*)/gm, '');
+    // Korvataan rivinvaihtomerkit välilyönnillä:
+    str = str.replace(/\r?\n/g, ' ');
+    // Jaetaan merkkijono hauiksi välimerkin ; perusteella:
+    const queries = str.split(';').map(query => query.trim()).filter(Boolean);
+    return queries;
+}
+
+/**
+ * Wrapperi mielivaltaiselle tietokantakyselylle.
  */
 async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|null=null) {
     console.log("myQuery", query);
@@ -74,7 +79,12 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
 
 /**
  * Poistaa ja luo tietokannan ja sen taulut testaus_ep.sql mukaisesti.
- * NOTE: Käytä varovaisesti, tuhoaa tietoa!
+ * Kutsu parametreilla
+ *      stage=1 (taulujen luonti)
+ *      stage=2 (herättimien luonti)
+ *      stage=3 (testidatan luonti ja lisäys tietokantaan).
+ * Koko tietokanta luodaan kutsumalla ensin parametrilla stage=1, sitten 2 ja 3.
+ * HUOM! Käytä varovaisesti, tuhoaa tietoa!
  */
 async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, databaseName: string, stage: number) {
     console.log(`starting recreateDatabase ${databaseName} stage ${stage}..`);
@@ -117,9 +127,11 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
             }
         } else if (stage == 3) {
             await generateAndInsertToDatabase(pool);
+
             // const data = generateFakeData();
             // const filePath = path.join(miscDirectory, `testaus_ep_data.json`);
             // fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
+            // Jos tiedosto vielä halutaan, luo callback ja callback kirjoittaa tiedoston.
         }
         console.log(`done with: recreateDatabase ${databaseName} stage ${stage}`);
     } catch (error) {
