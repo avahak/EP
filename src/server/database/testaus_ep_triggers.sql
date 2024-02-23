@@ -76,7 +76,7 @@ BEGIN
     CALL procedure_erat_to_peli(NEW.era1, NEW.era2, NEW.era3, NEW.era4, NEW.era5, NEW.peli);
 END //
 
--- Jos ep_erat rivi poistetaan, nollaa vastaavan pelin tulokset
+-- Jos ep_erat rivi poistetaan, nollaa vastaavan pelin tulokset:
 DROP TRIGGER IF EXISTS trigger_modify_peli_on_erat_delete //
 CREATE TRIGGER trigger_modify_peli_on_erat_delete
 BEFORE DELETE ON ep_erat
@@ -136,12 +136,14 @@ BEGIN
     DECLARE add_ktulos INT DEFAULT IF(COALESCE(NEW.ktulos, 0) > COALESCE(NEW.vtulos, 0), 1, 0);
     DECLARE add_vtulos INT DEFAULT IF(COALESCE(NEW.vtulos, 0) > COALESCE(NEW.ktulos, 0), 1, 0);
 
+    -- Kumotaan vanhat:
     UPDATE ep_ottelu
     SET 
         ktulos = COALESCE(ktulos, 0) - sub_ktulos, 
         vtulos = COALESCE(vtulos, 0) - sub_vtulos
     WHERE id = OLD.ottelu;
 
+    -- Kirjataan uudet:
     UPDATE ep_ottelu
     SET 
         ktulos = COALESCE(ktulos, 0) + add_ktulos, 
@@ -197,8 +199,11 @@ CREATE TRIGGER trigger_modify_pelaaja_on_peli_update
 BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
+    -- Kumotaan vanhat:
     CALL procedure_adjust_ep_pelaaja(OLD.kp, OLD.ktulos, OLD.vtulos, -1);
     CALL procedure_adjust_ep_pelaaja(OLD.vp, OLD.vtulos, OLD.ktulos, -1);
+
+    -- Kirjataan uudet:
     CALL procedure_adjust_ep_pelaaja(NEW.kp, NEW.ktulos, NEW.vtulos, +1);
     CALL procedure_adjust_ep_pelaaja(NEW.vp, NEW.vtulos, NEW.ktulos, +1);
 END //
@@ -302,9 +307,10 @@ CREATE TRIGGER trigger_modify_sarjat_on_peli_insert
 BEFORE INSERT ON ep_peli
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
+
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     CALL procedure_get_sarjat_home_id(NEW.ottelu, sarjat_home_id);
     CALL procedure_get_sarjat_away_id(NEW.ottelu, sarjat_away_id);
 
@@ -319,9 +325,10 @@ CREATE TRIGGER trigger_modify_sarjat_on_peli_delete
 BEFORE DELETE ON ep_peli
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
+
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     CALL procedure_get_sarjat_home_id(OLD.ottelu, sarjat_home_id);
     CALL procedure_get_sarjat_away_id(OLD.ottelu, sarjat_away_id);
 
@@ -336,19 +343,20 @@ CREATE TRIGGER trigger_modify_sarjat_on_peli_update
 BEFORE UPDATE ON ep_peli
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_old_home_id INT;
     DECLARE sarjat_old_away_id INT;
     DECLARE sarjat_new_home_id INT;
     DECLARE sarjat_new_away_id INT;
+
+    -- Kumotaan vanhat:
     CALL procedure_get_sarjat_home_id(OLD.ottelu, sarjat_old_home_id);
     CALL procedure_get_sarjat_away_id(OLD.ottelu, sarjat_old_away_id);
-    CALL procedure_get_sarjat_home_id(NEW.ottelu, sarjat_new_home_id);
-    CALL procedure_get_sarjat_away_id(NEW.ottelu, sarjat_new_away_id);
-
-    -- Päivitetään v_era, h_era, v_peli, h_peli:
     CALL procedure_adjust_ep_sarjat(sarjat_old_home_id, OLD.ktulos, OLD.vtulos, -1);
     CALL procedure_adjust_ep_sarjat(sarjat_old_away_id, OLD.vtulos, OLD.ktulos, -1);
+
+    -- Kirjataan uudet:
+    CALL procedure_get_sarjat_home_id(NEW.ottelu, sarjat_new_home_id);
+    CALL procedure_get_sarjat_away_id(NEW.ottelu, sarjat_new_away_id);
     CALL procedure_adjust_ep_sarjat(sarjat_new_home_id, NEW.ktulos, NEW.vtulos, +1);
     CALL procedure_adjust_ep_sarjat(sarjat_new_away_id, NEW.vtulos, NEW.ktulos, +1);
 END //
@@ -375,9 +383,10 @@ CREATE TRIGGER trigger_modify_sarjat_on_ottelu_insert
 BEFORE INSERT ON ep_ottelu
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
+
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     CALL procedure_get_sarjat_id(NEW.koti, sarjat_home_id);
     CALL procedure_get_sarjat_id(NEW.vieras, sarjat_away_id);
 
@@ -392,9 +401,10 @@ CREATE TRIGGER trigger_modify_sarjat_on_ottelu_delete
 BEFORE DELETE ON ep_ottelu
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_home_id INT;
     DECLARE sarjat_away_id INT;
+    
+    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     CALL procedure_get_sarjat_id(OLD.koti, sarjat_home_id);
     CALL procedure_get_sarjat_id(OLD.vieras, sarjat_away_id);
 
@@ -409,19 +419,20 @@ CREATE TRIGGER trigger_modify_sarjat_on_ottelu_update
 BEFORE UPDATE ON ep_ottelu
 FOR EACH ROW
 BEGIN
-    -- löydä sarjat id kotijoukkueelle ja vierasjoukkueelle:
     DECLARE sarjat_old_home_id INT;
     DECLARE sarjat_old_away_id INT;
     DECLARE sarjat_new_home_id INT;
     DECLARE sarjat_new_away_id INT;
+
+    -- Kumotaan vanhat:
     CALL procedure_get_sarjat_id(OLD.koti, sarjat_old_home_id);
     CALL procedure_get_sarjat_id(OLD.vieras, sarjat_old_away_id);
-    CALL procedure_get_sarjat_id(NEW.koti, sarjat_new_home_id);
-    CALL procedure_get_sarjat_id(NEW.vieras, sarjat_new_away_id);
-
-    -- Päivitetään ottelu, voitto, tappio:
     CALL procedure_adjust_sarjat_matches(sarjat_old_home_id, OLD.ktulos, OLD.vtulos, -1);
     CALL procedure_adjust_sarjat_matches(sarjat_old_away_id, OLD.vtulos, OLD.ktulos, -1);
+
+    -- Kirjataan uudet:
+    CALL procedure_get_sarjat_id(NEW.koti, sarjat_new_home_id);
+    CALL procedure_get_sarjat_id(NEW.vieras, sarjat_new_away_id);
     CALL procedure_adjust_sarjat_matches(sarjat_new_home_id, NEW.ktulos, NEW.vtulos, +1);
     CALL procedure_adjust_sarjat_matches(sarjat_new_away_id, NEW.vtulos, NEW.ktulos, +1);
 END //
