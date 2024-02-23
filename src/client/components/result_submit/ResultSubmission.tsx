@@ -8,9 +8,9 @@
 // import { Scoresheet } from "./Scoresheet";
 import { useState } from "react";
 import { MatchChooser } from "./MatchChooser";
-import { Scoresheet } from "./Scoresheet";
+import { Scoresheet } from "../scoresheet/Scoresheet";
 import { useNavigate } from "react-router-dom";
-import { serverFetch } from "../utils/apiUtils";
+import { serverFetch } from "../../utils/apiUtils";
 
 type Player = {
     id: number;
@@ -91,6 +91,7 @@ const ResultSubmission: React.FC = () => {
      * haluaa tehdä niihin muutoksia.
      */
     const handleReject = () => {
+        console.log("handleReject()");
         setPageState("scoresheet_modify");
     }
 
@@ -144,14 +145,14 @@ const ResultSubmission: React.FC = () => {
         const playersAway = await fetchPlayers(match.away);
         const rawScores = await fetchScores(match.id);
 
+        console.log("playersHome fetch: ", playersHome);
+        console.log("playersAway fetch: ", playersAway);
+        console.log("rawScores fetch: ", rawScores);
+
         const idToName: (id: number, players: Player[]) => string = (id, players) => {
             const index = players.findIndex((player) => player.id == id);
             return (index == -1) ? "" : players[index].name;
         }
-
-        console.log("playersHome fetch: ", playersHome);
-        console.log("playersAway fetch: ", playersAway);
-        console.log("rawScores fetch: ", rawScores);
 
         const playingHome: Player[] = [];
         const playingAway: Player[] = [];
@@ -173,7 +174,8 @@ const ResultSubmission: React.FC = () => {
         console.log("playingHome", playingHome);
         console.log("playingAway", playingAway);
 
-        setResult({ ...result, teamHome: {
+        setResult({
+            teamHome: {
                 teamName: match.home,
                 teamRole: "home",
                 allPlayers: playersHome,

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../shared/generalUtils";
+import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
 import './MatchChooser.css';
 import { SubmitHandler, useForm } from "react-hook-form";
-import { serverFetch } from "../utils/apiUtils";
+import { serverFetch } from "../../utils/apiUtils";
 
 type FormFields = {
     selectionCategory: string;

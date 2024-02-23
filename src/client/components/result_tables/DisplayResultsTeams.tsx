@@ -3,8 +3,8 @@
  */
 
 import { Link } from "react-router-dom";
-import { ResultTable } from "./ResultTable";
-import { useInitialServerFetch } from "../utils/apiUtils";
+import { ResultTable } from "../ResultTable";
+import { useInitialServerFetch } from "../../utils/apiUtils";
 
 const DisplayResultsTeams: React.FC = () => {
     // Suorittaa api-kutsun joukkueiden tulosten hakuun sivun lataamisen yhteydessä:

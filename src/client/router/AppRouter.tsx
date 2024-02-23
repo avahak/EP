@@ -8,16 +8,16 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FileUpload from "../components/FileUpload";
 // import { Scoresheet } from '../components/Scoresheet';
 import { App } from '../components/App';
-import HoughDemo from '../components/HoughDemo';
-import HomographyDemo from '../components/HomographyDemo';
-import VisionExample from '../components/VisionExample';
+import HoughDemo from '../components/machine_vision/HoughDemo';
+import HomographyDemo from '../components/machine_vision/HomographyDemo';
+import VisionExample from '../components/machine_vision/VisionExample';
 import { DBTest } from '../components/DBTest';
 // import { MatchChooser } from '../components/MatchChooser';
-import { ResultSubmission } from '../components/ResultSubmission';
-import { DisplayResultsTeams } from '../components/DisplayResultsTeams';
-import { DisplayResultsPlayers } from '../components/DisplayResultsPlayers';
+import { ResultSubmission } from '../components/result_submit/ResultSubmission';
+import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsTeams';
+import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
 import { TestResultTable } from '../components/ResultTable';
-import { MUITest } from '../components/MUITest';
+import { MUITest } from '../components/sandbox/MUITest';
 
 const AppRouter = () => {
     return (<>

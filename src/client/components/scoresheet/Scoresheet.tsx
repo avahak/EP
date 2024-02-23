@@ -4,20 +4,15 @@
  * Pelien tulokset valitaan myös select-elementin avulla ja kirjatut tulokset
  * näkyvät tulostaulussa (ScoreTable.tsx) välittömästi.
  * 
- * TODO: Otteluiden ja pelaajien hakeminen SQL-tietokannasta.
- * TODO: Vierasjoukkue tulee hyväksyä kirjatut tulokset ja tämän jälkeen admin vielä.
- * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
 import { Link } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
-import './Scoresheet.css';
 import AddPlayerModal from './AddPlayerModal';
-// import { getApiUrl } from '../utils/apiUtils';
-import { getDayOfWeekStrings, toDDMMYYYY } from '../../shared/generalUtils';
-// import { toDDMMYYYY } from "../../shared/generalUtils";
+import { getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
+import './Scoresheet.css';
 
 // Erän mahdolliset lopputulokset pelaajalle:
 const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
@@ -107,7 +102,6 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
         defaultValues: initialValues
     });
 
-    const scores = watch('scores');
     const allFormValues = watch();
 
     useEffect(() => {
@@ -126,7 +120,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
 
     // Takaisinkutsufunktio AddPlayerModal varten:
     const handleAddPlayer = (player: Player, team: Team, slot: number) => {
-        console.log("handleAddPlayer", playerName, team);
+        console.log("handleAddPlayer", player.name, team);
         const isHome = (team == allFormValues.teamHome);
         // const baseTeam = isHome ? allFormValues.teamHome : allFormValues.teamAway;
         setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, player]);
@@ -139,17 +133,16 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<FormFields> = (data) => {
         submitCallback(data);
-        return;
     }
 
-    const { runningScore, roundWins } = computeDerivedStats(scores);
+    const { runningScore, roundWins } = computeDerivedStats(allFormValues.scores);
 
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
      */
     const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
         const selectValue = event.target.value;
-        const updatedScores = [...scores];
+        const updatedScores = [...allFormValues.scores];
         updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
         // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
         if (selectValue !== " ")
@@ -227,7 +220,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
                     {team.allPlayers.map((playerOption, playerOptionIndex) => (
                         <option 
                             value={playerOption?.id ?? ''}
-                            disabled={team.selectedPlayers.map((player) => player?.id).includes(playerOption?.id)}
+                            disabled={(playerOption?.id != team.selectedPlayers[playerIndex]?.id) && (team.selectedPlayers.map((player) => player?.id).includes(playerOption?.id))}
                             key={`player-option-${playerOptionIndex}`}>
                             {playerOption?.name ?? ''}
                         </option>
@@ -267,7 +260,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
             </tr>
         </thead>
         <tbody>
-            {scores.map((_game, gameIndex) => (
+            {allFormValues.scores.map((_game, gameIndex) => (
             Array.from({ length: 2 }, (_, playerIndex) => (
                 <tr key={`row-${gameIndex}-${playerIndex}`}>
                 {/* Peli */}
@@ -286,7 +279,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
                 {/* Erätulokset */}
                 {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
                     <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                    <select className={scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
+                    <select className={allFormValues.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
                         {...register(
                         `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
                         )}
@@ -301,7 +294,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
                     </td>
                 )) : Array.from({ length: 5 }, (_, roundIndex) => (
                     <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                    <div style={{width: '25px', textAlign: 'center'}}>{scores[gameIndex][playerIndex][roundIndex]}</div>
+                    <div style={{width: '25px', textAlign: 'center'}}>{allFormValues.scores[gameIndex][playerIndex][roundIndex]}</div>
                     </td>
                 ))}
 
@@ -342,7 +335,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
             {mode == 'verify' && 
             <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
                 <button type="submit" style={{fontSize: "1.3em", background: '#ccffcc'}}>Hyväksy</button>
-                <button style={{fontSize: "1.3em", background: '#ffcccc'}} onClick={rejectCallback}>Muokkaa</button>
+                <button type="button" style={{fontSize: "1.3em", background: '#ffcccc'}} onClick={rejectCallback}>Muokkaa</button>
             </div>}
 
             <div id="table-box-outer">

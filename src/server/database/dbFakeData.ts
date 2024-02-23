@@ -242,7 +242,7 @@ function generate_pelit(ottelut: any[], pelaajat: any[]) {
             let voitotVieras = 0;
             for (let k = 0; k < 5; k++) {
                 let tulos = 'V0';
-                const x =  Math.random();
+                const rnd =  Math.random();
                 const breakpoints: [number, string][] = [
                     [0.25, 'K1'], [0.3, 'K2'], [0.35, 'K3'], 
                     [0.4, 'K4'], [0.45, 'K5'], [0.5, 'K6'], 
@@ -250,7 +250,7 @@ function generate_pelit(ottelut: any[], pelaajat: any[]) {
                     [0.9, 'V4'], [0.95, 'V5'], [1, 'V6']
                 ];
                 for (const [threshold, result] of breakpoints) {
-                    if (x < threshold) {
+                    if (rnd < threshold) {
                         tulos = result;
                         break;
                     }

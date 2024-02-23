@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 // import Draw from './DrawHough.js';
-import { getApiUrl } from "../utils/apiUtils";
-import ThumbnailSelector from './ThumbnailSelector';
+import { getApiUrl } from "../../utils/apiUtils";
+import ThumbnailSelector from '../ThumbnailSelector';
 import { Link } from 'react-router-dom';
 
 /**

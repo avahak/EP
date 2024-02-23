@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useEffect, useRef } from "react";
-import { getApiUrl } from "../utils/apiUtils";
+import { getApiUrl } from "../../utils/apiUtils";
 import { Link } from 'react-router-dom';
 
 const apiUrl = getApiUrl();

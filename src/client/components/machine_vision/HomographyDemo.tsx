@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Draw from './DrawHomography.js';
-import { getApiUrl } from "../utils/apiUtils";
+import { getApiUrl } from "../../utils/apiUtils.js";
 import { Link } from 'react-router-dom';
 
 /**
