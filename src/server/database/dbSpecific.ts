@@ -241,12 +241,14 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
         } catch (error) {
             await connection.rollback();
             console.error("Error during submitMatchResult:", error);
+            throw error;
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();
         }
     } catch (error) {
         console.error("Error during submitMatchResult:", error);
+        throw error;
     }
 }
 
