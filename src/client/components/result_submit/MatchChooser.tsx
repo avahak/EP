@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
@@ -6,8 +5,10 @@ import './MatchChooser.css';
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
 
+type SelectionCategory = "" | "home" | "away" | "other";
+
 type FormFields = {
-    selectionCategory: string;
+    selectionCategory: SelectionCategory;
     selectionIndex: number;
     date: string;
 };
@@ -52,6 +53,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
+            console.log("fetchMatches data: ", jsonData.rows);
             setMatches(jsonData.rows);
         } catch(error) {
             console.error('Error:', error);
@@ -79,7 +81,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     /**
      * Kutsutaan kun käyttäjä valitsee joukkueen.
      */
-    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: string) => {
+    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: SelectionCategory) => {
         console.log("selected", event.target.value, "category", category);
         setValue(`selectionCategory`, category);
         const index = parseInt(event.target.value);
@@ -101,7 +103,6 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
 
     return (
         <>
-        <Link to="/">Takaisin</Link>
         &nbsp;Tällä sivulla oletetaan, että käyttäjä on kirjautuneena sisään pelaajana,
         jonka joukkue on {userTeam}. (Sisäänkirjautumista ei ole vielä)
         <div id="container">

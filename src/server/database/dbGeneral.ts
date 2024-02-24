@@ -78,7 +78,7 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
 }
 
 /**
- * Poistaa ja luo tietokannan ja sen taulut testaus_ep.sql mukaisesti.
+ * Poistaa ja luo tietokannan ja sen taulut testaus_ep_tables.sql mukaisesti.
  * Kutsu parametreilla
  *      stage=1 (taulujen luonti)
  *      stage=2 (herättimien luonti)
@@ -90,7 +90,7 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
     console.log(`starting recreateDatabase ${databaseName} stage ${stage}..`);
     try {
         if (stage == 1) {
-            let sqlFile = fs.readFileSync(`src/server/database/${databaseName}.sql`, 'utf-8');
+            let sqlFile = fs.readFileSync(`src/server/database/${databaseName}_tables.sql`, 'utf-8');
             const queries = parseSqlFileContent(sqlFile);
 
             const connection = await poolNoDatabase.getConnection();

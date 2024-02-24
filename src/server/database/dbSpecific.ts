@@ -6,6 +6,7 @@
 import mysql from 'mysql2/promise';
 import { myQuery } from './dbGeneral.js';
 import { dateToISOString } from '../../shared/generalUtils.js';
+// import { parseMatch } from '../../shared/parseMatch.js';
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -25,34 +26,49 @@ async function getScores(pool: mysql.Pool, params: Record<string, any>) {
 
 /**
  * Palauttaa joukkueen kaikki pelaajat.
- * @param params - Sisältää ep_joukkue.lyhenne tiedon kentässä teamAbbr.
+ * @param params - Sisältää ep_joukkue.id tiedon kentässä teamId.
  */
 async function getPlayersInTeam(pool: mysql.Pool, params: Record<string, any>) {
-    // Valitaan kaikki pelaajat, joiden joukkueen lyhenne on teamAbbr:
+    // Valitaan kaikki pelaajat, joiden joukkueen id on teamId:
     const query = `
         SELECT p.id AS id, p.nimi AS name
         FROM ep_joukkue j
         JOIN ep_pelaaja p ON p.joukkue = j.id
-        WHERE j.lyhenne=?
+        WHERE j.id = ?
     `;
-    return myQuery(pool, query, [params.teamAbbr]);
+    return myQuery(pool, query, [params.teamId]);
+}
+
+/**
+ * Hakee taulun ep_ottelu perustiedot sen id:n perusteella.
+ * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
+ */
+async function getMatchInfo(pool: mysql.Pool, params: Record<string, any>) {
+    const query = `
+        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
+        FROM ep_ottelu o
+        JOIN ep_joukkue j1 ON o.koti = j1.id
+        JOIN ep_joukkue j2 ON o.vieras = j2.id
+        WHERE o.id = ?
+    `;
+    return myQuery(pool, query, [params.matchId]);
 }
 
 /**
  * Palauttaa menneet ilmoittamattomat (T) tai vierasjoukkueen hyväksymättömät (K) ottelut.
  */
-async function getMatchesToReport(pool: mysql.Pool, _params: Record<string, any>) {
+async function getMatchesToReport(pool: mysql.Pool, params: Record<string, any>) {
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K':
     const dateNow = dateToISOString(new Date());
     const query = `
-        SELECT o.id, o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
+        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
         JOIN ep_joukkue j1 ON o.koti = j1.id
         JOIN ep_joukkue j2 ON o.vieras = j2.id
-        WHERE (o.status='T' OR o.status='K') AND (o.paiva <= ?)
+        WHERE (o.status='T' OR o.status='K') AND (j1.kausi = ?) AND (o.paiva <= ?)
         ORDER BY o.paiva
     `;
-    return myQuery(pool, query, [dateNow]);
+    return myQuery(pool, query, [params._current_kausi, dateNow]);
 }
 
 /**
@@ -150,5 +166,89 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
     return [resultGeneral, resultHome, resultAway];
 }
 
-export { getAllMatches, getMatchesToReport, getPlayersInTeam, getScores, 
-    getResultsTeams, getResultsPlayers }
+/**
+ * Ottelun tulosten kirjaaminen.
+ * @param params - Sisältää kentän result.
+ */
+async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) {
+    const match = params.result;    // HUOM! Tämä tulisi tarkistaa vielä tässä!
+    const rounds = JSON.parse(JSON.stringify(match.rounds));    // deep copy trikki
+    
+    console.log("match", JSON.stringify(match));
+    await new Promise(r => setTimeout(r, 2000));    // poista tämä (tässä vain testausta varten)
+
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_erat:
+            // const query1 = `
+            //     DELETE e 
+            //     FROM ep_erat e
+            //     JOIN ep_peli p ON e.peli = p.id
+            //     JOIN ep_ottelu o ON p.ottelu = o.id
+            //     WHERE o.id = ?
+            // `;
+            // await connection.query(query1, [match.id]);
+
+            // Herättimen "trigger_modify_peli_on_erat_delete" takia 
+            // ei voida poistaa rivejä taulusta ep_erat kyselyllä, jossa esiintyy ep_peli.
+            // Tämän takia käytetään väliaikaista taulua apuna:
+            const query1_1 = `CREATE TEMPORARY TABLE temp_ids (id INT)`;
+            const query1_2 = `
+                INSERT INTO temp_ids (id)
+                SELECT e.id
+                FROM ep_erat e
+                JOIN ep_peli p ON e.peli = p.id
+                JOIN ep_ottelu o ON p.ottelu = o.id
+                WHERE o.id = ?
+            `;
+            const query1_3 = `DELETE FROM ep_erat WHERE id IN (SELECT * FROM temp_ids)`;
+            const query1_4 = `DROP TEMPORARY TABLE temp_ids`;
+            await connection.query(query1_1);
+            await connection.query(query1_2, [match.id]);
+            await connection.query(query1_3);
+            await connection.query(query1_4);
+
+            // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_peli:
+            const query2 = `
+                DELETE FROM ep_peli 
+                WHERE ottelu = ?
+            `;
+            await connection.query(query2, [match.id]);
+
+            // Lisätään uudet rivit tauluun ep_peli:
+            for (let k = 0; k < 9; k++) {
+                const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
+                const [insertedRow] = await connection.query(query3, match.games[k]);
+                // Liitetään rounds taulukkoon lisätyn rivin id:
+                if ('insertId' in insertedRow)
+                    rounds[k][0] = insertedRow.insertId;
+                else 
+                    throw Error("Error during ep_peli INSERT.")
+            }
+
+            // Lisätään uudet rivit tauluun ep_erat:
+            const query4 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`;
+            await connection.query(query4, [rounds]);
+
+            // Muutetaan ottelun status:
+            const query5 = `UPDATE ep_ottelu SET status = ? WHERE id = ?`;
+            await connection.query(query5, [match.newStatus, match.id]);
+
+            await connection.commit();
+            // await connection.rollback();
+        } catch (error) {
+            await connection.rollback();
+            console.error("Error during submitMatchResult:", error);
+        } finally {
+            connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
+            // connection.release();
+        }
+    } catch (error) {
+        console.error("Error during submitMatchResult:", error);
+    }
+}
+
+export { getAllMatches, getMatchInfo, getMatchesToReport, getPlayersInTeam, getScores, 
+    getResultsTeams, getResultsPlayers, submitMatchResult }

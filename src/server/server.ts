@@ -17,7 +17,7 @@ import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
 import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
-import { /*getAllMatches,*/ getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores } from './database/dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo } from './database/dbSpecific.js';
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä
 const KULUVA_KAUSI = 3;
@@ -212,7 +212,7 @@ app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory))
 app.get('/api/db/schema', async (_req, res) => {
     console.log(new Date(), "/api/db/schema requested")
     try {
-        const sqlFile1 = fs.readFileSync('src/server/database/testaus_ep.sql', 'utf-8');
+        const sqlFile1 = fs.readFileSync('src/server/database/testaus_ep_tables.sql', 'utf-8');
         const sqlFile2 = fs.readFileSync('src/server/database/testaus_ep_triggers.sql', 'utf-8');
         const commands1 = parseSqlFileContent(sqlFile1);
         const commands2 = parseSqlFileContent(sqlFile2);
@@ -271,10 +271,12 @@ app.get('/api/db/recreate/:stage', async (req, res) => {
  */
 const queryFunctions: Record<string, any> = {
     "get_players_in_team": getPlayersInTeam,
+    "get_match_info": getMatchInfo,
     "get_matches_to_report": getMatchesToReport,
     "get_results_teams": getResultsTeams,
     "get_results_players": getResultsPlayers,
-    "get_scores": getScores
+    "get_scores": getScores,
+    "submit_match_result": submitMatchResult
 };
 
 /**

@@ -6,12 +6,13 @@
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
-import { Link } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { ScoreTable } from "./ScoreTable";
 import AddPlayerModal from './AddPlayerModal';
 import { getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
+import { Box, Button, Typography } from '@mui/material';
+// import { parseMatch } from '../../../shared/parseMatch';
 import './Scoresheet.css';
 
 // Erän mahdolliset lopputulokset pelaajalle:
@@ -24,6 +25,7 @@ type Player = {
 };
 
 type Team = {
+    id: number;
     teamName: string;
     teamRole: "home" | "away";
     allPlayers: (Player | null)[];
@@ -31,6 +33,8 @@ type Team = {
 };
 
 type FormFields = {
+    id: number;
+    oldStatus: string;
     teamHome: Team;
     teamAway: Team;
     date: string;
@@ -38,6 +42,7 @@ type FormFields = {
 };
 
 const emptyTeam: Team = {
+    id: -1,
     teamName: '',
     teamRole: "home",
     allPlayers: [],
@@ -89,8 +94,9 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
 
 /**
  * React komponentti tuloslomakkeelle.
+ * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", submitCallback: (data: FormFields) => void, rejectCallback: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
+const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "display", submitCallback?: (data: FormFields) => void, rejectCallback?: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
     // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
@@ -132,7 +138,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
 
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<FormFields> = (data) => {
-        submitCallback(data);
+        if (submitCallback)
+            submitCallback(data);
     }
 
     const { runningScore, roundWins } = computeDerivedStats(allFormValues.scores);
@@ -320,23 +327,24 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
     };
 
     return (
-        <>
-        <Link to="/">Takaisin</Link>
-        {createAddPlayerModal()}
-        <div id="my_container">
-        <div id="scoresheet">
+        <Box>
         <form onSubmit={handleSubmit(onSubmit)}>
+        <Box>
+            {createAddPlayerModal()}
+            <div id="my_container">
+            <div id="scoresheet">
             {/* Ottelu ja päivämäärä */}
-            <h2 style={{textAlign: 'center'}}>{allFormValues.teamHome.teamName} - {allFormValues.teamAway.teamName},
-                    &nbsp;{!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
-                    &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}
-            {mode == "verify" && <><br />Tulos {runningScore[8][0]} - {runningScore[8][1]}</>}</h2>
-
-            {mode == 'verify' && 
-            <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
-                <button type="submit" style={{fontSize: "1.3em", background: '#ccffcc'}}>Hyväksy</button>
-                <button type="button" style={{fontSize: "1.3em", background: '#ffcccc'}} onClick={rejectCallback}>Muokkaa</button>
-            </div>}
+            <Box display="flex" justifyContent="center" marginBottom="20px">
+                <Box textAlign="center">
+                <Typography variant='h4'>
+                    {allFormValues.teamHome.teamName} - {allFormValues.teamAway.teamName}
+                </Typography>
+                <Typography variant='body1'>
+                    {!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
+                        &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}
+                </Typography>
+                </Box>
+            </Box>
 
             <div id="table-box-outer">
                 <div id="table-box-outer-top">
@@ -357,13 +365,23 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify", subm
                 {/* Taulukko tulosten kirjaamiseksi */}
                 {makeTable()}
             </div>
-
+        </div>
+        </div>
+        </Box>
+        <Box display="flex" justifyContent="flex-end" marginTop="16px">
             {mode == 'modify' &&
-            <button type="submit">Lähetä</button>}
+            <Button type="submit" variant="contained" color="success">Lähetä</Button>}
+
+            {(mode == "verify") && 
+            <Box display="flex" gap="20px">
+                <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
+                <Button type="submit" variant="contained" color="success">Hyväksy</Button>
+            </Box>}
+        </Box>
+        {/* {JSON.stringify(allFormValues)} */}
+        {/* {`data: ${JSON.stringify(parseMatch("?", allFormValues))}`} */}
         </form>
-        </div>
-        </div>
-        </>
+        </Box>
     );
 }
 

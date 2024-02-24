@@ -310,7 +310,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
         await connection.beginTransaction();
         try {
             // Lisää tauluun ep_rafla:
-            let sql = `INSERT INTO ep_rafla (lyhenne, nimi, osoite, postosoite, kauposa, yhdhenk, yhdpuh) VALUES ?`
+            let sql = `INSERT INTO ep_rafla (lyhenne, nimi, osoite, postosoite, kauposa, yhdhenk, yhdpuh) VALUES ?`;
             let batch = data.raflat.map((rafla) => {
                 return [
                     rafla.lyhenne.slice(0, 3), 
@@ -326,7 +326,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_raflat batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_kausi:
-            sql = `INSERT INTO ep_kausi (vuosi, kausi, Laji) VALUES ?`
+            sql = `INSERT INTO ep_kausi (vuosi, kausi, Laji) VALUES ?`;
             batch = data.kaudet.map((kausi) => {
                 return [
                     kausi.vuosi, 
@@ -338,7 +338,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_kausi batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_lohko:
-            sql = `INSERT INTO ep_lohko (kausi, tunnus, selite) VALUES ?`
+            sql = `INSERT INTO ep_lohko (kausi, tunnus, selite) VALUES ?`;
             batch = data.lohkot.map((lohko) => {
                 return [
                     lohko.kausi+1, 
@@ -350,7 +350,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_lohko batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_joukkue:
-            sql = `INSERT INTO ep_joukkue (lyhenne, nimi, kausi, lohko, ravintola, yhdhenk, yhdpuh, kapt, kpuh, varakapt, vkpuh) VALUES ?`
+            sql = `INSERT INTO ep_joukkue (lyhenne, nimi, kausi, lohko, ravintola, yhdhenk, yhdpuh, kapt, kpuh, varakapt, vkpuh) VALUES ?`;
             batch = data.joukkueet.map((joukkue) => {
                 return [
                     joukkue.lyhenne.slice(0, 3),
@@ -370,7 +370,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_joukkue batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_sarjat:
-            sql = `INSERT INTO ep_sarjat (nimi, joukkue, lyhenne, lohko) VALUES ?`
+            sql = `INSERT INTO ep_sarjat (nimi, joukkue, lyhenne, lohko) VALUES ?`;
             batch = data.sarjat.map((sarja) => {
                 return [
                     sarja.nimi.slice(0, 15),
@@ -383,7 +383,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_sarjat batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_jasen:
-            sql = `INSERT INTO ep_jasen (jasenno, etunimi, suku, pelaaja) VALUES ?`
+            sql = `INSERT INTO ep_jasen (jasenno, etunimi, suku, pelaaja) VALUES ?`;
             batch = data.jasenet.map((jasen) => {
                 return [
                     jasen.jasenno,
@@ -396,7 +396,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_jasen batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_pelaaja:
-            sql = `INSERT INTO ep_pelaaja (nimi, joukkue, jasen, sukupuoli) VALUES ?`
+            sql = `INSERT INTO ep_pelaaja (nimi, joukkue, jasen, sukupuoli) VALUES ?`;
             batch = data.pelaajat.map((pelaaja) => {
                 return [
                     pelaaja.nimi.slice(0, 15),
@@ -409,7 +409,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_erat pelaaja n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_ottelu:
-            sql = `INSERT INTO ep_ottelu (lohko, paiva, koti, vieras, status) VALUES ?`
+            sql = `INSERT INTO ep_ottelu (lohko, paiva, koti, vieras, status) VALUES ?`;
             batch = data.ottelut.map((ottelu) => {
                 return [
                     ottelu.lohko+1,
@@ -423,7 +423,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_ottelu batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_peli:
-            sql = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES ?`
+            sql = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES ?`;
             batch = data.pelit.map((peli) => {
                 return [
                     peli.ottelu+1,
@@ -435,7 +435,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_peli batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_erat:
-            sql = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`
+            sql = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`;
             batch = data.erat.map((era) => {
                 return [
                     era.peli+1,

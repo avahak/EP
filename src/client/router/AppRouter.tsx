@@ -4,7 +4,7 @@
  * ennen tässä määriteltyjä reittejä.
  */
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import FileUpload from "../components/FileUpload";
 // import { Scoresheet } from '../components/Scoresheet';
 import { App } from '../components/App';
@@ -21,7 +21,7 @@ import { MUITest } from '../components/sandbox/MUITest';
 
 const AppRouter = () => {
     return (<>
-        <Router>
+        <BrowserRouter>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
                 <Route path="/report" element={<ResultSubmission />} />
@@ -42,7 +42,7 @@ const AppRouter = () => {
                 {/* Juuri */}
                 <Route path="/" element={<App />} />
             </Routes>
-        </Router>
+        </BrowserRouter>
     </>);
 }
 

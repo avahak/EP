@@ -1,3 +1,5 @@
+- await new Promise(r => setTimeout(r, 1000));
+
 - useEffect, etc. compare values in a shallow way so using complex objects as
   dependencies can lead to unintended activations. Use https://lodash.com/docs/4.17.15
   IsEqual or some other deep comparison or JSON.stringify to transform the object 
