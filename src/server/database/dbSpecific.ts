@@ -252,5 +252,18 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
     }
 }
 
+/**
+ * Lisää uuden pelaajan joukkueeseen.
+ * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
+ */
+async function AddPlayer(pool: mysql.Pool, params: Record<string, any>) {
+    if (!params.teamId || !params.name)
+        throw Error('Missing player info.');
+    const name = params.name.slice(0, 15);
+    const sex = (params.sex == 'M' || params.sex == 'N') ? params.sex : '-';
+    const query = `INSERT INTO ep_pelaaja (nimi, joukkue, sukupuoli) VALUES (?, ?, ?)`;
+    return myQuery(pool, query, [name, params.teamId, sex]);
+}
+
 export { getAllMatches, getMatchInfo, getMatchesToReport, getPlayersInTeam, getScores, 
-    getResultsTeams, getResultsPlayers, submitMatchResult }
+    getResultsTeams, getResultsPlayers, submitMatchResult, AddPlayer }

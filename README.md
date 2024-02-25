@@ -61,7 +61,7 @@ src/client/result_submit/ - Hakemisto tulosten ilmoittamisen sivulle
                 MatchChooser ja Scoresheet komponentteja.
         MatchChooser.tsx - Komponentti ottelun valintaan (koti/vieras) 
                 tulosten ilmoittamista varten.
-        MatchChooser.css - Tyylitiedosto MatchChooser.tsx käyttöön.
+        MatchChooser.css - (Ei enää käytössä) Tyylitiedosto MatchChooser.tsx käyttöön.
 
 src/client/machine_vision/ - Hakemisto konenäköön liittyville sivuille
         DrawHomography.tsx - Homografian piirtämiseen käytettävä komponentti  

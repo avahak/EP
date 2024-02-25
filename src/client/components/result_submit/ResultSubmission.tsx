@@ -58,7 +58,7 @@ const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 
 /**
  * Tulosten ilmoitussivu.
  */
-const ResultSubmission: React.FC = () => {
+const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const [result, setResult] = useState<ResultFields>({
         id: -1,
         oldStatus: 'T',
@@ -86,11 +86,13 @@ const ResultSubmission: React.FC = () => {
             });
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
-            setPageState("submit_success");
 
             // Haetaan data uudelleen esitettäväksi:
             const matchData = await fetchMatchData(result.id);
+
             setResult(matchData);
+            setPageState("submit_success");
+            console.log("matchData", matchData);
             setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
         } catch(error) {
             console.error('Error:', error);
@@ -151,7 +153,7 @@ const ResultSubmission: React.FC = () => {
         <Container maxWidth="sm">
         {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 
-            <MatchChooser userTeam={"FX1"} submitCallback={matchChooserCallback} />}
+            <MatchChooser userTeam={userTeam} submitCallback={matchChooserCallback} />}
 
         {/* Kotijoukkue kirjaa tulokset: */}
         {/* tai vierasjoukkue haluaa tehdä muutoksia tuloksiin: */}
@@ -186,6 +188,7 @@ const ResultSubmission: React.FC = () => {
             <Scoresheet initialValues={result} mode="display" />
         }
 
+        {/* Snackbar välittää viestejä käyttäjälle popup laatikossa */}
         <Snackbar
             anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             open={snackbarState.isOpen}

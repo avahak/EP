@@ -1,9 +1,10 @@
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
-import './MatchChooser.css';
+import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
+// import './MatchChooser.css';
+import { Box, Button, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
 
 type SelectionCategory = "" | "home" | "away" | "other";
 
@@ -34,13 +35,27 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
 
     const allFormValues = watch();
 
+    /**
+     * Palauttaa valitun ottelun tai null.
+     */
+    const getSelectedMatch = (category: string, index: number) => {
+        let selectedMatch = null;
+        if (category == 'home')
+            selectedMatch = homeMatches[index];
+        else if (category == 'away')
+            selectedMatch = awayMatches[index];
+        else if (category == 'other')
+            selectedMatch = otherMatches[index];
+        return selectedMatch;
+    }
+
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<any> = (data: FormFields) => {
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
         submitCallback({ match, date: data.date });
     }
 
-    // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
+    // Hakee ottelut tietokannasta
     const fetchMatches = async () => {
         try {
             const response = await serverFetch("/db/specific_query", {
@@ -65,28 +80,28 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     }, []);
 
     /**
-     * Palauttaa valitun ottelun tai null.
+     * Kutsutaan kun käyttäjä valitsee joukkueen.
      */
-    const getSelectedMatch = (category: string, index: number) => {
-        let selectedMatch = null;
-        if (category == 'home')
-            selectedMatch = homeMatches[index];
-        else if (category == 'away')
-            selectedMatch = awayMatches[index];
-        else if (category == 'other')
-            selectedMatch = otherMatches[index];
-        return selectedMatch;
-    }
+    // const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: SelectionCategory) => {
+    //     const index = parseInt(event.target.value);
+    //     const match = getSelectedMatch(category, index);
+    //     console.log("selected", event.target.value, "category", category, match);
+    //     setValue(`selectionCategory`, category);
+    //     setValue(`selectionIndex`, index);
+    //     setValue(`date`, match.date);
+    // };
 
     /**
      * Kutsutaan kun käyttäjä valitsee joukkueen.
      */
-    const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: SelectionCategory) => {
-        console.log("selected", event.target.value, "category", category);
+    const handleRadioChange = (_event: React.ChangeEvent<HTMLInputElement>, value: string) => {
+        const parts = value.split("-");
+        const category = parts[0] as SelectionCategory;
+        const index = parseInt(parts[1]);
+        const match = getSelectedMatch(category, index);
         setValue(`selectionCategory`, category);
-        const index = parseInt(event.target.value);
         setValue(`selectionIndex`, index);
-        setValue(`date`, dateToISOString(new Date(getSelectedMatch(category, index).date)));
+        setValue(`date`, match.date);
     };
 
     const homeMatches = matches.filter((match) => (match.home == userTeam) && (match.status == 'T'));
@@ -101,91 +116,87 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
 
     let selectedMatch = getSelectedMatch(allFormValues.selectionCategory, allFormValues.selectionIndex);
 
+    let selectedRadioButton = "";
+    if (allFormValues.selectionCategory == "home")
+        selectedRadioButton = `home-${allFormValues.selectionIndex}`;
+    else if (allFormValues.selectionCategory == "away")
+        selectedRadioButton = `away-${allFormValues.selectionIndex}`;
+    console.log("selectedRadioButton:", selectedRadioButton);
+
     return (
-        <>
-        &nbsp;Tällä sivulla oletetaan, että käyttäjä on kirjautuneena sisään pelaajana,
-        jonka joukkue on {userTeam}. (Sisäänkirjautumista ei ole vielä)
-        <div id="container">
-        <form onSubmit={handleSubmit(onSubmit)}>
-        <div id="formContainer">
-        <h1>Ilmoita tulos</h1>
-        <div className="selectDiv">
-            <label>
-            Omat kotiottelut:
-            </label>
-            {homeMatches.length == 0 ? "-" :
-            <select value={allFormValues.selectionCategory == 'home' ? allFormValues.selectionIndex : ''} 
-                    onChange={(event) => handleSelectMatch(event, 'home')}>
-                <option value="" disabled hidden>
-                    Valitse kotiottelu
-                </option>
-                {homeMatches.map((match, matchIndex) => (
-                    <option key={`home-${matchIndex}`} value={matchIndex}>
-                    {match.home}-{match.away}, {formatDate(match.date)}
-                </option>
-                ))}
-            </select>}
-        </div>
-        <div className="selectDiv">
-            <label>
-            Omat vierasottelut:
-            </label>
-            {awayMatches.length == 0 ? "-" :
-            <select value={allFormValues.selectionCategory == 'away' ? allFormValues.selectionIndex : ''} 
-                     onChange={(event) => handleSelectMatch(event, 'away')}>
-                <option value="" disabled hidden>
-                    Valitse vierasottelu
-                </option>
-                {awayMatches.map((match, matchIndex) => (
-                    <option key={`away-${matchIndex}`} value={matchIndex}>
-                    {match.home}-{match.away}, {formatDate(match.date)}
-                </option>
-                ))}
-            </select>}
-        </div>
-        {/* <div className="selectDiv">
-            <label>
-            Muut ottelut:
-            </label>
-            {otherMatches.length == 0 ? "-" :
-            <select value={allFormValues.selectionCategory == 'other' ? allFormValues.selectionIndex : ''} 
-                    onChange={(event) => handleSelectMatch(event, 'other')}>
-                <option value="" disabled hidden>
-                    Valitse muu ottelu
-                </option>
-                {otherMatches.map((match, matchIndex) => (
-                    <option key={`other-${matchIndex}`} value={matchIndex}>
-                    {match.home}-{match.away}, {formatDate(match.date)}
-                </option>
-                ))}
-            </select>}
-        </div> */}
+        <Box>
+            <form onSubmit={handleSubmit(onSubmit)}>
+            <Box sx={{ mb: 5 }}>
+                <Typography variant="h2" textAlign="center">Ilmoita tulos</Typography>
+            </Box>
+            <Grid container spacing={5}>
+            {/* <Box display="flex" justifyContent="center" gap="50px"> */}
+                <Grid item xs={12} sm={6}>
+                    <Paper style={{ padding: "10px" }} elevation={5}>
+                    <Typography variant="body1" textAlign="center" fontWeight="bold">Omat kotiottelut</Typography>
+                    <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {homeMatches.length > 0 ? (
+                    <RadioGroup value={selectedRadioButton} onChange={handleRadioChange}>
+                        {homeMatches.map((match, matchIndex) => (
+                        <FormControlLabel 
+                            key={`home-${matchIndex}`} 
+                            value={`home-${matchIndex}`} 
+                            control={<Radio />} 
+                            label={<Typography variant="body2" textAlign="center">{`${match.home} - ${match.away}, ${formatDate(match.date)}`}</Typography>}
+                        />
+                        ))}
+                    </RadioGroup>) 
+                    : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
+                    }
+                    </Box>
+                    </Paper>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <Paper style={{ padding: "10px" }} elevation={5}>
+                    <Typography variant="body1" textAlign="center" fontWeight="bold">Omat vierasottelut</Typography>
+                    <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {awayMatches.length > 0 ? (
+                    <RadioGroup value={selectedRadioButton} onChange={handleRadioChange}>
+                        {awayMatches.map((match, matchIndex) => (
+                        <FormControlLabel 
+                            key={`away-${matchIndex}`} 
+                            value={`away-${matchIndex}`} 
+                            control={<Radio />} 
+                            label={<Typography variant="body2" textAlign="center">{`${match.home} - ${match.away}, ${formatDate(match.date)}`}</Typography>}
+                        />
+                        ))}
+                    </RadioGroup>) 
+                    : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
+                    }
+                    </Box>
+                    </Paper>
 
-        {selectedMatch == null ? <></> :
-        <div className="selectionDiv">
-            <div>
-                <p className="selectedMatch">
-                {selectedMatch.home}-{selectedMatch.away}
-                </p>
-                <div className="dateDiv">
-                <label>Muuta päivämäärää tarvittaessa:</label>
-                {getDayOfWeekStrings(new Date(allFormValues.date)).long}
-                <input
-                    type="date"
-                    id="datePicker"
-                    name="datePicker"
-                    value={allFormValues.date}
-                    onChange={(event) => setValue("date", event.target.value)}
-                />
-                </div>
-            </div>
-            <button id="submitButton" type="submit">Valitse</button>
-        </div>}
-
-        </div>
-        </form>
-        </div>
-        </>
+                </Grid>
+            {/* </Box> */}
+            </Grid>
+            {selectedMatch && <>
+                <Box sx={{ mb: 1, mt: 5 }}>
+                    <Typography variant="h2" textAlign="center">{selectedMatch.home} - {selectedMatch.away}</Typography>
+                    <Box sx={{ mt:4 }}>
+                    <Typography textAlign="center" variant="body1">Muuta päivämäärää tarvittaessa:</Typography>
+                    <Box display="flex" gap="10px" justifyContent="center">
+                        <Typography variant="body1">{getDayOfWeekStrings(new Date(allFormValues.date)).long}</Typography>
+                        <input
+                            type="date"
+                            id="datePicker"
+                            name="datePicker"
+                            value={allFormValues.date}
+                            onChange={(event) => setValue("date", event.target.value)}
+                        />
+                    </Box>
+                    </Box>
+                </Box>
+                <Box display="flex" justifyContent="right">
+                    <Button variant="contained" type="submit">Valitse</Button>
+                </Box>
+            </>}
+            </form>
+        </Box>
     );
 }
 

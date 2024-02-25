@@ -24,7 +24,11 @@ const AppRouter = () => {
         <BrowserRouter>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
-                <Route path="/report" element={<ResultSubmission />} />
+                <Route path="/report_fx1" element={<ResultSubmission userTeam="FX1" />} />
+                <Route path="/report_aa1" element={<ResultSubmission userTeam="AA1" />} />
+                <Route path="/report_mg1" element={<ResultSubmission userTeam="MG1" />} />
+                <Route path="/report_kp1" element={<ResultSubmission userTeam="KP1" />} />
+                <Route path="/report_tp1" element={<ResultSubmission userTeam="TP1" />} />
                 <Route path="/results_teams" element={<DisplayResultsTeams />} />
                 <Route path="/results_players" element={<DisplayResultsPlayers />} />
 

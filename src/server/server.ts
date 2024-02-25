@@ -17,7 +17,7 @@ import multer from 'multer';
 import { createThumbnail } from './imageTools.js';
 import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo } from './database/dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './database/dbSpecific.js';
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä
 const KULUVA_KAUSI = 3;
@@ -276,7 +276,8 @@ const queryFunctions: Record<string, any> = {
     "get_results_teams": getResultsTeams,
     "get_results_players": getResultsPlayers,
     "get_scores": getScores,
-    "submit_match_result": submitMatchResult
+    "submit_match_result": submitMatchResult,
+    "add_player": AddPlayer,
 };
 
 /**

@@ -109,6 +109,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
     });
 
     const allFormValues = watch();
+    // console.log("initialValues", initialValues);
+    // console.log("allFormValues", allFormValues);
 
     useEffect(() => {
         console.log("Scoresheet useEffect called");
@@ -127,7 +129,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
     // Takaisinkutsufunktio AddPlayerModal varten:
     const handleAddPlayer = (player: Player, team: Team, slot: number) => {
         console.log("handleAddPlayer", player.name, team);
-        const isHome = (team == allFormValues.teamHome);
+        console.log("currentPlayerSlot", currentPlayerSlot);
+        const isHome = (team.teamRole == "home");
         // const baseTeam = isHome ? allFormValues.teamHome : allFormValues.teamAway;
         setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, player]);
         setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, player);
@@ -138,7 +141,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
 
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<FormFields> = (data) => {
-        if (submitCallback)
+        if (submitCallback) 
             submitCallback(data);
     }
 
@@ -186,7 +189,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
                 isOpen={isAddPlayerModalOpen}
                 team={currentPlayerSlot.team}
                 onClose={handleCloseAddPlayerModal}
-                onAddPlayer={(playerName) => handleAddPlayer(playerName, currentPlayerSlot.team, currentPlayerSlot.slot)}
+                onAddPlayer={(player) => handleAddPlayer(player, currentPlayerSlot.team, currentPlayerSlot.slot)}
             />
         </>);
     }

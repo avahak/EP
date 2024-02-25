@@ -13,7 +13,12 @@ const App = () => {
         <Container sx={{backgroundColor: (theme) => theme.palette.common.white}}>
             <div style={{padding: "2em"}}>
                 <Typography variant="h3">Sivut</Typography>
-                <Link to="/report">Ottelun ilmoitus</Link> 
+                Ilmoita tulos joukkueelle&nbsp;
+                <Link to="/report_fx1">FX1</Link>&nbsp;
+                <Link to="/report_aa1">AA1</Link>&nbsp;
+                <Link to="/report_mg1">MG1</Link>&nbsp;
+                <Link to="/report_kp1">KP1</Link>&nbsp;
+                <Link to="/report_tp1">TP1</Link> 
                 <br />
                 <Link to="/results_teams">Tuloksia joukkueille</Link> 
                 <br />

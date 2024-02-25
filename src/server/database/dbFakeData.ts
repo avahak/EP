@@ -14,7 +14,7 @@ import { dateToISOString, pickRandomDistinctElements } from "../../shared/genera
 function generate_raflat() {
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
-    const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG']];
+    const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     const raflat: any[] = [];
     names.forEach(([name, shortName]) => {
         const rafla = { 
@@ -75,7 +75,7 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
     const sarjat: any[] = [];
     lohkot.forEach((lohko) => {
         raflat.forEach((rafla) => {
-            let count = Math.round(6 * Math.random()**2);
+            let count = 1 + Math.round(5 * Math.random());
             for (let k = 1; k <= count; k++) {
                 const joukkue = {
                     index: joukkueet.length,
@@ -172,8 +172,8 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
     // käydään kaikki lohkot läpi:
     for (let [lohko, lohkonJoukkueet] of lohkoJoukkueMap.entries()) {
         const year = kaudet[lohkot[lohko].kausi].vuosi + 2004;
-        const startDate = new Date(`${year}-08-01`);
-        const endDate = new Date(`${year+1}-04-30`);
+        const startDate = new Date(`${year}-06-01`);
+        const endDate = new Date(`${year+1}-04-01`); 
         lohkonJoukkueet.forEach((koti) => {
             lohkonJoukkueet.forEach((vieras) => {
                 if (koti == vieras)
