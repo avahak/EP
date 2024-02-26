@@ -232,9 +232,13 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
             const query4 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`;
             await connection.query(query4, [rounds]);
 
+            // Muutetaan ottelun päivämäärä:
+            const query5 = `UPDATE ep_ottelu SET paiva = ? WHERE id = ?`;
+            await connection.query(query5, [match.date, match.id]);
+
             // Muutetaan ottelun status:
-            const query5 = `UPDATE ep_ottelu SET status = ? WHERE id = ?`;
-            await connection.query(query5, [match.newStatus, match.id]);
+            const query6 = `UPDATE ep_ottelu SET status = ? WHERE id = ?`;
+            await connection.query(query6, [match.newStatus, match.id]);
 
             await connection.commit();
             // await connection.rollback();

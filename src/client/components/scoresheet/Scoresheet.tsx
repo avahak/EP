@@ -168,10 +168,10 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
         console.log("handleSelectPlayer", event.target.value);
         const isHome = (team.teamRole == "home");
         if (event.target.value == "newPlayer") {
-            // Reset the selected value
+            // Tyhjennetään pelaajan valinta:
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);
             setCurrentPlayerSlot({team, slot});
-            console.log("newPlayer selected", slot);
+            console.log("newPlayer selected, slot: ", slot);
             handleOpenAddPlayerModal();
         } else {
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 

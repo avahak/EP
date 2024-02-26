@@ -61,6 +61,7 @@ function parseMatch(newStatus: string, match: any) {
         oldStatus: match.oldStatus,
         newStatus: newStatus,
         id: match.id, 
+        date: match.date,
         playersHome: match.teamHome.selectedPlayers.map((player: any) => player.id), 
         playersAway: match.teamAway.selectedPlayers.map((player: any) => player.id), 
         games, 

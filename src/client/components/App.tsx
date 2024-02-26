@@ -24,6 +24,8 @@ const App = () => {
                 <br />
                 <Link to="/results_players">Tuloksia pelaajille</Link> 
                 <br />
+                <Link to="/display_match">Näytä yksittäisen ottelun tulos</Link> 
+                <br />
             </div>
             <div style={{padding: "2em"}}>
                 <Typography variant="h6">Konenäkö</Typography>

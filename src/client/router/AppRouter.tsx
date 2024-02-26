@@ -18,6 +18,7 @@ import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsT
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
 import { TestResultTable } from '../components/ResultTable';
 import { MUITest } from '../components/sandbox/MUITest';
+import { DisplayScoresheet } from '../components/result_tables/DisplayScoresheet';
 
 const AppRouter = () => {
     return (<>
@@ -31,6 +32,7 @@ const AppRouter = () => {
                 <Route path="/report_tp1" element={<ResultSubmission userTeam="TP1" />} />
                 <Route path="/results_teams" element={<DisplayResultsTeams />} />
                 <Route path="/results_players" element={<DisplayResultsPlayers />} />
+                <Route path="/display_match" element={<DisplayScoresheet />} />
 
                 {/* Konenäkö */}
                 <Route path="/hough" element={<HoughDemo />} />
