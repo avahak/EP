@@ -166,7 +166,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
      */
     const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
         console.log("handleSelectPlayer", event.target.value);
-        const isHome = (team == allFormValues.teamHome);
+        const isHome = (team.teamRole == "home");
         if (event.target.value == "newPlayer") {
             // Reset the selected value
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);

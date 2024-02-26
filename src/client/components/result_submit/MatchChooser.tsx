@@ -1,3 +1,7 @@
+/**
+ * Komponentti ottelun valintaan (koti/vieras) tulosten ilmoittamista varten.
+ */
+
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
