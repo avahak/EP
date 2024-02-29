@@ -10,7 +10,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { Box } from '@mui/material';
-import { useSnackbar } from '../../utils/SnackbarContext';
+// import { useSnackbar } from '../../utils/SnackbarContext';
 
 type Player = {
     id: number;
