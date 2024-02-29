@@ -37,10 +37,10 @@ const thumbnailDirectory = `${baseUploadDirectory}/images/thumbnails`;
 const miscDirectory = `${baseUploadDirectory}/misc`;
 
 const _dirname = process.cwd();
-console.log(_dirname);
+const BASE_URL = process.env.BASE_URL || "";
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta
-app.use(express.static(path.join(_dirname, 'dist')));
+app.use(BASE_URL, express.static(path.join(_dirname, 'dist')));
 
 // Kaikki reitit käyttävät CORS-politiikkaa:
 app.use(cors());
@@ -80,7 +80,7 @@ const poolNoDatabase = mysql.createPool({
 /**
  * Reitti homografian testaukseen.
  */
-app.post('/api/homography', async (req: Request, res: Response) => {
+app.post(BASE_URL + '/api/homography', async (req: Request, res: Response) => {
     try {
         const imgPath1 = `${imageDirectory}/${req.body.imgName1}`;
         const imgPath2 = `${imageDirectory}/${req.body.imgName2}`;
@@ -105,7 +105,7 @@ app.post('/api/homography', async (req: Request, res: Response) => {
 /**
  * Reitti Hough-muunnoksen testaamiseksi.
  */
-app.post("/api/hough",  async (req: Request, res: Response) => {
+app.post(BASE_URL + "/api/hough",  async (req: Request, res: Response) => {
     try {
         console.log("req.body", req.body);
         const imgPath = `${imageDirectory}/${req.body.imgName}`;
@@ -128,7 +128,7 @@ app.post("/api/hough",  async (req: Request, res: Response) => {
  * Lataa tiedoston serverille. Jos tiedosto on kuva, muodostetaan myös
  * esikatselukuva ja tallennetaan molemmat.
  */
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+app.post(BASE_URL + '/api/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
     if (!file) {
         res.status(400).send('No file uploaded.');
@@ -168,7 +168,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 });
 
 // Palauttaa listan esikatselukuvista:
-app.get('/api/thumbnails', (_req, res) => {
+app.get(BASE_URL + '/api/thumbnails', (_req, res) => {
     try {
         if (!fs.existsSync(thumbnailDirectory))
             throw Error("No thumbnail directory");
@@ -201,16 +201,16 @@ const serveFile = (req: Request, res: Response, baseDirectory: string) => {
 };
 
 // Välitetään kuvia:
-app.get('/api/images/:filename', (req, res) => serveFile(req, res, imageDirectory));
+app.get(BASE_URL + '/api/images/:filename', (req, res) => serveFile(req, res, imageDirectory));
 // Välitetään esikatselukuvia:
-app.get('/api/thumbnails/:filename', (req, res) => serveFile(req, res, thumbnailDirectory));
+app.get(BASE_URL + '/api/thumbnails/:filename', (req, res) => serveFile(req, res, thumbnailDirectory));
 // Välitetään muita tiedostoja:
-app.get('/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory));
+app.get(BASE_URL + '/api/misc/:filename', (req, res) => serveFile(req, res, miscDirectory));
 
 /**
  * SQL-tietokannan testausta
 */
-app.get('/api/db/schema', async (_req, res) => {
+app.get(BASE_URL + '/api/db/schema', async (_req, res) => {
     console.log(new Date(), "/api/db/schema requested")
     try {
         const sqlFile1 = fs.readFileSync('src/server/database/testaus_ep_tables.sql', 'utf-8');
@@ -246,7 +246,7 @@ app.get('/api/db/schema', async (_req, res) => {
  * Sitten generoi ja lisää testidataa sen tauluihin.
  * HUOM: Poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
-app.get('/api/db/recreate/:stage', async (req, res) => {
+app.get(BASE_URL + '/api/db/recreate/:stage', async (req, res) => {
     if (process.env.ENVIRONMENT != 'LOCALHOST')
         return res.status(403).send("Database creation forbidden in this environment.");
     const stage = parseInt(req.params.stage);
@@ -285,7 +285,7 @@ const queryFunctions: Record<string, any> = {
  * Tätä reittiä käytetään tarjoamaan tietokannan spesifien kyselyiden 
  * (src/server/db/dbSpecific.ts) tuloksia.
  */
-app.post('/api/db/specific_query', async (req, res) => {
+app.post(BASE_URL + '/api/db/specific_query', async (req, res) => {
     const queryName = req.body.queryName;
     const params = req.body.params || {};
     params._current_kausi = KULUVA_KAUSI;

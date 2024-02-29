@@ -24,7 +24,7 @@ import { SnackbarProvider } from '../utils/SnackbarContext';
 const AppRouter = () => {
     return (<>
         <SnackbarProvider>
-        <BrowserRouter>
+        <BrowserRouter basename='/test'>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
                 <Route path="/report_fx1" element={<ResultSubmission userTeam="FX1" />} />
