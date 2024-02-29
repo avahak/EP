@@ -25,7 +25,7 @@ const CustomTableCell = styled(TableCell)({
     paddingLeft: "2px",
     paddingRight: "2px",
     minWidth: "40px",
-    maxWidth: "100px",
+    maxWidth: "75px",
     overflow: "hidden",
 });
 
