@@ -117,7 +117,8 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
         newResults[playerIndex][round] = result;
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
-        setCurrentRound(round+1);
+        if (result != " ")
+            setCurrentRound(round+1);
         setErrorMessage("");
     }
 

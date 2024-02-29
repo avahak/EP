@@ -8,6 +8,7 @@ import { useState } from "react";
 import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
 
 const CustomTableCell = styled(TableCell)({
+    border: '1px solid black',
     padding: 0,
 });
 
