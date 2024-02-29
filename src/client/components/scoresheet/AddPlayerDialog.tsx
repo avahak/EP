@@ -1,5 +1,5 @@
 /** 
- * AddPlayerModal on dialog ikkuna, joka avataan Scoresheet päälle
+ * AddPlayerDialog on dialog ikkuna, joka avataan Scoresheet päälle
  * pelaajan lisäämiseksi joukkueeseen.
  */
 
@@ -12,7 +12,8 @@ import TextField from '@mui/material/TextField';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { serverFetch } from '../../utils/apiUtils';
-import { Alert, Box, FormControl, InputLabel, MenuItem, Select, Snackbar } from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { useSnackbar } from '../../utils/SnackbarContext';
 
 type Player = {
     id: number;
@@ -27,7 +28,7 @@ type Team = {
     selectedPlayers: (Player | null)[];
 };
 
-type AddPlayerModalProps = {
+type AddPlayerDialogProps = {
     isOpen: boolean;
     team: Team;
     onClose: () => void;
@@ -36,10 +37,11 @@ type AddPlayerModalProps = {
 
 type Sex = "-" | "M" | "N";
 
-const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
+const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
     const [newPlayerName, setNewPlayerName] = useState<string>('');
     const [newPlayerSex, setNewPlayerSex] = useState<Sex>('-');
-    const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
+    // const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
+    const setSnackbarState = useSnackbar();
 
     /**
      * Lisää uuden pelaajan tietokantaan.
@@ -63,11 +65,11 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, 
 
             console.log("jsonData.rows", jsonData.rows);
 
-            setSnackbarState({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.teamName}.`, severity: "success" });
+            setSnackbarState?.({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.teamName}.`, severity: "success" });
             return jsonData.rows.insertId;
         } catch(error) {
             console.error('Error:', error);
-            setSnackbarState({ isOpen: true, message: "Pelaajan lisäys epäonnistui.", severity: "error" });
+            setSnackbarState?.({ isOpen: true, message: "Pelaajan lisäys epäonnistui.", severity: "error" });
             return -1;
         }
     };
@@ -135,26 +137,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, team, onClose, 
                 </Button>
             </DialogActions>
         </Dialog>
-
-        {/* Snackbar ilmoittaa pelaajan lisäyksen onnistumisesta: */}
-        <Snackbar
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            open={snackbarState.isOpen}
-            autoHideDuration={3000}
-            onClose={() => setSnackbarState({ isOpen: false })}
-            message="Lomakkeen lähetys epäonnistui, tarkista lomake."
-        >
-            <Alert
-                onClose={() => setSnackbarState({ isOpen: false })}
-                severity={snackbarState.severity}
-                variant="filled"
-                sx={{ width: '100%' }}
-            >
-                {snackbarState.message}
-            </Alert>
-        </Snackbar>
         </>
     );
 };
 
-export default AddPlayerModal;
+export default AddPlayerDialog;

@@ -36,10 +36,11 @@ const imageDirectory = `${baseUploadDirectory}/images`;
 const thumbnailDirectory = `${baseUploadDirectory}/images/thumbnails`;
 const miscDirectory = `${baseUploadDirectory}/misc`;
 
-const __dirname = process.cwd();
+const _dirname = process.cwd();
+console.log(_dirname);
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(_dirname, 'dist')));
 
 // Kaikki reitit käyttävät CORS-politiikkaa:
 app.use(cors());
@@ -307,7 +308,7 @@ app.post('/api/db/specific_query', async (req, res) => {
  */
 app.get('*', (_req, res) => {
     console.log("*:", _req.url);
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(_dirname, 'dist', 'index.html'));
 });
 
 // Käynnistetään express.js serveri:

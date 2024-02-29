@@ -1,11 +1,7 @@
 /**
- * Sivu tulosten ilmoittamiseksi. Ensin valitaan ottelu käyttäen 
- * MatchChooser komponenttia. Jos kyseessä on kotiottelu niin esitetään
- * Scoresheet (mode='modify') täytettäväksi ja vierasottelun tapauksessa
- * esitetään Scoresheet (mode='verify') hyväksyttäväksi.
+ * Esittää yhden ottelun pöytäkirjan.
  */
 
-// import { Scoresheet } from "./Scoresheet";
 import { useEffect, useState } from "react";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { Container } from "@mui/material";
@@ -34,9 +30,6 @@ type ResultFields = null | {
     scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
 };
 
-/**
- * Tulosten ilmoitussivu.
- */
 const DisplayScoresheet: React.FC = () => {
     const [result, setResult] = useState<ResultFields>(null);
 

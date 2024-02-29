@@ -1,3 +1,6 @@
+- SSE: https://medium.com/tokopedia-engineering/implementing-server-sent-events-in-reactjs-c36661d89468
+
+
 - await new Promise(r => setTimeout(r, 1000));
 
 - useEffect, etc. compare values in a shallow way so using complex objects as

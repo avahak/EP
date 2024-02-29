@@ -8,16 +8,13 @@
  */
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
-import { ScoreTable } from "./ScoreTable";
-import AddPlayerModal from './AddPlayerModal';
+import { ResultTable } from "./ResultTable";
+import AddPlayerDialog from './AddPlayerDialog';
 import { getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 // import { parseMatch } from '../../../shared/parseMatch';
-import './Scoresheet.css';
-
-// Erän mahdolliset lopputulokset pelaajalle:
-const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
-const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
+import { TeamSelection } from "./TeamSelection";
+import { ScoreTable } from "./ScoreTable";
 
 type Player = {
     id: number;
@@ -48,6 +45,8 @@ const emptyTeam: Team = {
     allPlayers: [],
     selectedPlayers: [null, null, null],
 };
+
+type ScoresheetMode = "modify" | "verify" | "display";
 
 /**
  * Laskee juoksevan tuloksen "runningScore" ja voitettujen erien lukumäärän "roundWins"
@@ -83,60 +82,50 @@ const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], 
 }
 
 /**
- * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
- */
-const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
-    const player = players[index];
-    if (!!player)
-        return player.name;
-    return `${defaultName} ${index+1}`;
-}
-
-/**
  * React komponentti tuloslomakkeelle.
  * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "display", submitCallback?: (data: FormFields) => void, rejectCallback?: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
-    // isAddPlayerModalOpen seuraa onko modaali pelaajan lisäämiseksi auki:
-    const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
+const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: FormFields) => void, rejectCallback?: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
+    // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
+    const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
     // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
     // uusi pelaaja lisätään modaalin avulla:
     const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
     // Lomakkeen kenttien tila:
-    const { register, setValue, handleSubmit, watch } = useForm<FormFields>({
+    const { setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: initialValues
     });
 
-    const allFormValues = watch();
+    const formFields = watch();
     // console.log("initialValues", initialValues);
-    // console.log("allFormValues", allFormValues);
+    // console.log("formFields", formFields);
 
     useEffect(() => {
         console.log("Scoresheet useEffect called");
     }, []);
 
-    // avaa AddPlayerModal
-    const handleOpenAddPlayerModal = () => {
-        setIsAddPlayerModalOpen(true);
+    // avaa AddPlayerDialog
+    const handleOpenAddPlayerDialog = () => {
+        setIsAddPlayerDialogOpen(true);
     }
 
-    // sulkee AddPlayerModal
-    const handleCloseAddPlayerModal = () => {
-        setIsAddPlayerModalOpen(false);
+    // sulkee AddPlayerDialog
+    const handleCloseAddPlayerDialog = () => {
+        setIsAddPlayerDialogOpen(false);
     }
 
-    // Takaisinkutsufunktio AddPlayerModal varten:
+    // Takaisinkutsufunktio AddPlayerDialog varten:
     const handleAddPlayer = (player: Player, team: Team, slot: number) => {
         console.log("handleAddPlayer", player.name, team);
         console.log("currentPlayerSlot", currentPlayerSlot);
         const isHome = (team.teamRole == "home");
-        // const baseTeam = isHome ? allFormValues.teamHome : allFormValues.teamAway;
+        // const baseTeam = isHome ? formFields.teamHome : formFields.teamAway;
         setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, player]);
         setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, player);
         console.log("handleAddPlayer isHome", isHome);
-        console.log("handleAddPlayer allPlayers", isHome ? allFormValues.teamHome.allPlayers : allFormValues.teamAway.allPlayers);
-        console.log("handleAddPlayer selectedPlayers", isHome ? allFormValues.teamHome.selectedPlayers : allFormValues.teamAway.selectedPlayers);
+        console.log("handleAddPlayer allPlayers", isHome ? formFields.teamHome.allPlayers : formFields.teamAway.allPlayers);
+        console.log("handleAddPlayer selectedPlayers", isHome ? formFields.teamHome.selectedPlayers : formFields.teamAway.selectedPlayers);
     } 
 
     // Funktio, joka kutsutaan kun lomake lähetetään:
@@ -145,14 +134,14 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
             submitCallback(data);
     }
 
-    const { runningScore, roundWins } = computeDerivedStats(allFormValues.scores);
+    const { runningScore, roundWins } = computeDerivedStats(formFields.scores);
 
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
      */
     const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
         const selectValue = event.target.value;
-        const updatedScores = [...allFormValues.scores];
+        const updatedScores = [...formFields.scores];
         updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
         // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
         if (selectValue !== " ")
@@ -164,225 +153,93 @@ const Scoresheet: React.FC<{ initialValues: any, mode: "modify" | "verify" | "di
      * Kutsutaan kun käyttäjä valitsee pelaajan. Jos pelaaja on "newPlayer", 
      * avataan modaali pelaajan lisäämiseksi.
      */
-    const handleSelectPlayer = (event: React.ChangeEvent<HTMLSelectElement>, team: Team, slot: number) => {
-        console.log("handleSelectPlayer", event.target.value);
+    const handleSelectPlayer = (event: SelectChangeEvent<any>, team: Team, slot: number) => {
+        const value = event.target.value;
+        event.target.value = "";
+        console.log("handleSelectPlayer", value);
         const isHome = (team.teamRole == "home");
-        if (event.target.value == "newPlayer") {
+        if (value == "newPlayer") {
             // Tyhjennetään pelaajan valinta:
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);
             setCurrentPlayerSlot({team, slot});
             console.log("newPlayer selected, slot: ", slot);
-            handleOpenAddPlayerModal();
+            handleOpenAddPlayerDialog();
         } else {
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 
-                team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(event.target.value))]);
+                team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(value))]);
         }
-    };
-
-    /**
-     * Luo modaalin pelaajan lisäämiseksi.
-     */
-    const createAddPlayerModal = () => {
-        return (<>
-            {/* Render the AddPlayerModal */}
-            <AddPlayerModal
-                isOpen={isAddPlayerModalOpen}
-                team={currentPlayerSlot.team}
-                onClose={handleCloseAddPlayerModal}
-                onAddPlayer={(player) => handleAddPlayer(player, currentPlayerSlot.team, currentPlayerSlot.slot)}
-            />
-        </>);
-    }
-
-    /**
-     * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
-     * ja pelaajien valintaan käytettävät select-elementit.
-     */
-    const teamSelection = (teamRole: "home" | "away") => {
-        const team = (teamRole == "home") ? allFormValues.teamHome! : allFormValues.teamAway!;
-        // const teamString = (teamRole == "home") ? "teamHome" : "teamAway";
-        const teamText = (teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
-        const defaultOptionText = (teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
-        console.log("team", team);
-        return (<>
-        <div className="team-select-container">
-            {/* Joukkuen nimi */}
-            <label className="team-label">{teamText}&nbsp;
-            {!!team.teamName ? team.teamName : "-"}
-            </label>
-
-            {/* Joukkueen pelaajat */}
-            {mode == "modify" ? <>
-            {[0, 1, 2].map((playerIndex) => (
-                <React.Fragment key={`player-${playerIndex}`}>
-                <select disabled={!team.teamName}
-                        value={team.selectedPlayers[playerIndex]?.id ?? ''} 
-                        // {...register(`${teamString}.selectedPlayers.${playerIndex}.id` as const)}
-                        onChange={(event) => {
-                            // if React Hook Form implements onChange, run it: 
-                            // if (register(`${teamString}.selectedPlayers.${playerIndex}.id`).onChange)
-                            //     register(`${teamString}.selectedPlayers.${playerIndex}.id`).onChange(event);
-                            handleSelectPlayer(event, team, playerIndex);
-                        }}>
-                    <option value="" disabled hidden>
-                        {`${defaultOptionText} ${playerIndex+1}`}
-                    </option>
-                    {team.allPlayers.map((playerOption, playerOptionIndex) => (
-                        <option 
-                            value={playerOption?.id ?? ''}
-                            disabled={(playerOption?.id != team.selectedPlayers[playerIndex]?.id) && (team.selectedPlayers.map((player) => player?.id).includes(playerOption?.id))}
-                            key={`player-option-${playerOptionIndex}`}>
-                            {playerOption?.name ?? ''}
-                        </option>
-                    ))}
-                    <option value="newPlayer">
-                        Lisää uusi pelaaja
-                    </option>
-                </select>
-                </React.Fragment>))} </>
-                : <>
-                {[0, 1, 2].map((playerIndex) => (
-                    <label key={`label-${playerIndex}`}>{playerIndex+1}. {team.selectedPlayers[playerIndex]?.name ?? ''}</label>
-                ))}
-                </> }
-        </div>
-        </>)
-    };
-
-    /**
-     * Luo taulukon (html table) erien tulosten kirjaamiseksi.
-     */
-    const makeTable = () => {
-        return (
-        <div id="table-box">
-        <table className="game-table">
-        <thead>
-            <tr>
-            <th>Peli</th>
-            <th className="table-head-2">Pelaajan nimi</th>
-            <th>1.</th>
-            <th>2.</th>
-            <th>3.</th>
-            <th>4.</th>
-            <th>5.</th>
-            <th>Voitot</th>
-            <th>Tilanne<br />K - V</th>
-            </tr>
-        </thead>
-        <tbody>
-            {allFormValues.scores.map((_game, gameIndex) => (
-            Array.from({ length: 2 }, (_, playerIndex) => (
-                <tr key={`row-${gameIndex}-${playerIndex}`}>
-                {/* Peli */}
-                {playerIndex == 0 &&
-                    <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
-                        {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
-                    </td>}
-
-                {/* Pelaaja */}
-                <td className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
-                    {playerIndex == 0 ? 
-                        playerName(allFormValues.teamHome.selectedPlayers, gameIndex % 3, "Kotipelaaja")
-                        : playerName(allFormValues.teamAway.selectedPlayers, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}
-                </td>
-
-                {/* Erätulokset */}
-                {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
-                    <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                    <select className={allFormValues.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
-                        {...register(
-                        `scores.${gameIndex}.${playerIndex}.${roundIndex}` as const
-                        )}
-                        onChange={(event) => handleSelectOutcome(event, gameIndex, playerIndex, roundIndex)}
-                    >
-                        {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
-                        <option key={outcomeIndex} value={outcome}>
-                            {outcome}
-                        </option>
-                        ))}
-                    </select>
-                    </td>
-                )) : Array.from({ length: 5 }, (_, roundIndex) => (
-                    <td className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                    <div style={{width: '25px', textAlign: 'center'}}>{allFormValues.scores[gameIndex][playerIndex][roundIndex]}</div>
-                    </td>
-                ))}
-
-                {/* Voitot */}
-                <td className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
-                    {roundWins[gameIndex][playerIndex]}
-                </td>
-
-                {/* Tilanne */}
-                {playerIndex == 0 ? 
-                <td rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
-                    {runningScore[gameIndex][0] >= 0 ? 
-                    `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
-                    : " - "}
-                </td>
-                : <></>}
-
-                </tr>))
-            ))}
-        </tbody>
-        </table>
-        </div>);
     };
 
     return (
         <Box>
         <form onSubmit={handleSubmit(onSubmit)}>
         <Box>
-            {createAddPlayerModal()}
-            <div id="my_container">
-            <div id="scoresheet">
+            {/* Lisätään dialog pelaajan lisäämiseksi  */}
+            <AddPlayerDialog
+                isOpen={isAddPlayerDialogOpen}
+                team={currentPlayerSlot.team}
+                onClose={handleCloseAddPlayerDialog}
+                onAddPlayer={(player) => handleAddPlayer(player, currentPlayerSlot.team, currentPlayerSlot.slot)}
+            />
+            
             {/* Ottelu ja päivämäärä */}
             <Box display="flex" justifyContent="center" marginBottom="20px">
                 <Box textAlign="center">
                 <Typography variant='h4'>
-                    {allFormValues.teamHome.teamName} - {allFormValues.teamAway.teamName}
+                    {formFields.teamHome.teamName} - {formFields.teamAway.teamName}
                 </Typography>
                 <Typography variant='body1'>
-                    {!allFormValues.date ? "" : getDayOfWeekStrings(new Date(allFormValues.date)).long}
-                        &nbsp;{toDDMMYYYY(new Date(allFormValues.date))}
+                    {!formFields.date ? "" : getDayOfWeekStrings(new Date(formFields.date)).long}
+                        &nbsp;{toDDMMYYYY(new Date(formFields.date))}
                 </Typography>
                 </Box>
             </Box>
 
-            <div id="table-box-outer">
-                <div id="table-box-outer-top">
-                    <div style={{display: 'flex', flexDirection: 'column'}}>
-                        {/* Kotijoukkueen nimi ja pelaajat */}
-                        {teamSelection("home")}
 
-                        {/* Vierasjoukkueen nimi ja pelaajat */}
-                        {teamSelection("away")}
-                    </div>
+            <Box>
+                <Grid container spacing={5}>
+                    {/* Kotijoukkueen nimi ja pelaajat */}
+                    <Grid item xs={12} sm={6}>
+                        {<TeamSelection mode={mode} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
+                    </Grid>
+                    {/* Vierasjoukkueen nimi ja pelaajat */}
+                    <Grid item xs={12} sm={6}>
+                        {<TeamSelection mode={mode} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
+                    </Grid>
+                </Grid>
+            </Box>
 
-                    {/* Tuloslaatikko */}
-                    <div className="score-table">
-                        <ScoreTable roundWins={roundWins} playersHome={allFormValues.teamHome.selectedPlayers} playersAway={allFormValues.teamAway.selectedPlayers}></ScoreTable>
-                    </div>
-                </div>
+            {/* Tuloslaatikko */}
+            {mode != "modify" &&
+                <ResultTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></ResultTable>
+            }
 
-                {/* Taulukko tulosten kirjaamiseksi */}
-                {makeTable()}
-            </div>
-        </div>
-        </div>
+            <ScoreTable mode={mode} formFields={formFields} handleSelectOutcome={handleSelectOutcome} runningScore={runningScore} roundWins={roundWins}></ScoreTable>
         </Box>
-        <Box display="flex" justifyContent="flex-end" marginTop="16px">
-            {mode == 'modify' &&
-            <Button type="submit" variant="contained" color="success">Lähetä</Button>}
+        {mode == "modify" &&
+            <ResultTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></ResultTable>
+        }
+        {/* Tuloslaatikko */}
+        <Box display="flex" justifyContent="space-between" marginTop="16px">
+            <Box>
+            </Box>
+            <Box display="flex" flexDirection="column" sx={{p: 1}}>
+                <Box flexGrow={1}>
+                </Box>
+                <Box>
+                {mode == 'modify' &&
+                <Button type="submit" variant="contained" color="success">Lähetä</Button>}
 
-            {(mode == "verify") && 
-            <Box display="flex" gap="20px">
-                <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
-                <Button type="submit" variant="contained" color="success">Hyväksy</Button>
-            </Box>}
-        </Box>
-        {/* {JSON.stringify(allFormValues)} */}
-        {/* {`data: ${JSON.stringify(parseMatch("?", allFormValues))}`} */}
+                {(mode == "verify") && 
+                <Box display="flex" gap="20px">
+                    <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
+                    <Button type="submit" variant="contained" color="success">Hyväksy</Button>
+                </Box>}
+                </Box>
+            </Box>
+         </Box>
+        {/* {JSON.stringify(formFields)} */}
+        {/* {`data: ${JSON.stringify(parseMatch("?", formFields))}`} */}
         </form>
         </Box>
     );

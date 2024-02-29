@@ -1,59 +1,155 @@
-import "./ScoreTable.css";
+/**
+ * ScoreTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
+ */
+
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material"
+import GameDialog from "./GameDialog";
+import { useState } from "react";
+// import './Scoresheet.css';
+
+const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
+// Erän mahdolliset lopputulokset pelaajalle:
+const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 
 type Player = {
     id: number;
     name: string;
 };
 
-/**
- * Yksi laatikko pelin lopputuloksen esittämiseksi. Tässä on kummankin
- * pelaajan voittamien pelien määrät (left, right).
- */
-const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) => {
-    const textLeft = left.toString();
-    const textRight = right.toString();
-    return (
-        <div className="diagonal-box">
-            <span className="left-text">{textLeft}</span>
-            <span className="right-text">{textRight}</span>
-            <span className="diagonal-line"></span>
-        </div>
-    );
+type Team = {
+    id: number;
+    teamName: string;
+    teamRole: "home" | "away";
+    allPlayers: (Player | null)[];
+    selectedPlayers: (Player | null)[];
+};
+
+type FormFields = {
+    id: number;
+    oldStatus: string;
+    teamHome: Team;
+    teamAway: Team;
+    date: string;
+    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
+};
+
+type ScoresheetMode = "modify" | "verify" | "display";
+
+type ScoreTableProps = {
+    mode: ScoresheetMode;
+    formFields: FormFields;
+    handleSelectOutcome: (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => void;
+    runningScore: number[][];
+    roundWins: number[][];
 }
 
 /**
- * Laatikko pelaajan nimelle.
+ * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
  */
-const NameBox: React.FC<{ text: string; orientation: "horizontal" | "vertical" }> = ({text, orientation}) => {
-    return (
-        <div className={`underline-box ${orientation == "vertical" ? orientation : ""}`}>
-            <div className="text-box">{ text }</div>
-        </div>
-    );
+const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
+    const player = players[index];
+    if (!!player)
+        return player.name;
+    return `${defaultName} ${index+1}`;
 }
 
-/**
- * ScoreTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
- * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
- * pöytäkirjassa.
- */
-const ScoreTable: React.FC<{ roundWins: number[][]; playersHome: (Player | null)[]; playersAway: (Player | null)[] }> = ({roundWins, playersHome, playersAway}) => {
+const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectOutcome, roundWins, runningScore }) => {
+    const [gameDialogOpen, setGameDialogOpen] = useState<boolean>(false);
+
+    const onModifyGame = () => {
+        setGameDialogOpen(false);
+    }
+
     return (
-        <div className="result-box">
-            <>
-            <div></div>
-            {[0, 1, 2].map((col) => (
-                <NameBox key={`name-box-top-${col}`} text={playersAway[col]?.name ?? ''} orientation="vertical"></NameBox>
+    // <div id="table-box">
+    <>
+    <Box>
+    <Table className="game-table">
+    <TableHead>
+        <TableRow>
+        {/* <th>Peli</th> */}
+        <TableCell className="table-head-2">Pelaajan nimi</TableCell>
+        <TableCell>1.</TableCell>
+        <TableCell>2.</TableCell>
+        <TableCell>3.</TableCell>
+        <TableCell>4.</TableCell>
+        <TableCell>5.</TableCell>
+        <TableCell>Voitot</TableCell>
+        <TableCell>Tilanne<br />K - V</TableCell>
+        </TableRow>
+    </TableHead>
+    <TableBody>
+        {formFields.scores.map((_game, gameIndex) => (
+        Array.from({ length: 2 }, (_, playerIndex) => (
+            <TableRow key={`row-${gameIndex}-${playerIndex}`} onClick={() => setGameDialogOpen(true)}>
+            {/* Peli */}
+            {/* {playerIndex == 0 &&
+                <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
+                    {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
+                </td>} */}
+
+            {/* Pelaaja */}
+            <TableCell className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
+                {playerIndex == 0 ? 
+                    <Box display="flex">
+                        {/* <Typography paddingX="5px" variant="body1">{gameIndex % 3 + 1}.</Typography> */}
+                        <Box flexGrow="1" display="flex" justifyContent="center">
+                            <Typography variant="body1">{playerName(formFields.teamHome.selectedPlayers, gameIndex % 3, "Kotipelaaja")}</Typography>
+                        </Box>
+                    </Box>
+                    : 
+                    <>
+                    <Box display="flex">
+                        {/* <Typography paddingX="5px" variant="body1">{(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}.</Typography> */}
+                        <Box flexGrow="1" display="flex" justifyContent="center">
+                            <Typography variant="body1">{playerName(formFields.teamAway.selectedPlayers, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}</Typography>
+                        </Box>
+                    </Box>
+                    </>}
+            </TableCell>
+
+            {/* Erätulokset */}
+            {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
+                <TableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                <select className={formFields.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
+                    value={formFields.scores[gameIndex][playerIndex][roundIndex]}
+                    onChange={(event) => handleSelectOutcome(event, gameIndex, playerIndex, roundIndex)}
+                >
+                    {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
+                    <option key={outcomeIndex} value={outcome}>
+                        {outcome}
+                    </option>
+                    ))}
+                </select>
+                </TableCell>
+            )) : Array.from({ length: 5 }, (_, roundIndex) => (
+                <TableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                <div style={{width: '25px', textAlign: 'center'}}>{formFields.scores[gameIndex][playerIndex][roundIndex]}</div>
+                </TableCell>
             ))}
-            
-            {[0, 1, 2].map((row) => [
-                <NameBox key={`name-box-${row}`} text={playersHome[row]?.name ?? ''} orientation="horizontal"></NameBox>,
-                [0, 1, 2].map((col) => (
-                    <DiagonalSplitBox key={`dg-box-${row}-${col}`} left={roundWins[(9-row*2+col*3) % 9][0]} right={roundWins[(9-row*2+col*3) % 9][1]} />
-                )),
-                ])}
-            </>
-        </div>);
-}
 
-export { DiagonalSplitBox, NameBox, ScoreTable };
+            {/* Voitot */}
+            <TableCell className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+                {roundWins[gameIndex][playerIndex]}
+            </TableCell>
+
+            {/* Tilanne */}
+            {playerIndex == 0 ? 
+            <TableCell rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
+                {runningScore[gameIndex][0] >= 0 ? 
+                `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
+                : " - "}
+            </TableCell>
+            : <></>}
+
+            </TableRow>))
+        ))}
+    </TableBody>
+    </Table>
+    </Box>
+
+    <GameDialog isOpen={gameDialogOpen} formFields={formFields} onClose={onModifyGame} />
+    </>
+)};
+
+export { ScoreTable };

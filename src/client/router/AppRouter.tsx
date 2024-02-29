@@ -19,9 +19,11 @@ import { DisplayResultsPlayers } from '../components/result_tables/DisplayResult
 import { TestResultTable } from '../components/ResultTable';
 import { MUITest } from '../components/sandbox/MUITest';
 import { DisplayScoresheet } from '../components/result_tables/DisplayScoresheet';
+import { SnackbarProvider } from '../utils/SnackbarContext';
 
 const AppRouter = () => {
     return (<>
+        <SnackbarProvider>
         <BrowserRouter>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
@@ -49,6 +51,7 @@ const AppRouter = () => {
                 <Route path="/" element={<App />} />
             </Routes>
         </BrowserRouter>
+        </SnackbarProvider>
     </>);
 }
 

@@ -10,10 +10,11 @@ import { useState } from "react";
 import { MatchChooser } from "./MatchChooser";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { serverFetch } from "../../utils/apiUtils";
-import { Alert, Backdrop, Box, CircularProgress, Container, Snackbar, Typography } from "@mui/material";
+import { Backdrop, Box, CircularProgress, Container, Typography } from "@mui/material";
 import { parseMatch } from "../../../shared/parseMatch";
 import { fetchMatchData } from "../../utils/matchLoader";
 import { Link } from "react-router-dom";
+import { useSnackbar } from "../../utils/SnackbarContext";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
@@ -68,7 +69,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         scores: [...scoresDefaultValue],
     });
     const [pageState, setPageState] = useState<PageState>("choose_match");
-    const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
+    const setSnackbarState = useSnackbar();
 
     /**
      * Hakee pelaajat joukkueeseen sen lyhenteen perusteella.
@@ -93,12 +94,12 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
             setResult(matchData);
             setPageState("submit_success");
             console.log("matchData", matchData);
-            setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
+            setSnackbarState?.({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
         } catch(error) {
             console.error('Error:', error);
             setPageState(oldPageState);
 
-            setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", severity: "error" });
+            setSnackbarState?.({ isOpen: true, message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", severity: "error" });
         }
     };
 
@@ -187,26 +188,6 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         {pageState == "submit_success" && 
             <Scoresheet initialValues={result} mode="display" />
         }
-
-        {/* Snackbar välittää viestejä käyttäjälle popup laatikossa */}
-        <Snackbar
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            open={snackbarState.isOpen}
-            autoHideDuration={5000}
-            onClose={() => setSnackbarState({ isOpen: false })}
-            message="Lomakkeen lähetys epäonnistui, tarkista lomake."
-        >
-            <Alert
-                onClose={() => setSnackbarState({ isOpen: false })}
-                // severity="success"
-                severity={snackbarState.severity}
-                variant="filled"
-                sx={{ width: '100%' }}
-            >
-                {snackbarState.message}
-            </Alert>
-        </Snackbar>
-
 
         </Container>
         </>
