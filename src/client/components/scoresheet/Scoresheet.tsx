@@ -8,13 +8,13 @@
  */
 import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
-import { ResultTable } from "./ResultTable";
+import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
 import { getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 // import { parseMatch } from '../../../shared/parseMatch';
 import { TeamSelection } from "./TeamSelection";
-import { ScoreTable } from "./ScoreTable";
+import { RoundResultsTable } from "./RoundResultsTable";
 
 type Player = {
     id: number;
@@ -139,13 +139,22 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
      */
-    const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
-        const selectValue = event.target.value;
+    // const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
+    //     const selectValue = event.target.value;
+    //     const updatedScores = [...formFields.scores];
+    //     updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
+    //     // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
+    //     if (selectValue !== " ")
+    //         updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
+    //     setValue('scores', updatedScores);
+    // };
+
+    /**
+     * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
+     */
+    const handleGameDialogSubmit = (gameIndex: number, results: string[][]) => {
         const updatedScores = [...formFields.scores];
-        updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
-        // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
-        if (selectValue !== " ")
-            updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
+        updatedScores[gameIndex] = [...results];
         setValue('scores', updatedScores);
     };
 
@@ -211,13 +220,13 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
 
             {/* Tuloslaatikko */}
             {mode != "modify" &&
-                <ResultTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></ResultTable>
+                <GameResultsTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
             }
 
-            <ScoreTable mode={mode} formFields={formFields} handleSelectOutcome={handleSelectOutcome} runningScore={runningScore} roundWins={roundWins}></ScoreTable>
+            <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} runningScore={runningScore} roundWins={roundWins}></RoundResultsTable>
         </Box>
         {mode == "modify" &&
-            <ResultTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></ResultTable>
+            <GameResultsTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
         }
         {/* Tuloslaatikko */}
         <Box display="flex" justifyContent="space-between" marginTop="16px">

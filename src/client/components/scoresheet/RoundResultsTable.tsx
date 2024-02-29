@@ -1,12 +1,11 @@
 /**
- * ScoreTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
+ * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
  */
 
 import { Box, Table, TableBody, TableHead, TableRow, TableCell, Typography, styled } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
 import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
-// import './Scoresheet.css';
 
 const CustomTableCell = styled(TableCell)({
     padding: 0,
@@ -40,10 +39,10 @@ type FormFields = {
 
 type ScoresheetMode = "modify" | "verify" | "display";
 
-type ScoreTableProps = {
+type RoundResultsTableProps = {
     mode: ScoresheetMode;
     formFields: FormFields;
-    handleSelectOutcome: (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => void;
+    onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
     runningScore: number[][];
     roundWins: number[][];
 }
@@ -58,11 +57,22 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
     return `${defaultName} ${index+1}`;
 }
 
-const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectOutcome, roundWins, runningScore }) => {
+const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, roundWins, runningScore }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
 
-    // Kutsutaan, kun GameDialog muutokset hyväksytään
-    const gameDialogCallback = () => {
+    /**
+     * Kutsutaan, kun GameDialog suljetaan tuloksia kirjaamatta.
+     */
+    const handleGameDialogClose = () => {
+        setGameDialogState({ isOpen: false });
+    };
+
+    /**
+     * Kutsutaan, kun GameDialog tulokset halutaan kirjataan.
+     */
+    const handleGameDialogSubmit = (gameIndex: number, results: string[][]) => {
+        // console.log("RoundResultsTable: handleGameDialogSubmit: results", results);
+        onGameDialogSubmit(gameIndex, results);
         setGameDialogState({ isOpen: false });
     };
 
@@ -119,7 +129,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                 <CustomTableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
                 <select className={formFields.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
                     value={formFields.scores[gameIndex][playerIndex][roundIndex]}
-                    onChange={(event) => handleSelectOutcome(event, gameIndex, playerIndex, roundIndex)}
+                    onChange={() => console.log("REMOVE THIS")}
                 >
                     {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
                     <option key={outcomeIndex} value={outcome}>
@@ -154,8 +164,8 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
     </Table>
     </Box>
 
-    <GameDialog state={gameDialogState} formFields={formFields} onClose={gameDialogCallback} />
+    <GameDialog state={gameDialogState} formFields={formFields} onClose={handleGameDialogClose} onSubmit={handleGameDialogSubmit} />
     </>
 )};
 
-export { ScoreTable };
+export { RoundResultsTable };

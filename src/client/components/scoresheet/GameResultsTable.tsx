@@ -1,5 +1,5 @@
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
-import "./ResultTable.css";
+import "./GameResultsTable.css";
 
 // @ts-ignore
 const StyledTable = styled(Table)(({ theme }) => ({
@@ -68,11 +68,11 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
 }
 
 /**
- * ResultTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
+ * GameResultsTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const ResultTable: React.FC<{ roundWins: number[][]; teamHome: Team; teamAway: Team }> = ({roundWins, teamHome, teamAway}) => {
+const GameResultsTable: React.FC<{ roundWins: number[][]; teamHome: Team; teamAway: Team }> = ({roundWins, teamHome, teamAway}) => {
     return (
         <Box sx={{m: 0, p: 0}} >
         <Paper elevation={10} sx={{p: 1, m: 2}}>
@@ -124,4 +124,4 @@ const ResultTable: React.FC<{ roundWins: number[][]; teamHome: Team; teamAway: T
     );
 }
 
-export { ResultTable };
+export { GameResultsTable };

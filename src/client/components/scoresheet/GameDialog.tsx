@@ -24,8 +24,8 @@ const CustomTableCell = styled(TableCell)({
     paddingBottom: "8px",
     paddingLeft: "2px",
     paddingRight: "2px",
-    minWidth: "40px",
-    maxWidth: "75px",
+    minWidth: "36px",
+    maxWidth: "70px",
     overflow: "hidden",
 });
 
@@ -82,12 +82,14 @@ type GameDialogProps = {
     state: GameDialogState;
     formFields: FormFields;
     onClose: () => void;
-    // onAccept: (..) => void;
+    onSubmit: (gameIndex: number, gameResults: string[][]) => void;
 };
 
-const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) => {
+const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onSubmit }) => {
     const [results, setResults] = useState<string[][]>([[" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "]])
+    const [errorMessage, setErrorMessage] = useState<string>("");
     const [currentRound, setCurrentRound] = useState<number>(0);
+
     const [homePlayerIndex, awayPlayerIndex] = gameIndexToPlayerIndexes(state.gameIndex!);
     const playerHome = formFields.teamHome.selectedPlayers[homePlayerIndex]?.name;
     const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name;
@@ -103,8 +105,10 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
             if ((results[0][k] != " ") || (results[1][k] != " "))
                 isFinished = false;
     }
-    if (invalidResult)
-        isFinished = false;
+    if (invalidResult && isFinished) {
+        setErrorMessage(invalidResult);
+        setCurrentRound(0);
+    }
 
     const setRoundResult = (round: number, playerIndex: number, result: string) => {
         if (round < 0 || round >= 5)
@@ -114,6 +118,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
         setCurrentRound(round+1);
+        setErrorMessage("");
     }
 
     useEffect(() => {
@@ -238,10 +243,10 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         </TableRow>
                     </TableBody>
                 </CustomTable>
-                {(currentRound >= 5 && invalidResult) &&
+                {(errorMessage) &&
                 <Box sx={{mt: 2}}>
                     <Typography variant="body1" color="error">
-                        Virhe! {`${invalidResult}`}
+                        Virhe! {`${errorMessage}`}
                     </Typography>
                 </Box>
                 }
@@ -284,7 +289,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                 }
 
                 {/* Lopputulos: */}
-                {(isFinished && !invalidResult) && 
+                {(isFinished && !errorMessage) && 
                 <Box sx={{mt: 0}}>
                     <Table>
                         <TableHead>
@@ -334,10 +339,10 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
 
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} variant="contained" color="error">
+                <Button variant="contained" color="error" onClick={onClose}>
                     Peruuta
                 </Button>
-                <Button variant="contained" color="primary">
+                <Button variant="contained" color="primary" onClick={() => onSubmit(state.gameIndex!, results)}>
                     Kirjaa peli
                 </Button>
             </DialogActions>
