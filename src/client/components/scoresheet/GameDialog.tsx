@@ -9,7 +9,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography, styled } from '@mui/material';
-import { gameIndexToPlayerIndexes } from '../../utils/matchLoader';
+import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchLoader';
 import './GameDialog.css';
 // import { useSnackbar } from '../../utils/SnackbarContext';
 
@@ -22,18 +22,32 @@ const CustomTableCell = styled(TableCell)({
     border: '2px solid black',
     paddingTop: "8px",
     paddingBottom: "8px",
-    paddingLeft: 0,
-    paddingRight: 0,
+    paddingLeft: "2px",
+    paddingRight: "2px",
+    minWidth: "40px",
+    maxWidth: "100px",
+    overflow: "hidden",
 });
 
 const CustomHeadTableCell = styled(TableCell)({
     border: 0,
     paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
 });
 
 const CustomTypography = styled(Typography)({
     textAlign: "center",
-    minHeight: "1.5rem",
+});
+
+const CustomNameTypography = styled(Typography)({
+    textAlign: "center",
+    // maxWidth: "50px",
+    textWrap: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    padding: 0,
+    margin: 0,
 });
 
 type Player = {
@@ -71,7 +85,6 @@ type GameDialogProps = {
     // onAccept: (..) => void;
 };
 
-// @ts-ignore
 const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) => {
     const [results, setResults] = useState<string[][]>([[" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "]])
     const [currentRound, setCurrentRound] = useState<number>(0);
@@ -79,12 +92,28 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
     const playerHome = formFields.teamHome.selectedPlayers[homePlayerIndex]?.name;
     const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name;
 
+    const gameScore = computeGameScore(results);
+    const invalidResult = checkGameResults(results);
+
+    let isFinished = (currentRound >= 5);
+    if (gameScore[0] >= 3 || gameScore[1] >= 3) {
+        // Tarkistetaan, että loput eristä on tyhjiä:
+        isFinished = true;
+        for (let k = currentRound; k < 5; k++)
+            if ((results[0][k] != " ") || (results[1][k] != " "))
+                isFinished = false;
+    }
+    if (invalidResult)
+        isFinished = false;
+
     const setRoundResult = (round: number, playerIndex: number, result: string) => {
+        if (round < 0 || round >= 5)
+            return;
         const newResults = JSON.parse(JSON.stringify(results));
         newResults[playerIndex][round] = result;
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
-        setCurrentRound(currentRound+1);
+        setCurrentRound(round+1);
     }
 
     useEffect(() => {
@@ -99,8 +128,22 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
     return (
         <>
         <Dialog open={state.isOpen} onClose={onClose}>
-            <DialogTitle>{`Peli ${state.gameIndex!+1}`}</DialogTitle>
+            <DialogTitle>{`${formFields.teamHome.teamName} - ${formFields.teamAway.teamName}, peli ${state.gameIndex!+1}`}</DialogTitle>
             <DialogContent>
+                {false && 
+                <Box sx={{mt: 2}}>
+                    <Typography variant="body1">
+                        Pelaajat
+                    </Typography>
+                    <Typography variant="body2">
+                        {playerHome}
+                    </Typography>
+                    <Typography variant="body2">
+                        {playerAway}
+                    </Typography>
+                </Box>
+                }
+                {!isFinished && <>
                 <Box display="flex" justifyContent="space-between">
                     <Typography variant="body1">
                         {`Syötä pelin ${state.gameIndex!+1} erän ${currentRound+1} tulos:`}
@@ -109,6 +152,8 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         {`Tyhjää erä ${currentRound+1}`}
                     </Button>
                 </Box>
+
+                {/* Nimi ja nappulat kotipelaajalle: */}
                 <Box>
                     <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
                         <Box>
@@ -126,7 +171,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         <Box display="flex" flexDirection="column" gap="10px">
                             <Box width="100%">
                                 <Typography maxWidth="200px">
-                                    {`Merkkaa erän ${currentRound+1} kotivoitto:`}
+                                    {`Erän ${currentRound+1} kotivoitto:`}
                                 </Typography>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
@@ -142,11 +187,19 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         </Box>
                     </Box>
                 </Box>
-                <CustomTable>
+                </>}
+
+                {/* Taulu tuloksille */}
+                <CustomTable sx={{mt: 1}}>
                     <TableHead>
                         <TableRow>
+                            <CustomHeadTableCell>
+                                <CustomNameTypography variant="body2">
+                                    Pelaaja
+                                </CustomNameTypography>
+                            </CustomHeadTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomHeadTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                <CustomHeadTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <CustomTypography variant="body2">
                                         {`Erä ${index+1}`}
                                     </CustomTypography>
@@ -155,18 +208,28 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        <TableRow>
+                        <TableRow sx={{height: "50px"}}>
+                            <CustomTableCell width="50px">
+                                <CustomNameTypography variant="body2" fontWeight="bold">
+                                    {playerHome}
+                                </CustomNameTypography>
+                            </CustomTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                <CustomTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <CustomTypography variant="body1" fontWeight="bold">
                                         {`${results[0][index] ?? -1}`}
                                     </CustomTypography>
                                 </CustomTableCell>
                             )}
                         </TableRow>
-                        <TableRow>
+                        <TableRow sx={{height: "50px"}}>
+                            <CustomTableCell>
+                                <CustomNameTypography variant="body2" fontWeight="bold">
+                                    {playerAway}
+                                </CustomNameTypography>
+                            </CustomTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                <CustomTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <CustomTypography variant="body1" fontWeight="bold">
                                         {`${results[1][index] ?? -1}`}
                                     </CustomTypography>
@@ -175,8 +238,18 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         </TableRow>
                     </TableBody>
                 </CustomTable>
+                {(currentRound >= 5 && invalidResult) &&
+                <Box sx={{mt: 2}}>
+                    <Typography variant="body1" color="error">
+                        Virhe! {`${invalidResult}`}
+                    </Typography>
+                </Box>
+                }
+
+                {/* Nimi ja nappulat vieraspelaajalle */}
+                {!isFinished &&
                 <Box>
-                <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                    <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
                         <Box>
                             <Typography maxWidth="200px" textAlign="center">
                                 Alarivi
@@ -188,11 +261,11 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                                 {formFields.teamAway.teamName} (vieras)
                             </Typography>
                         </Box>
-                        {/* Kotipelaajan nappulat tässä: */}
+                        {/* Vieraspelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
                             <Box width="100%">
                                 <Typography maxWidth="200px">
-                                    {`Merkkaa erän ${currentRound+1} kotivoitto:`}
+                                    {`Erän ${currentRound+1} vierasvoitto:`}
                                 </Typography>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
@@ -208,6 +281,57 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         </Box>
                     </Box>
                 </Box>
+                }
+
+                {/* Lopputulos: */}
+                {(isFinished && !invalidResult) && 
+                <Box sx={{mt: 0}}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        Pelaaja
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        Tulos
+                                    </Typography>
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        {playerHome} (ylärivi)
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        {gameScore[0]}
+                                    </Typography>
+                                </TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        {playerAway} (alarivi)
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        {gameScore[1]}
+                                    </Typography>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Box>
+                }
+
+
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} variant="contained" color="error">

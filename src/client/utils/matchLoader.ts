@@ -41,6 +41,53 @@ function playerIndexesToGameIndex(playerHomeIndex: number, playerAwayIndex: numb
     return (9-playerHomeIndex*2+playerAwayIndex*3) % 9;
 };
 
+
+/**
+ * Palauttaa pelin lopputuloksen muodossa [koti erävoitot, vieras erävoitot].
+ */
+function computeGameScore(results: string[][]) {
+    let gameScore = [0, 0];
+    for (let playerIndex = 0; playerIndex < 2; playerIndex++) {
+        let playerRoundWins = 0;
+        for (let roundIndex = 0; roundIndex < 5; roundIndex++) {
+            if (results[playerIndex][roundIndex] != " ")
+                playerRoundWins += 1;
+        }
+        gameScore[playerIndex] = playerRoundWins;
+    }
+    return gameScore;
+}
+
+/**
+ * Tarkistaa, että erien tulokset ovat oikein ja päättyy kolmeen voittoon.
+ */
+function checkGameResults(gameResult: string[][]) {
+    let firstEmptyRound = 5;
+    let gameFinishedRound = 5;
+    let score = [0, 0];
+    for (let k = 0; k < 5; k++) {
+        for (let playerIndex = 0; playerIndex < 2; playerIndex++)
+            if (gameResult[playerIndex][k] != " ")
+                score[playerIndex] += 1;
+        if (score[0] >= 3 || score[1] >= 3)
+            gameFinishedRound = Math.min(k, gameFinishedRound);
+
+        if (gameResult[0][k] == " " && gameResult[1][k] == " ")
+            firstEmptyRound = Math.min(k, firstEmptyRound);
+        else {
+            if (k > firstEmptyRound)
+                return "Pelissä on tyhjä erä.";
+            if (k > gameFinishedRound)
+                return "Pelissä on liikaa eriä.";
+        }
+    }
+    if (score[0] == 0 && score[1] == 0)
+        return "Erätulokset ovat tyhjiä.";
+    if (score[0] < 3 && score[1] < 3)
+        return "Kumpikaan pelaaja ei yltänyt kolmeen voittoon.";
+    return "";
+}
+
 /**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
  */
@@ -186,4 +233,4 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
-export { fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex };
+export { fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };

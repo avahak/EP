@@ -2,11 +2,15 @@
  * ScoreTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
  */
 
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material"
+import { Box, Table, TableBody, TableHead, TableRow, TableCell, Typography, styled } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
 import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
 // import './Scoresheet.css';
+
+const CustomTableCell = styled(TableCell)({
+    padding: 0,
+});
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 // Erän mahdolliset lopputulokset pelaajalle:
@@ -66,18 +70,18 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
     // <div id="table-box">
     <>
     <Box>
-    <Table className="game-table">
+    <Table className="game-table" size="small">
     <TableHead>
         <TableRow>
         {/* <th>Peli</th> */}
-        <TableCell className="table-head-2">Pelaajan nimi</TableCell>
-        <TableCell>1.</TableCell>
-        <TableCell>2.</TableCell>
-        <TableCell>3.</TableCell>
-        <TableCell>4.</TableCell>
-        <TableCell>5.</TableCell>
-        <TableCell>Voitot</TableCell>
-        <TableCell>Tilanne<br />K - V</TableCell>
+        <CustomTableCell className="table-head-2">Pelaajan nimi</CustomTableCell>
+        <CustomTableCell>1.</CustomTableCell>
+        <CustomTableCell>2.</CustomTableCell>
+        <CustomTableCell>3.</CustomTableCell>
+        <CustomTableCell>4.</CustomTableCell>
+        <CustomTableCell>5.</CustomTableCell>
+        <CustomTableCell>Voitot</CustomTableCell>
+        <CustomTableCell>Tilanne<br />K - V</CustomTableCell>
         </TableRow>
     </TableHead>
     <TableBody>
@@ -91,7 +95,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                 </td>} */}
 
             {/* Pelaaja */}
-            <TableCell className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
+            <CustomTableCell className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
                 {playerIndex == 0 ? 
                     <Box display="flex">
                         {/* <Typography paddingX="5px" variant="body1">{gameIndex % 3 + 1}.</Typography> */}
@@ -108,11 +112,11 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                         </Box>
                     </Box>
                     </>}
-            </TableCell>
+            </CustomTableCell>
 
             {/* Erätulokset */}
             {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
-                <TableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                <CustomTableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
                 <select className={formFields.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
                     value={formFields.scores[gameIndex][playerIndex][roundIndex]}
                     onChange={(event) => handleSelectOutcome(event, gameIndex, playerIndex, roundIndex)}
@@ -123,25 +127,25 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                     </option>
                     ))}
                 </select>
-                </TableCell>
+                </CustomTableCell>
             )) : Array.from({ length: 5 }, (_, roundIndex) => (
-                <TableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
+                <CustomTableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
                 <div style={{width: '25px', textAlign: 'center'}}>{formFields.scores[gameIndex][playerIndex][roundIndex]}</div>
-                </TableCell>
+                </CustomTableCell>
             ))}
 
             {/* Voitot */}
-            <TableCell className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+            <CustomTableCell className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
                 {roundWins[gameIndex][playerIndex]}
-            </TableCell>
+            </CustomTableCell>
 
             {/* Tilanne */}
             {playerIndex == 0 ? 
-            <TableCell rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
+            <CustomTableCell rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
                 {runningScore[gameIndex][0] >= 0 ? 
                 `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
                 : " - "}
-            </TableCell>
+            </CustomTableCell>
             : <></>}
 
             </TableRow>))
