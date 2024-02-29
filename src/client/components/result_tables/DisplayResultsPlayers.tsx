@@ -5,7 +5,7 @@
 // import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { ResultTable } from "../ResultTable";
+import { ResultTable } from "../tables/ResultTable";
 import { extractKeys } from "../../../shared/generalUtils";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 

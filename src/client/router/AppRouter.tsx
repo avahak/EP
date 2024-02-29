@@ -16,7 +16,7 @@ import { DBTest } from '../components/DBTest';
 import { ResultSubmission } from '../components/result_submit/ResultSubmission';
 import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsTeams';
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
-import { TestResultTable } from '../components/ResultTable';
+import { TestResultTable } from '../components/tables/ResultTable';
 import { MUITest } from '../components/sandbox/MUITest';
 import { DisplayScoresheet } from '../components/result_tables/DisplayScoresheet';
 import { SnackbarProvider } from '../utils/SnackbarContext';

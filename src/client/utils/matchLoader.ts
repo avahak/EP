@@ -25,6 +25,23 @@ type MatchData = {
 const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
 
 /**
+ * Muuttaa pelin indeksin (0-8) koti- ja vieraspelaajan indekseiksi (0-2) samassa
+ * järjestyksessä kuin ottelupöytäkirjassa.
+ * @returns Taulukko [playerHomeIndex, playerAwayIndex].
+ */
+function gameIndexToPlayerIndexes(gameIndex: number) {
+    return [gameIndex % 3, (gameIndex+Math.floor(gameIndex/3)) % 3];
+};
+
+/**
+ * Muuttaa pelin koti- ja vieraspelaajan indeksit (0-2) pelin indeksiksi (0-8) samassa
+ * järjestyksessä kuin ottelupöytäkirjassa.
+ */
+function playerIndexesToGameIndex(playerHomeIndex: number, playerAwayIndex: number) {
+    return (9-playerHomeIndex*2+playerAwayIndex*3) % 9;
+};
+
+/**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
  */
 function parseScores(rawScores: any, teamHome: (Player | null)[], teamAway: (Player | null)[]) {
@@ -34,9 +51,10 @@ function parseScores(rawScores: any, teamHome: (Player | null)[], teamAway: (Pla
         let indexAway = teamAway.findIndex((player) => player?.id == row.vp);
         if (indexHome == -1 || indexAway == -1)
             continue;
+        const gameIndex = playerIndexesToGameIndex(indexHome, indexAway);
         for (let k = 0; k < 5; k++) {
             const result = row[`era${k+1}`];
-            results[(9-indexHome*2+indexAway*3) % 9][result[0] == 'K' ? 0 : 1][k] =
+            results[gameIndex][result[0] == 'K' ? 0 : 1][k] =
                 [' ', '1', 'A', '9', 'K', 'C', 'V'][parseInt(result[1])];
         }
     }
@@ -168,4 +186,4 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
-export { fetchMatchData };
+export { fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex };

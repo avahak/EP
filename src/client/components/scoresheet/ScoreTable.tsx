@@ -5,6 +5,7 @@
 import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
+import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
 // import './Scoresheet.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
@@ -54,11 +55,12 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
 }
 
 const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectOutcome, roundWins, runningScore }) => {
-    const [gameDialogOpen, setGameDialogOpen] = useState<boolean>(false);
+    const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
 
-    const onModifyGame = () => {
-        setGameDialogOpen(false);
-    }
+    // Kutsutaan, kun GameDialog muutokset hyväksytään
+    const gameDialogCallback = () => {
+        setGameDialogState({ isOpen: false });
+    };
 
     return (
     // <div id="table-box">
@@ -81,7 +83,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
     <TableBody>
         {formFields.scores.map((_game, gameIndex) => (
         Array.from({ length: 2 }, (_, playerIndex) => (
-            <TableRow key={`row-${gameIndex}-${playerIndex}`} onClick={() => setGameDialogOpen(true)}>
+            <TableRow key={`row-${gameIndex}-${playerIndex}`} onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}>
             {/* Peli */}
             {/* {playerIndex == 0 &&
                 <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
@@ -94,7 +96,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                     <Box display="flex">
                         {/* <Typography paddingX="5px" variant="body1">{gameIndex % 3 + 1}.</Typography> */}
                         <Box flexGrow="1" display="flex" justifyContent="center">
-                            <Typography variant="body1">{playerName(formFields.teamHome.selectedPlayers, gameIndex % 3, "Kotipelaaja")}</Typography>
+                            <Typography variant="body1">{playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Kotipelaaja")}</Typography>
                         </Box>
                     </Box>
                     : 
@@ -102,7 +104,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
                     <Box display="flex">
                         {/* <Typography paddingX="5px" variant="body1">{(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}.</Typography> */}
                         <Box flexGrow="1" display="flex" justifyContent="center">
-                            <Typography variant="body1">{playerName(formFields.teamAway.selectedPlayers, (gameIndex+Math.floor(gameIndex/3)) % 3, "Vieraspelaaja")}</Typography>
+                            <Typography variant="body1">{playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieraspelaaja")}</Typography>
                         </Box>
                     </Box>
                     </>}
@@ -148,7 +150,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ mode, formFields, handleSelectO
     </Table>
     </Box>
 
-    <GameDialog isOpen={gameDialogOpen} formFields={formFields} onClose={onModifyGame} />
+    <GameDialog state={gameDialogState} formFields={formFields} onClose={gameDialogCallback} />
     </>
 )};
 

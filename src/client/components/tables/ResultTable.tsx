@@ -19,10 +19,10 @@ import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
 import { Link } from 'react-router-dom';
 import { Typography } from '@mui/material';
-import { extractKeys, getComparator } from '../../shared/generalUtils';
+import { extractKeys, getComparator } from '../../../shared/generalUtils';
 // import styled from '@emotion/styled';
 // import { useTheme } from '@mui/material/styles';
-import { Order } from '../../shared/generalUtils';
+import { Order } from '../../../shared/generalUtils';
 
 // Tyyli taulun otsikkoriville
 const customColumnStyleHeader = {

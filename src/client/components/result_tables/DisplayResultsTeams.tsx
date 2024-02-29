@@ -3,7 +3,7 @@
  */
 
 import { Link } from "react-router-dom";
-import { ResultTable } from "../ResultTable";
+import { ResultTable } from "../tables/ResultTable";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 
 const DisplayResultsTeams: React.FC = () => {
