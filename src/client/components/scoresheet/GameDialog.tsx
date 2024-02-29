@@ -20,6 +20,8 @@ const CustomTable = styled(Table)({
   
 const CustomTableCell = styled(TableCell)({
     border: '2px solid black',
+    paddingTop: "8px",
+    paddingBottom: "8px",
     paddingLeft: 0,
     paddingRight: 0,
 });
@@ -30,7 +32,8 @@ const CustomHeadTableCell = styled(TableCell)({
 });
 
 const CustomTypography = styled(Typography)({
-    textAlign: "center"
+    textAlign: "center",
+    minHeight: "1.5rem",
 });
 
 type Player = {
@@ -106,14 +109,42 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                         {`Tyhjää erä ${currentRound+1}`}
                     </Button>
                 </Box>
+                <Box>
+                    <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                        <Box>
+                            <Typography maxWidth="200px" textAlign="center">
+                                Ylärivi
+                            </Typography>
+                            <hr />
+                            <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
+                                {playerHome}
+                                <br />
+                                {formFields.teamHome.teamName} (koti)
+                            </Typography>
+                        </Box>
+                        {/* Kotipelaajan nappulat tässä: */}
+                        <Box display="flex" flexDirection="column" gap="10px">
+                            <Box width="100%">
+                                <Typography maxWidth="200px">
+                                    {`Merkkaa erän ${currentRound+1} kotivoitto:`}
+                                </Typography>
+                            </Box>
+                            <Box display="flex" gap="15px" justifyContent="center">
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "A")}>A</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "C")}>C</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "V")}>V</Button>
+                            </Box>
+                            <Box display="flex" gap="15px" justifyContent="center">
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "1")}>1</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "9")}>9</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "K")}>K</Button>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
                 <CustomTable>
                     <TableHead>
                         <TableRow>
-                            <CustomHeadTableCell>
-                                <CustomTypography variant="body2">
-                                    Pelaaja
-                                </CustomTypography>
-                            </CustomHeadTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
                                 <CustomHeadTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <CustomTypography variant="body2">
@@ -125,32 +156,18 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                     </TableHead>
                     <TableBody>
                         <TableRow>
-                            <CustomTableCell sx={{ px: 1, py: 0 }}>
-                                <CustomTypography variant="body2">
-                                    {playerHome} 
-                                    <br />
-                                    {formFields.teamHome.teamName} (koti)
-                                </CustomTypography>
-                            </CustomTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
                                 <CustomTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
-                                    <CustomTypography variant="body2">
+                                    <CustomTypography variant="body1" fontWeight="bold">
                                         {`${results[0][index] ?? -1}`}
                                     </CustomTypography>
                                 </CustomTableCell>
                             )}
                         </TableRow>
                         <TableRow>
-                            <CustomTableCell sx={{ px: 1, py: 0 }}>
-                                <CustomTypography variant="body2">
-                                    {playerAway} 
-                                    <br />
-                                    {formFields.teamAway.teamName} (vieras)
-                                </CustomTypography>
-                            </CustomTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
                                 <CustomTableCell key={index} className={index == currentRound ? "active" : ""} onClick={() => setCurrentRound(index)}>
-                                    <CustomTypography variant="body1">
+                                    <CustomTypography variant="body1" fontWeight="bold">
                                         {`${results[1][index] ?? -1}`}
                                     </CustomTypography>
                                 </CustomTableCell>
@@ -159,45 +176,34 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose }) =
                     </TableBody>
                 </CustomTable>
                 <Box>
-                    <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                        <Box>
+                            <Typography maxWidth="200px" textAlign="center">
+                                Alarivi
+                            </Typography>
+                            <hr />
+                            <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
+                                {playerAway}
+                                <br />
+                                {formFields.teamAway.teamName} (vieras)
+                            </Typography>
+                        </Box>
                         {/* Kotipelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
                             <Box width="100%">
                                 <Typography maxWidth="200px">
-                                    {`Erällä ${currentRound+1} kotivoitto?`}
+                                    {`Merkkaa erän ${currentRound+1} kotivoitto:`}
                                 </Typography>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" size="large" onClick={() => setRoundResult(currentRound, 0, "9")}>9</Button>
-                                <Button variant="outlined" size="large" onClick={() => setRoundResult(currentRound, 0, "1")}>1</Button>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "A")}>A</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "K")}>K</Button>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "C")}>C</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "V")}>V</Button>
-                            </Box>
-                        </Box>
-                        {/* Vieraspelaajan nappulat tässä: */}
-                        <Box display="flex" flexDirection="column" gap="10px">
-                            <Box width="100%">
-                                <Typography maxWidth="200px">
-                                    {`Erällä ${currentRound+1} vierasvoitto?`}
-                                </Typography>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" size="large" onClick={() => setRoundResult(currentRound, 1, "1")}>1</Button>
-                                <Button variant="outlined" size="large" onClick={() => setRoundResult(currentRound, 1, "9")}>9</Button>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "1")}>1</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "9")}>9</Button>
                                 <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "K")}>K</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "A")}>A</Button>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "V")}>V</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "A")}>A</Button>
                                 <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "C")}>C</Button>
+                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "V")}>V</Button>
                             </Box>
                         </Box>
                     </Box>
