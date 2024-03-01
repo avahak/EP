@@ -45,7 +45,7 @@ const DisplayScoresheet: React.FC = () => {
 
     return (<>
         <Link to="/">Takaisin</Link>
-        <Container maxWidth="sm">
+        <Container maxWidth="md">
 
         {result &&
         <Scoresheet initialValues={result} mode="display" />

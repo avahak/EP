@@ -151,7 +151,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
 
     return (<>
         <Link to="/">Takaisin</Link>
-        <Container maxWidth="sm">
+        <Container maxWidth="md">
         {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 
             <MatchChooser userTeam={userTeam} submitCallback={matchChooserCallback} />}

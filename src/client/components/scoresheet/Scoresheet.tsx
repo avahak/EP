@@ -10,7 +10,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useEffect, useState } from "react";
 import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
-import { getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
+import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 // import { parseMatch } from '../../../shared/parseMatch';
 import { TeamSelection } from "./TeamSelection";
@@ -162,18 +162,32 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             {/* Ottelu ja päivämäärä */}
             <Box display="flex" justifyContent="center" marginBottom="20px">
                 <Box textAlign="center">
-                <Typography variant='h4'>
-                    {formFields.teamHome.teamName} - {formFields.teamAway.teamName}
-                </Typography>
-                <Typography variant='body1'>
-                    {!formFields.date ? "" : getDayOfWeekStrings(new Date(formFields.date)).long}
-                        &nbsp;{toDDMMYYYY(new Date(formFields.date))}
-                </Typography>
+                    <Typography variant='h4'>
+                        {formFields.teamHome.teamName} - {formFields.teamAway.teamName}
+                    </Typography>
+                    <Box display="flex">
+                        <Typography variant='body1'>
+                            {!formFields.date ? "" : getDayOfWeekStrings(new Date(formFields.date)).long}
+                            &nbsp;    
+                        </Typography>
+                            {mode == "modify" ?
+                            <input
+                                type="date"
+                                id="datePicker"
+                                name="datePicker"
+                                value={dateToISOString(new Date(formFields.date))}
+                                onChange={(event) => setValue("date", event.target.value)}
+                            />
+                            :
+                            <Typography variant='body1'>
+                                {toDDMMYYYY(new Date(formFields.date))}
+                            </Typography>
+                        }
+                    </Box>
                 </Box>
             </Box>
 
-
-            <Box>
+            <Box sx={{mb: 2}}>
                 <Grid container spacing={5}>
                     {/* Kotijoukkueen nimi ja pelaajat */}
                     <Grid item xs={12} sm={6}>
@@ -186,16 +200,11 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Grid>
             </Box>
 
-            {/* Tuloslaatikko */}
-            {mode != "modify" &&
-                <GameResultsTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
-            }
-
             <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} runningScore={runningScore} roundWins={roundWins}></RoundResultsTable>
         </Box>
-        {mode == "modify" &&
-            <GameResultsTable roundWins={roundWins} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
-        }
+
+        <GameResultsTable roundWins={roundWins} runningScore={runningScore} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
+
         {/* Tuloslaatikko */}
         <Box display="flex" justifyContent="space-between" marginTop="16px">
             <Box>

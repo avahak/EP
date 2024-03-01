@@ -57,8 +57,6 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, roundWins, runningScore }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
     
-    console.log("mode", mode);
-
     /**
      * Kutsutaan, kun GameDialog suljetaan tuloksia kirjaamatta.
      */
@@ -88,11 +86,13 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
                 Peli
             </BasicTypography>
         </BasicTableHeadCell>
+
         <BasicTableHeadCell width="25%">
             <BasicTypography variant="body2">
                 Pelaaja
             </BasicTypography>
         </BasicTableHeadCell>
+
         <BasicTableHeadCell width="8%">
             <BasicTypography variant="body2">E1</BasicTypography>
         </BasicTableHeadCell>
@@ -108,23 +108,26 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
         <BasicTableHeadCell width="8%">
             <BasicTypography variant="body2">E5</BasicTypography>
         </BasicTableHeadCell>
-        {/* <BasicTableHeadCell sx={{maxWidth: "20px"}}> */}
+        
         <BasicTableHeadCell width="8%">
             <BasicTypography variant="body2">
                 V.
             </BasicTypography>
         </BasicTableHeadCell>
+
         <BasicTableHeadCell width="12%">
             <BasicTypography variant="body2"> 
                 Tilanne<br />K - V
             </BasicTypography>
         </BasicTableHeadCell>
-        {/* <BasicTableHeadCell sx={{paddingRight: 1, width: "20px"}}> */}
+
+        {mode == "modify" &&
         <BasicTableHeadCell width="15%">
             <BasicTypography variant="body2">
                 Muokkaa
             </BasicTypography>
         </BasicTableHeadCell>
+        }
         </TableRow>
     </TableHead>
     <TableBody>
@@ -134,10 +137,10 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {/* Peli */}
             {playerIndex == 0 &&
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
-                    <BasicTypography variant="body1" textAlign="center">
+                    <Typography variant="body1" textAlign="center">
                         {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
                         {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[0]+1}`}
-                    </BasicTypography>
+                    </Typography>
                 </BasicTableCellLow>
             }
 
@@ -145,12 +148,12 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`player-${gameIndex}-${playerIndex}`}>
                 {playerIndex == 0 ? 
                     <BasicNameTypography>
-                        {playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Kotipelaaja")}
+                        {playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Koti")}
                     </BasicNameTypography>
                     : 
                     <>
                     <BasicNameTypography>
-                        {playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieraspelaaja")}
+                        {playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieras")}
                     </BasicNameTypography>
                     </>}
             </BasicTableCellLow>
@@ -174,19 +177,30 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {/* Tilanne */}
             {playerIndex == 0 &&
             <BasicTableCellLow rowSpan={2} className={`${PARITY[gameIndex]}`} key={`running-score-${gameIndex}`}>
-                <BasicTypography variant="body1" textAlign="center">
+                <Typography variant="body1" textAlign="center">
                     {runningScore[gameIndex][0] >= 0 ? 
                         `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
-                        : " - "}
-                </BasicTypography>
+                        : "-"}
+                </Typography>
             </BasicTableCellLow>
             }
 
-            {playerIndex == 0 &&
+            {(mode == "modify" && playerIndex == 0) &&
             <TableCell sx={{p: 0, width: "40px", border: "1px solid black"}} rowSpan={2} className={`${PARITY[gameIndex]}`} key={`edit-${gameIndex}`}>
                 <Box display="flex" justifyContent="center" sx={{p: 0}}>
-                <IconButton onClick={() => console.log("Edit icon clicked.")} aria-label="Edit" sx={{p: 0}}>
-                    <EditIcon />
+                <IconButton 
+                    onClick={() => console.log("Edit icon clicked.")} 
+                    aria-label="Muokkaa" 
+                    sx={{
+                        p: 0,
+                        backgroundColor: '#29f',
+                        color: 'white',
+                        '&:hover': {
+                            backgroundColor: '#13a',
+                        },
+                    }}
+                >
+                    <EditIcon fontSize="large"/>
                 </IconButton>
                 </Box>
             </TableCell>

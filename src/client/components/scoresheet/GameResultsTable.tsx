@@ -61,12 +61,12 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const GameResultsTable: React.FC<{ roundWins: number[][]; teamHome: Team; teamAway: Team }> = ({roundWins, teamHome, teamAway}) => {
+const GameResultsTable: React.FC<{ roundWins: number[][]; runningScore: number[][]; teamHome: Team; teamAway: Team }> = ({roundWins, runningScore, teamHome, teamAway}) => {
     return (
         <Box sx={{m: 0, p: 0}} >
         <Paper elevation={10} sx={{p: 1, m: 2}}>
         <Typography textAlign="center" fontWeight="bold">
-            Tulokset
+            {`Ottelun tulos ${runningScore[8][0]} - ${runningScore[8][1]}`}
         </Typography>
         <StyledTable size="small">
             <TableHead>
