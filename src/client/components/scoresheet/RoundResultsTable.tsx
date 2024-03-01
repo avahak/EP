@@ -79,7 +79,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     // <div id="table-box">
     <>
     <TableContainer component={Paper} sx={{px: 1, py: 2}} elevation={4}>
-    <Typography textAlign="center">Erätulokset</Typography>
+    <Typography variant="h6" textAlign="center">Erätulokset</Typography>
     <BasicTable>
     <TableHead sx={{borderBottom: "2px solid black"}}>
     <TableRow>
@@ -94,11 +94,9 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             </BasicTypography>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
-            <Box style={{position: "relative"}}>
-                <BasicTypography>1.</BasicTypography>
-            </Box>
+            <BasicTypography>1.</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
+        <BasicTableHeadCell >
             <BasicTypography>2.</BasicTypography>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
