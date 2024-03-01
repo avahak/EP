@@ -1,14 +1,12 @@
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
 import "./GameResultsTable.css";
 
-// @ts-ignore
-const StyledTable = styled(Table)(({ theme }) => ({
+const StyledTable = styled(Table)(({ }) => ({
     border: '2px solid black',
     borderCollapse: 'collapse',
 }));
 
-// @ts-ignore
-const StyledTableText = styled(Typography)(({ theme }) => ({
+const StyledTableText = styled(Typography)(({ }) => ({
     // color: "red",
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -21,18 +19,9 @@ interface StyledTableCellProps {
     theme?: Theme;
 }
 
-// @ts-ignore
-const StyledTableCell1 = styled(TableCell)<StyledTableCellProps>(({ theme }) => ({
+const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ height }) => ({
     border: '1px solid black',
-    // height: "50px",
-    padding: 2,
-    // overflow: 'hidden',
-}));
-
-// @ts-ignore
-const StyledTableCell2 = styled(TableCell)<StyledTableCellProps>(({ theme }) => ({
-    border: '1px solid black',
-    height: "40px",
+    height: height || "40px",
     padding: 2,
     // overflow: 'hidden',
 }));
@@ -82,38 +71,38 @@ const GameResultsTable: React.FC<{ roundWins: number[][]; teamHome: Team; teamAw
         <StyledTable size="small">
             <TableHead>
                 <TableRow>
-                    <StyledTableCell1 sx={{minWidth: "30px", maxWidth: "100px"}} className="diagonal-split-box">
+                    <StyledTableCell sx={{minWidth: "30px", maxWidth: "100px"}} className="diagonal-split-box">
                         <DiagonalSplitBox 
                             left={<StyledTableText variant="body2" fontWeight="bold">{teamHome.teamName}</StyledTableText>}
                             right={<StyledTableText variant="body2" fontWeight="bold">{teamAway.teamName}</StyledTableText>}
                         />
-                    </StyledTableCell1>
+                    </StyledTableCell>
 
                     {[0, 1, 2].map((col) => (
-                        <StyledTableCell2 sx={{maxWidth: "60px"}} key={`box-${col}`} variant="head">
+                        <StyledTableCell sx={{maxWidth: "60px"}} key={`box-${col}`} variant="head">
                             <StyledTableText variant="body2" textAlign="center" fontWeight="bold">
                                 {teamAway.selectedPlayers[col]?.name ?? ""}
                             </StyledTableText>
-                        </StyledTableCell2>
+                        </StyledTableCell>
                     ))}
                 </TableRow>
             </TableHead>
             <TableBody>
                 {[0, 1, 2].map((row) => (
                     <TableRow key={`box-${row}`}>
-                        <StyledTableCell1 sx={{maxWidth: "100px"}} variant="head">
+                        <StyledTableCell sx={{maxWidth: "100px"}} variant="head">
                             <StyledTableText variant="body2" textAlign="center" fontWeight="bold">
                                 {teamHome.selectedPlayers[row]?.name ?? ""}
                             </StyledTableText>
-                        </StyledTableCell1>
+                        </StyledTableCell>
                         {[0, 1, 2].map((col) => (
-                            <StyledTableCell2 sx={{maxWidth: "60px"}} key={`box-${row}-${col}`}>
+                            <StyledTableCell sx={{maxWidth: "60px"}} key={`box-${row}-${col}`}>
                                 {/* <DiagonalSplitBox 
                                     left={<StyledTableText className="dsb2-left-text">{roundWins[(9-row*2+col*3) % 9][0]}</StyledTableText>}
                                     right={<StyledTableText className="dsb2-right-text">{roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>}
                                 /> */}
                                 <StyledTableText>{roundWins[(9-row*2+col*3) % 9][0]} - {roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>
-                            </StyledTableCell2>
+                            </StyledTableCell>
                         ))}
                     </TableRow>
                 ))}

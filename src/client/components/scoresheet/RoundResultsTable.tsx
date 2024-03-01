@@ -2,19 +2,15 @@
  * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
  */
 
-import { Box, Table, TableBody, TableHead, TableRow, TableCell, Typography, styled } from "@mui/material"
+import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
 import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
-
-const CustomTableCell = styled(TableCell)({
-    border: '1px solid black',
-    padding: 0,
-});
+import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
+import EditIcon from '@mui/icons-material/Edit';
+import './Scoresheet.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
-// Erän mahdolliset lopputulokset pelaajalle:
-const POSSIBLE_OUTCOMES = ["1", "A", "C", "K", "V", "9", " "];
 
 type Player = {
     id: number;
@@ -60,6 +56,8 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
 
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, roundWins, runningScore }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
+    
+    console.log("mode", mode);
 
     /**
      * Kutsutaan, kun GameDialog suljetaan tuloksia kirjaamatta.
@@ -80,19 +78,45 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     return (
     // <div id="table-box">
     <>
-    <Box>
-    <Table className="game-table" size="small">
-    <TableHead>
+    <TableContainer component={Paper} sx={{px: 1, py: 2}} elevation={4}>
+    <BasicTable className="game-table">
+    <TableHead sx={{borderBottom: "2px solid black"}}>
         <TableRow>
         {/* <th>Peli</th> */}
-        <CustomTableCell className="table-head-2">Pelaajan nimi</CustomTableCell>
-        <CustomTableCell>1.</CustomTableCell>
-        <CustomTableCell>2.</CustomTableCell>
-        <CustomTableCell>3.</CustomTableCell>
-        <CustomTableCell>4.</CustomTableCell>
-        <CustomTableCell>5.</CustomTableCell>
-        <CustomTableCell>Voitot</CustomTableCell>
-        <CustomTableCell>Tilanne<br />K - V</CustomTableCell>
+        <BasicTableHeadCell>
+            <BasicTypography>Peli</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>Pelaaja</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>1.</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>2.</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>3.</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>4.</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>5.</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>Voitot</BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell>
+            <BasicTypography>
+                Tilanne<br />K - V
+            </BasicTypography>
+        </BasicTableHeadCell>
+        <BasicTableHeadCell sx={{width: "40px"}}>
+            <BasicTypography variant="body2">
+                Muokkaa
+            </BasicTypography>
+        </BasicTableHeadCell>
         </TableRow>
     </TableHead>
     <TableBody>
@@ -100,70 +124,71 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
         Array.from({ length: 2 }, (_, playerIndex) => (
             <TableRow key={`row-${gameIndex}-${playerIndex}`} onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}>
             {/* Peli */}
-            {/* {playerIndex == 0 &&
-                <td className={`${PARITY[gameIndex]} table-col-1`} rowSpan={2} style={{ fontSize: '1.25em', fontWeight: 'bold' }}>
-                    {gameIndex % 3 + 1} - {(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}
-                </td>} */}
+            {playerIndex == 0 &&
+                <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
+                    <BasicTypography variant="h6" paddingX="3px">
+                        {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
+                        {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[0]+1}`}
+                    </BasicTypography>
+                </BasicTableCellLow>
+            }
 
             {/* Pelaaja */}
-            <CustomTableCell className={`${PARITY[gameIndex]} table-col-2`} key={`player-${gameIndex}-${playerIndex}`}>
+            <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`player-${gameIndex}-${playerIndex}`}>
                 {playerIndex == 0 ? 
-                    <Box display="flex">
-                        {/* <Typography paddingX="5px" variant="body1">{gameIndex % 3 + 1}.</Typography> */}
-                        <Box flexGrow="1" display="flex" justifyContent="center">
-                            <Typography variant="body1">{playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Kotipelaaja")}</Typography>
-                        </Box>
-                    </Box>
+                    <BasicNameTypography>
+                        {playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Kotipelaaja")}
+                    </BasicNameTypography>
                     : 
                     <>
-                    <Box display="flex">
-                        {/* <Typography paddingX="5px" variant="body1">{(gameIndex+Math.floor(gameIndex/3)) % 3 + 1}.</Typography> */}
-                        <Box flexGrow="1" display="flex" justifyContent="center">
-                            <Typography variant="body1">{playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieraspelaaja")}</Typography>
-                        </Box>
-                    </Box>
+                    <BasicNameTypography>
+                        {playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieraspelaaja")}
+                    </BasicNameTypography>
                     </>}
-            </CustomTableCell>
+            </BasicTableCellLow>
 
             {/* Erätulokset */}
-            {mode == "modify" ? Array.from({ length: 5 }, (_, roundIndex) => (
-                <CustomTableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                <select className={formFields.scores[gameIndex][playerIndex][roundIndex] == " " ? "" : "winner"}
-                    value={formFields.scores[gameIndex][playerIndex][roundIndex]}
-                    onChange={() => console.log("REMOVE THIS")}
-                >
-                    {POSSIBLE_OUTCOMES.map((outcome, outcomeIndex) => (
-                    <option key={outcomeIndex} value={outcome}>
-                        {outcome}
-                    </option>
-                    ))}
-                </select>
-                </CustomTableCell>
-            )) : Array.from({ length: 5 }, (_, roundIndex) => (
-                <CustomTableCell className={`${PARITY[gameIndex]} table-col-3`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`}>
-                <div style={{width: '25px', textAlign: 'center'}}>{formFields.scores[gameIndex][playerIndex][roundIndex]}</div>
-                </CustomTableCell>
+            {Array.from({ length: 5 }, (_, roundIndex) => (
+                <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`} sx={{borderLeft: roundIndex == 0 ? "3px solid black" : "1px solid black", borderRight: roundIndex == 4 ? "3px solid black" : "1px solid black"}}>
+                    <BasicTypography>
+                        {formFields.scores[gameIndex][playerIndex][roundIndex]}
+                    </BasicTypography>
+                </BasicTableCellLow>
             ))}
 
             {/* Voitot */}
-            <CustomTableCell className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
-                {roundWins[gameIndex][playerIndex]}
-            </CustomTableCell>
+            <BasicTableCellLow className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+                <BasicTypography>
+                    {roundWins[gameIndex][playerIndex]}
+                </BasicTypography>
+            </BasicTableCellLow>
 
             {/* Tilanne */}
-            {playerIndex == 0 ? 
-            <CustomTableCell rowSpan={2} className={`${PARITY[gameIndex]} table-col-5`} key={`running-score-${gameIndex}-${playerIndex}`}>
-                {runningScore[gameIndex][0] >= 0 ? 
-                `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
-                : " - "}
-            </CustomTableCell>
-            : <></>}
+            {playerIndex == 0 &&
+            <BasicTableCellLow rowSpan={2} className={`${PARITY[gameIndex]}`} key={`running-score-${gameIndex}`}>
+                <Typography variant="h6" textAlign="center">
+                    {runningScore[gameIndex][0] >= 0 ? 
+                        `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
+                        : " - "}
+                </Typography>
+            </BasicTableCellLow>
+            }
+
+            {playerIndex == 0 &&
+            <TableCell sx={{width: "40px", border: "1px solid black"}} rowSpan={2} className={`${PARITY[gameIndex]}`} key={`edit-${gameIndex}`}>
+                <Box display="flex" justifyContent="center">
+                <IconButton onClick={() => console.log("Edit icon clicked.")} aria-label="Edit" sx={{p: 0}}>
+                    <EditIcon />
+                </IconButton>
+                </Box>
+            </TableCell>
+            }
 
             </TableRow>))
         ))}
     </TableBody>
-    </Table>
-    </Box>
+    </BasicTable>
+    </TableContainer>
 
     <GameDialog state={gameDialogState} formFields={formFields} onClose={handleGameDialogClose} onSubmit={handleGameDialogSubmit} />
     </>

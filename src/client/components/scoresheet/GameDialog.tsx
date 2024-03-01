@@ -8,47 +8,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography, styled } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchLoader';
 import './GameDialog.css';
+import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
 // import { useSnackbar } from '../../utils/SnackbarContext';
-
-const CustomTable = styled(Table)({
-    // border: '2px solid black',
-    borderCollapse: 'collapse',
-});
-  
-const CustomTableCell = styled(TableCell)({
-    border: '2px solid black',
-    paddingTop: "8px",
-    paddingBottom: "8px",
-    paddingLeft: "2px",
-    paddingRight: "2px",
-    minWidth: "36px",
-    maxWidth: "70px",
-    overflow: "hidden",
-});
-
-const CustomHeadTableCell = styled(TableCell)({
-    border: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    paddingRight: 0,
-});
-
-const CustomTypography = styled(Typography)({
-    textAlign: "center",
-});
-
-const CustomNameTypography = styled(Typography)({
-    textAlign: "center",
-    // maxWidth: "50px",
-    textWrap: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    padding: 0,
-    margin: 0,
-});
 
 type Player = {
     id: number;
@@ -196,54 +160,54 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 </>}
 
                 {/* Taulu tuloksille */}
-                <CustomTable sx={{mt: 1}}>
+                <BasicTable sx={{mt: 1}}>
                     <TableHead>
                         <TableRow>
-                            <CustomHeadTableCell>
-                                <CustomNameTypography variant="body2">
+                            <BasicTableHeadCell>
+                                <BasicNameTypography variant="body2">
                                     Pelaaja
-                                </CustomNameTypography>
-                            </CustomHeadTableCell>
+                                </BasicNameTypography>
+                            </BasicTableHeadCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomHeadTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
-                                    <CustomTypography variant="body2">
+                                <BasicTableHeadCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                    <BasicTypography variant="body2">
                                         {`Erä ${index+1}`}
-                                    </CustomTypography>
-                                </CustomHeadTableCell>
+                                    </BasicTypography>
+                                </BasicTableHeadCell>
                             )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         <TableRow sx={{height: "50px"}}>
-                            <CustomTableCell width="50px">
-                                <CustomNameTypography variant="body2" fontWeight="bold">
+                            <BasicTableCell>
+                                <BasicNameTypography variant="body2" fontWeight="bold">
                                     {playerHome}
-                                </CustomNameTypography>
-                            </CustomTableCell>
+                                </BasicNameTypography>
+                            </BasicTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
-                                    <CustomTypography variant="body1" fontWeight="bold">
+                                <BasicTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                    <BasicTypography variant="body1" fontWeight="bold">
                                         {`${results[0][index] ?? -1}`}
-                                    </CustomTypography>
-                                </CustomTableCell>
+                                    </BasicTypography>
+                                </BasicTableCell>
                             )}
                         </TableRow>
                         <TableRow sx={{height: "50px"}}>
-                            <CustomTableCell>
-                                <CustomNameTypography variant="body2" fontWeight="bold">
+                            <BasicTableCell>
+                                <BasicNameTypography variant="body2" fontWeight="bold">
                                     {playerAway}
-                                </CustomNameTypography>
-                            </CustomTableCell>
+                                </BasicNameTypography>
+                            </BasicTableCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <CustomTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
-                                    <CustomTypography variant="body1" fontWeight="bold">
+                                <BasicTableCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                    <BasicTypography variant="body1" fontWeight="bold">
                                         {`${results[1][index] ?? -1}`}
-                                    </CustomTypography>
-                                </CustomTableCell>
+                                    </BasicTypography>
+                                </BasicTableCell>
                             )}
                         </TableRow>
                     </TableBody>
-                </CustomTable>
+                </BasicTable>
                 {(errorMessage) &&
                 <Box sx={{mt: 2}}>
                     <Typography variant="body1" color="error">

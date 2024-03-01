@@ -89,6 +89,39 @@ function checkGameResults(gameResult: string[][]) {
 }
 
 /**
+ * Laskee juoksevan tuloksen "runningScore" ja voitettujen erien lukumäärän "roundWins"
+ * erien tulosten perusteella.
+ */
+const computeDerivedStats = (scores: string[][][]): { runningScore: number[][], roundWins: number[][] } => {
+    const runningScore = Array.from({ length: 9 }, () => [0, 0]);
+    const roundWins = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => 0));
+    for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
+        for (let k = 0; k < 2; k++)
+            runningScore[gameIndex][k] = gameIndex == 0 ? 0 : runningScore[gameIndex-1][k];
+        for (let playerIndex = 0; playerIndex < 2; playerIndex++) {
+            let playerRoundWins = 0;
+            for (let roundIndex = 0; roundIndex < 5; roundIndex++) {
+                if (scores[gameIndex][playerIndex][roundIndex] != " ")
+                    playerRoundWins += 1;
+            }
+            roundWins[gameIndex][playerIndex] = playerRoundWins;
+        }
+        // Lasketaan juokseva tulos ainoastaan jos pelit tähän asti on 
+        // kirjattu täysin valmiiksi.
+        const gamesCompleteUpToThis = (runningScore[gameIndex][0] >= 0) && (Math.max(...roundWins[gameIndex]) >= 3);
+        if (gamesCompleteUpToThis) {
+            if (roundWins[gameIndex][0] > roundWins[gameIndex][1])
+                runningScore[gameIndex][0] += 1;
+            else if (roundWins[gameIndex][1] > roundWins[gameIndex][0])
+                runningScore[gameIndex][1] += 1;
+        } else {
+            runningScore[gameIndex] = [-1, -1];
+        }
+    }
+    return { runningScore, roundWins };
+}
+
+/**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
  */
 function parseScores(rawScores: any, teamHome: (Player | null)[], teamAway: (Player | null)[]) {
@@ -233,4 +266,4 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
-export { fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };
+export { computeDerivedStats, fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };
