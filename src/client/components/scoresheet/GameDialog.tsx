@@ -160,16 +160,16 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 </>}
 
                 {/* Taulu tuloksille */}
-                <BasicTable sx={{mt: 1}}>
+                <BasicTable sx={{mt: 1, tableLayout: "fixed", maxWidth: "400px"}}>
                     <TableHead>
                         <TableRow>
-                            <BasicTableHeadCell>
+                            <BasicTableHeadCell width="40%">
                                 <BasicNameTypography variant="body2">
                                     Pelaaja
                                 </BasicNameTypography>
                             </BasicTableHeadCell>
                             {[0, 1, 2, 3, 4].map((index) => 
-                                <BasicTableHeadCell key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
+                                <BasicTableHeadCell width="15%" key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <BasicTypography variant="body2">
                                         {`Erä ${index+1}`}
                                     </BasicTypography>

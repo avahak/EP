@@ -78,47 +78,49 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     return (
     // <div id="table-box">
     <>
-    <TableContainer component={Paper} sx={{px: 1, py: 2}} elevation={4}>
-    <Typography variant="h6" textAlign="center">Erätulokset</Typography>
-    <BasicTable>
+    <TableContainer component={Paper} sx={{px: 1, py: 2, width: "100%"}} elevation={4}>
+    <Typography variant="h5" sx={{py: 1}} textAlign="center">Erätulokset</Typography>
+    <BasicTable sx={{tableLayout: "fixed"}}>
     <TableHead sx={{borderBottom: "2px solid black"}}>
     <TableRow>
-        <BasicTableHeadCell>
+        <BasicTableHeadCell width="12%">
             <BasicTypography variant="body2">
                 Peli
             </BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
+        <BasicTableHeadCell width="25%">
             <BasicTypography variant="body2">
                 Pelaaja
             </BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
-            <BasicTypography>1.</BasicTypography>
+        <BasicTableHeadCell width="8%">
+            <BasicTypography variant="body2">E1</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell >
-            <BasicTypography>2.</BasicTypography>
+        <BasicTableHeadCell width="8%">
+            <BasicTypography variant="body2">E2</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
-            <BasicTypography>3.</BasicTypography>
+        <BasicTableHeadCell width="8%">
+            <BasicTypography variant="body2">E3</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
-            <BasicTypography>4.</BasicTypography>
+        <BasicTableHeadCell width="8%">
+            <BasicTypography variant="body2">E4</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
-            <BasicTypography>5.</BasicTypography>
+        <BasicTableHeadCell width="8%">
+            <BasicTypography variant="body2">E5</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell sx={{maxWidth: "20px"}}>
+        {/* <BasicTableHeadCell sx={{maxWidth: "20px"}}> */}
+        <BasicTableHeadCell width="8%">
             <BasicTypography variant="body2">
-                Voitot
+                V.
             </BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
+        <BasicTableHeadCell width="12%">
             <BasicTypography variant="body2"> 
                 Tilanne<br />K - V
             </BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell sx={{paddingRight: 1, width: "20px"}}>
+        {/* <BasicTableHeadCell sx={{paddingRight: 1, width: "20px"}}> */}
+        <BasicTableHeadCell width="15%">
             <BasicTypography variant="body2">
                 Muokkaa
             </BasicTypography>
@@ -132,10 +134,10 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {/* Peli */}
             {playerIndex == 0 &&
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
-                    <Typography variant="h6" textAlign="center">
+                    <BasicTypography variant="body1" textAlign="center">
                         {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
                         {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[0]+1}`}
-                    </Typography>
+                    </BasicTypography>
                 </BasicTableCellLow>
             }
 
@@ -172,11 +174,11 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {/* Tilanne */}
             {playerIndex == 0 &&
             <BasicTableCellLow rowSpan={2} className={`${PARITY[gameIndex]}`} key={`running-score-${gameIndex}`}>
-                <Typography variant="h6" textAlign="center">
+                <BasicTypography variant="body1" textAlign="center">
                     {runningScore[gameIndex][0] >= 0 ? 
                         `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
                         : " - "}
-                </Typography>
+                </BasicTypography>
             </BasicTableCellLow>
             }
 
