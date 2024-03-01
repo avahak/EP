@@ -17,13 +17,13 @@ interface BasicTableCellProps extends TableCellProps {
 }
 
 const BasicTableCell = styled(TableCell)<BasicTableCellProps>(({ minWidth, maxWidth, paddingX, paddingY }) => ({
-    border: '1px solid black',
+    border: '2px solid black',
     paddingTop: paddingY || "8px",
     paddingBottom: paddingY || "8px",
     paddingLeft: paddingX || "2px",
     paddingRight: paddingX || "2px",
-    minWidth: minWidth || "40px",
-    maxWidth: maxWidth || "70px",
+    minWidth: minWidth || "20px",
+    maxWidth: maxWidth || "50px",
     overflow: "hidden",
 }));
 
@@ -33,13 +33,14 @@ const BasicTableCellLow = styled(TableCell)<BasicTableCellProps>(({ minWidth, ma
     paddingBottom: paddingY || "4px",
     paddingLeft: paddingX || "2px",
     paddingRight: paddingX || "2px",
-    minWidth: minWidth || "40px",
-    maxWidth: maxWidth || "70px",
+    minWidth: minWidth || "20px",
+    maxWidth: maxWidth || "50px",
     overflow: "hidden",
 }));
 
 const BasicTableHeadCell = styled(TableCell)({
     border: 0,
+    paddingTop: 0,
     paddingBottom: 0,
     paddingLeft: 0,
     paddingRight: 0,

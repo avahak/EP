@@ -79,18 +79,24 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     // <div id="table-box">
     <>
     <TableContainer component={Paper} sx={{px: 1, py: 2}} elevation={4}>
-    <BasicTable className="game-table">
+    <Typography textAlign="center">Erätulokset</Typography>
+    <BasicTable>
     <TableHead sx={{borderBottom: "2px solid black"}}>
-        <TableRow>
-        {/* <th>Peli</th> */}
+    <TableRow>
         <BasicTableHeadCell>
-            <BasicTypography>Peli</BasicTypography>
+            <BasicTypography variant="body2">
+                Peli
+            </BasicTypography>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
-            <BasicTypography>Pelaaja</BasicTypography>
+            <BasicTypography variant="body2">
+                Pelaaja
+            </BasicTypography>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
-            <BasicTypography>1.</BasicTypography>
+            <Box style={{position: "relative"}}>
+                <BasicTypography>1.</BasicTypography>
+            </Box>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
             <BasicTypography>2.</BasicTypography>
@@ -104,15 +110,17 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
         <BasicTableHeadCell>
             <BasicTypography>5.</BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell>
-            <BasicTypography>Voitot</BasicTypography>
+        <BasicTableHeadCell sx={{maxWidth: "20px"}}>
+            <BasicTypography variant="body2">
+                Voitot
+            </BasicTypography>
         </BasicTableHeadCell>
         <BasicTableHeadCell>
-            <BasicTypography>
+            <BasicTypography variant="body2"> 
                 Tilanne<br />K - V
             </BasicTypography>
         </BasicTableHeadCell>
-        <BasicTableHeadCell sx={{width: "40px"}}>
+        <BasicTableHeadCell sx={{paddingRight: 1, width: "20px"}}>
             <BasicTypography variant="body2">
                 Muokkaa
             </BasicTypography>
@@ -126,10 +134,10 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {/* Peli */}
             {playerIndex == 0 &&
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
-                    <BasicTypography variant="h6" paddingX="3px">
+                    <Typography variant="h6" textAlign="center">
                         {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
                         {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[0]+1}`}
-                    </BasicTypography>
+                    </Typography>
                 </BasicTableCellLow>
             }
 
@@ -175,8 +183,8 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             }
 
             {playerIndex == 0 &&
-            <TableCell sx={{width: "40px", border: "1px solid black"}} rowSpan={2} className={`${PARITY[gameIndex]}`} key={`edit-${gameIndex}`}>
-                <Box display="flex" justifyContent="center">
+            <TableCell sx={{p: 0, width: "40px", border: "1px solid black"}} rowSpan={2} className={`${PARITY[gameIndex]}`} key={`edit-${gameIndex}`}>
+                <Box display="flex" justifyContent="center" sx={{p: 0}}>
                 <IconButton onClick={() => console.log("Edit icon clicked.")} aria-label="Edit" sx={{p: 0}}>
                     <EditIcon />
                 </IconButton>
