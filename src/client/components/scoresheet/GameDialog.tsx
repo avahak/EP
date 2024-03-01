@@ -8,7 +8,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchLoader';
 import './GameDialog.css';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
@@ -116,7 +116,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 {!isFinished && <>
                 <Box display="flex" justifyContent="space-between">
                     <Typography variant="body1">
-                        {`Syötä pelin ${state.gameIndex!+1} erän ${currentRound+1} tulos:`}
+                        {`Syötä pelin ${state.gameIndex!+1} erän ${currentRound+1} tulos.`}
                     </Typography>
                     <Button variant="outlined" size="small" onClick={() => setRoundResult(currentRound, 0, " ")}>
                         {`Tyhjää erä ${currentRound+1}`}
@@ -124,13 +124,12 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 </Box>
 
                 {/* Nimi ja nappulat kotipelaajalle: */}
-                <Box>
-                    <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                <Paper component="fieldset" sx={{marginTop: 2}}>
+                    <legend>
+                        <Typography variant="body2">Kotipelaaja (ylärivi)</Typography>
+                    </legend>
+                    <Box display="flex" justifyContent="space-around" gap="20px">
                         <Box>
-                            <Typography maxWidth="200px" textAlign="center">
-                                Ylärivi
-                            </Typography>
-                            <hr />
                             <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
                                 {playerHome}
                                 <br />
@@ -139,28 +138,29 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         </Box>
                         {/* Kotipelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
-                            <Box width="100%">
+                            {/* <Box width="100%">
                                 <Typography maxWidth="200px">
                                     {`Erän ${currentRound+1} kotivoitto:`}
                                 </Typography>
+                            </Box> */}
+                            <Box display="flex" gap="15px" justifyContent="center">
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "A")}>A</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "C")}>C</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "V")}>V</Button>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "A")}>A</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "C")}>C</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "V")}>V</Button>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "1")}>1</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "9")}>9</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 0, "K")}>K</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "K")}>K</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "9")}>9</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "1")}>1</Button>
                             </Box>
                         </Box>
                     </Box>
-                </Box>
+                </Paper>
                 </>}
 
                 {/* Taulu tuloksille */}
-                <BasicTable sx={{mt: 1, tableLayout: "fixed", maxWidth: "400px"}}>
+                <TableContainer sx={{display: "flex", justifyContent: "center"}}>
+                <BasicTable sx={{mt: 2, tableLayout: "fixed", maxWidth: "400px"}}>
                     <TableHead>
                         <TableRow>
                             <BasicTableHeadCell width="40%">
@@ -208,6 +208,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         </TableRow>
                     </TableBody>
                 </BasicTable>
+                </TableContainer>
                 {(errorMessage) &&
                 <Box sx={{mt: 2}}>
                     <Typography variant="body1" color="error">
@@ -218,13 +219,16 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
 
                 {/* Nimi ja nappulat vieraspelaajalle */}
                 {!isFinished &&
-                <Box>
-                    <Box display="flex" justifyContent="space-around" marginTop={2} gap="20px">
+                <Paper component="fieldset" sx={{marginTop: 2}}>
+                    <legend>
+                        <Typography variant="body2">Vieraspelaaja (alarivi)</Typography>
+                    </legend>
+                    <Box display="flex" justifyContent="space-around" gap="20px">
                         <Box>
-                            <Typography maxWidth="200px" textAlign="center">
+                            {/* <Typography maxWidth="200px" textAlign="center">
                                 Alarivi
                             </Typography>
-                            <hr />
+                            <hr /> */}
                             <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
                                 {playerAway}
                                 <br />
@@ -233,24 +237,24 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         </Box>
                         {/* Vieraspelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
-                            <Box width="100%">
+                            {/* <Box width="100%">
                                 <Typography maxWidth="200px">
                                     {`Erän ${currentRound+1} vierasvoitto:`}
                                 </Typography>
+                            </Box> */}
+                            <Box display="flex" gap="15px" justifyContent="center">
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "K")}>K</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "9")}>9</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "1")}>1</Button>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "1")}>1</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "9")}>9</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "K")}>K</Button>
-                            </Box>
-                            <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "A")}>A</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "C")}>C</Button>
-                                <Button variant="outlined" onClick={() => setRoundResult(currentRound, 1, "V")}>V</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "A")}>A</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "C")}>C</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "V")}>V</Button>
                             </Box>
                         </Box>
                     </Box>
-                </Box>
+                </Paper>
                 }
 
                 {/* Lopputulos: */}

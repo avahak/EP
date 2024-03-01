@@ -133,7 +133,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     <TableBody>
         {formFields.scores.map((_game, gameIndex) => (
         Array.from({ length: 2 }, (_, playerIndex) => (
-            <TableRow key={`row-${gameIndex}-${playerIndex}`} onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}>
+            <TableRow key={`row-${gameIndex}-${playerIndex}`}>
             {/* Peli */}
             {playerIndex == 0 &&
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
@@ -186,10 +186,15 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             }
 
             {(mode == "modify" && playerIndex == 0) &&
-            <TableCell sx={{p: 0, width: "40px", border: "1px solid black"}} rowSpan={2} className={`${PARITY[gameIndex]}`} key={`edit-${gameIndex}`}>
+            <TableCell 
+                sx={{p: 0, width: "40px", border: "1px solid black"}} 
+                rowSpan={2} 
+                className={`${PARITY[gameIndex]}`} 
+                key={`edit-${gameIndex}`}
+            >
                 <Box display="flex" justifyContent="center" sx={{p: 0}}>
                 <IconButton 
-                    onClick={() => console.log("Edit icon clicked.")} 
+                    onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}
                     aria-label="Muokkaa" 
                     sx={{
                         p: 0,
