@@ -81,6 +81,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     };
 
     useEffect(() => {
+        console.log("useEffect fetchMatches()");
         fetchMatches();
     }, []);
 
@@ -107,7 +108,6 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
         setValue(`selectionCategory`, category);
         setValue(`selectionIndex`, index);
         setValue(`date`, match.date);
-        sendButton.current?.focus();
     };
 
     /**
@@ -130,6 +130,10 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     };
 
     let selectedMatch = getSelectedMatch(allFormValues.selectionCategory, allFormValues.selectionIndex);
+    useEffect(() => {
+        console.log("useEffect focus: sendButton.current is ", sendButton.current);
+        sendButton.current?.focus();
+    }, [selectedMatch]);
 
     let selectedRadioButton = "";
     if (allFormValues.selectionCategory == "home")
