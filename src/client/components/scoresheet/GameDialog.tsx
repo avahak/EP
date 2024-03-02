@@ -9,7 +9,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchLoader';
+import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchTools';
 import './GameDialog.css';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
 // import { useSnackbar } from '../../utils/SnackbarContext';
@@ -29,7 +29,7 @@ type Team = {
 
 type FormFields = {
     id: number;
-    oldStatus: string;
+    status: string;
     teamHome: Team;
     teamAway: Team;
     date: string;
@@ -89,6 +89,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     useEffect(() => {
         setCurrentRound(state.roundIndex ?? 0);
         setResults(formFields.scores[state.gameIndex ?? 0]);
+        setErrorMessage("");
     }, [state]);
 
     console.log("GameDialog: formFields", formFields);
@@ -118,24 +119,21 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                     <Typography variant="body1">
                         {`Syötä pelin ${state.gameIndex!+1} erän ${currentRound+1} tulos.`}
                     </Typography>
-                    <Button variant="outlined" size="small" onClick={() => setRoundResult(currentRound, 0, " ")}>
+                    <Button variant="contained" size="small" onClick={() => setRoundResult(currentRound, 0, " ")}>
                         {`Tyhjää erä ${currentRound+1}`}
                     </Button>
                 </Box>
 
                 {/* Nimi ja nappulat kotipelaajalle: */}
-                <Paper component="fieldset" sx={{marginTop: 2}}>
+                <Box display="flex" justifyContent="end">
+                <Paper component="fieldset" sx={{marginTop: 2, width: "fit-content"}}>
                     <legend>
-                        <Typography variant="body2">Kotipelaaja (ylärivi)</Typography>
+                        <Typography variant="body2">Kotipelaaja</Typography>
                     </legend>
-                    <Box display="flex" justifyContent="space-around" gap="20px">
-                        <Box>
-                            <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
-                                {playerHome}
-                                <br />
-                                {formFields.teamHome.teamName} (koti)
-                            </Typography>
-                        </Box>
+                    <Typography fontWeight="bold">
+                        {playerHome}, {formFields.teamHome.teamName}
+                    </Typography>
+                    <Box display="flex" sx={{mt: 1}}>
                         {/* Kotipelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
                             {/* <Box width="100%">
@@ -156,6 +154,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         </Box>
                     </Box>
                 </Paper>
+                </Box>
                 </>}
 
                 {/* Taulu tuloksille */}
@@ -219,22 +218,15 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
 
                 {/* Nimi ja nappulat vieraspelaajalle */}
                 {!isFinished &&
-                <Paper component="fieldset" sx={{marginTop: 2}}>
+                <Box display="flex" justifyContent="end">
+                <Paper component="fieldset" sx={{marginTop: 2, width: "fit-content"}}>
                     <legend>
-                        <Typography variant="body2">Vieraspelaaja (alarivi)</Typography>
+                        <Typography variant="body2">Vieraspelaaja</Typography>
                     </legend>
-                    <Box display="flex" justifyContent="space-around" gap="20px">
-                        <Box>
-                            {/* <Typography maxWidth="200px" textAlign="center">
-                                Alarivi
-                            </Typography>
-                            <hr /> */}
-                            <Typography maxWidth="200px" textAlign="center" fontWeight="bold">
-                                {playerAway}
-                                <br />
-                                {formFields.teamAway.teamName} (vieras)
-                            </Typography>
-                        </Box>
+                    <Typography fontWeight="bold">
+                        {playerAway}, {formFields.teamAway.teamName}
+                    </Typography>
+                    <Box display="flex" sx={{mt: 1}}>
                         {/* Vieraspelaajan nappulat tässä: */}
                         <Box display="flex" flexDirection="column" gap="10px">
                             {/* <Box width="100%">
@@ -255,6 +247,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         </Box>
                     </Box>
                 </Paper>
+                </Box>
                 }
 
                 {/* Lopputulos: */}

@@ -15,7 +15,7 @@ import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material'
 // import { parseMatch } from '../../../shared/parseMatch';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
-import { computeDerivedStats } from "../../utils/matchLoader";
+import { computeGameRunningStats } from "../../utils/matchTools";
 
 type Player = {
     id: number;
@@ -32,7 +32,7 @@ type Team = {
 
 type FormFields = {
     id: number;
-    oldStatus: string;
+    status: string;
     teamHome: Team;
     teamAway: Team;
     date: string;
@@ -102,7 +102,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             submitCallback(data);
     }
 
-    const { runningScore, roundWins } = computeDerivedStats(formFields.scores);
+    const gameRunningStats = computeGameRunningStats(formFields.scores);
 
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
@@ -147,6 +147,15 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         }
     };
 
+    /**
+     * Muutetaan ottelun päivämäärä.
+     */
+    const handleSetDate = (value: string) => {
+        console.log("handleSetDate", value);
+        if (value)
+            setValue("date", value);
+    }
+
     return (
         <Box>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -160,7 +169,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             />
             
             {/* Ottelu ja päivämäärä */}
-            <Box display="flex" justifyContent="center" marginBottom="20px">
+            <Box display="flex" justifyContent="center" sx={{mb: 2}}>
                 <Box textAlign="center">
                     <Typography variant='h4'>
                         {formFields.teamHome.teamName} - {formFields.teamAway.teamName}
@@ -173,10 +182,9 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                             {mode == "modify" ?
                             <input
                                 type="date"
-                                id="datePicker"
-                                name="datePicker"
                                 value={dateToISOString(new Date(formFields.date))}
-                                onChange={(event) => setValue("date", event.target.value)}
+                                onChange={(event) => handleSetDate(event.target.value)}
+                                style={{zIndex: 1}}
                             />
                             :
                             <Typography variant='body1'>
@@ -187,23 +195,31 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Box>
             </Box>
 
-            <Box sx={{mb: 2}}>
-                <Grid container spacing={5}>
+            <Box sx={{mb: 2, mt: 1}}>
+                <Grid container>
                     {/* Kotijoukkueen nimi ja pelaajat */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={6} sx={{px: 2}}>
                         {<TeamSelection mode={mode} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                     {/* Vierasjoukkueen nimi ja pelaajat */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={6} sx={{px: 2}}>
                         {<TeamSelection mode={mode} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                 </Grid>
             </Box>
 
-            <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} runningScore={runningScore} roundWins={roundWins}></RoundResultsTable>
+            <Box display="flex" justifyContent="center">
+                <Box width="100%" maxWidth="750px" minWidth="300px">
+                    <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
+                </Box>
+            </Box>
         </Box>
 
-        <GameResultsTable roundWins={roundWins} runningScore={runningScore} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
+        <Box display="flex" justifyContent="center">
+            <Box width="100%" maxWidth="500px">
+                <GameResultsTable gameRunningStats={gameRunningStats} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
+            </Box>
+        </Box>
 
         {/* Tuloslaatikko */}
         <Box display="flex" justifyContent="space-between" marginTop="16px">

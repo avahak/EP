@@ -58,7 +58,7 @@ function parseMatch(newStatus: string, match: any) {
 
     return { 
         ok: true, 
-        oldStatus: match.oldStatus,
+        status: match.status,
         newStatus: newStatus,
         id: match.id, 
         date: match.date,

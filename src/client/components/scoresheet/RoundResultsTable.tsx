@@ -5,29 +5,16 @@
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
-import { gameIndexToPlayerIndexes } from "../../utils/matchLoader";
+import { GameRunningStats, Player, Team, gameIndexToPlayerIndexes } from "../../utils/matchTools";
 import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import './Scoresheet.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
 type FormFields = {
     id: number;
-    oldStatus: string;
+    status: string;
     teamHome: Team;
     teamAway: Team;
     date: string;
@@ -40,8 +27,7 @@ type RoundResultsTableProps = {
     mode: ScoresheetMode;
     formFields: FormFields;
     onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
-    runningScore: number[][];
-    roundWins: number[][];
+    gameRunningStats: GameRunningStats;
 }
 
 /**
@@ -54,9 +40,9 @@ const playerName = (players: (Player | null)[], index: number, defaultName: stri
     return `${defaultName} ${index+1}`;
 }
 
-const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, roundWins, runningScore }) => {
+const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, gameRunningStats }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
-    
+
     /**
      * Kutsutaan, kun GameDialog suljetaan tuloksia kirjaamatta.
      */
@@ -133,7 +119,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     <TableBody>
         {formFields.scores.map((_game, gameIndex) => (
         Array.from({ length: 2 }, (_, playerIndex) => (
-            <TableRow key={`row-${gameIndex}-${playerIndex}`}>
+            <TableRow key={`row-${gameIndex}-${playerIndex}`} sx={{borderBottom: playerIndex == 1 ? "2px solid black" : ""}}>
             {/* Peli */}
             {playerIndex == 0 &&
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
@@ -168,9 +154,9 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             ))}
 
             {/* Voitot */}
-            <BasicTableCellLow className={`${roundWins[gameIndex][playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+            <BasicTableCellLow className={`${gameRunningStats[gameIndex].roundWins[playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
                 <BasicTypography>
-                    {roundWins[gameIndex][playerIndex]}
+                    {gameRunningStats[gameIndex].roundWins[playerIndex]}
                 </BasicTypography>
             </BasicTableCellLow>
 
@@ -178,8 +164,8 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             {playerIndex == 0 &&
             <BasicTableCellLow rowSpan={2} className={`${PARITY[gameIndex]}`} key={`running-score-${gameIndex}`}>
                 <Typography variant="body1" textAlign="center">
-                    {runningScore[gameIndex][0] >= 0 ? 
-                        `${runningScore[gameIndex][0]} - ${runningScore[gameIndex][1]}`
+                    {gameRunningStats[gameIndex].isAllGamesValid ? 
+                        `${gameRunningStats[gameIndex].runningMatchScore[0]} - ${gameRunningStats[gameIndex].runningMatchScore[1]}`
                         : "-"}
                 </Typography>
             </BasicTableCellLow>
@@ -191,17 +177,16 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
                 rowSpan={2} 
                 className={`${PARITY[gameIndex]}`} 
                 key={`edit-${gameIndex}`}
+                onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}
             >
                 <Box display="flex" justifyContent="center" sx={{p: 0}}>
                 <IconButton 
-                    onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}
                     aria-label="Muokkaa" 
+                    color={gameRunningStats[gameIndex].isValidGame ? "primary" : "error"}
                     sx={{
                         p: 0,
-                        backgroundColor: '#29f',
-                        color: 'white',
                         '&:hover': {
-                            backgroundColor: '#13a',
+                            backgroundColor: '#aaa',
                         },
                     }}
                 >

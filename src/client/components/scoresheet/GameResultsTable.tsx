@@ -1,5 +1,6 @@
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
 import "./GameResultsTable.css";
+import { GameRunningStats, Team, playerIndexesToGameIndex } from "../../utils/matchTools";
 
 const StyledTable = styled(Table)(({ }) => ({
     border: '2px solid black',
@@ -26,19 +27,6 @@ const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ height }) => 
     // overflow: 'hidden',
 }));
 
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
 /**
  * Yksi laatikko pelin lopputuloksen esittämiseksi. Tässä on kummankin
  * pelaajan voittamien pelien määrät (left, right).
@@ -61,17 +49,20 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const GameResultsTable: React.FC<{ roundWins: number[][]; runningScore: number[][]; teamHome: Team; teamAway: Team }> = ({roundWins, runningScore, teamHome, teamAway}) => {
+const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStats; teamHome: Team; teamAway: Team }> = ({gameRunningStats, teamHome, teamAway}) => {
     return (
-        <Box sx={{m: 0, p: 0}} >
         <Paper elevation={10} sx={{p: 1, m: 2}}>
         <Typography textAlign="center" fontWeight="bold">
-            {`Ottelun tulos ${runningScore[8][0]} - ${runningScore[8][1]}`}
+            {gameRunningStats[8].isAllGamesValid ?
+            `Ottelun tulos ${gameRunningStats[8].runningMatchScore[0]} - ${gameRunningStats[8].runningMatchScore[1]}`
+            : 
+            `Pelien tulokset`
+            }
         </Typography>
-        <StyledTable size="small">
+        <StyledTable sx={{tableLayout: "fixed"}}>
             <TableHead>
                 <TableRow>
-                    <StyledTableCell sx={{minWidth: "30px", maxWidth: "100px"}} className="diagonal-split-box">
+                    <StyledTableCell width="30%" className="diagonal-split-box">
                         <DiagonalSplitBox 
                             left={<StyledTableText variant="body2" fontWeight="bold">{teamHome.teamName}</StyledTableText>}
                             right={<StyledTableText variant="body2" fontWeight="bold">{teamAway.teamName}</StyledTableText>}
@@ -79,7 +70,7 @@ const GameResultsTable: React.FC<{ roundWins: number[][]; runningScore: number[]
                     </StyledTableCell>
 
                     {[0, 1, 2].map((col) => (
-                        <StyledTableCell sx={{maxWidth: "60px"}} key={`box-${col}`} variant="head">
+                        <StyledTableCell width="20%" key={`box-${col}`} variant="head">
                             <StyledTableText variant="body2" textAlign="center" fontWeight="bold">
                                 {teamAway.selectedPlayers[col]?.name ?? ""}
                             </StyledTableText>
@@ -90,18 +81,21 @@ const GameResultsTable: React.FC<{ roundWins: number[][]; runningScore: number[]
             <TableBody>
                 {[0, 1, 2].map((row) => (
                     <TableRow key={`box-${row}`}>
-                        <StyledTableCell sx={{maxWidth: "100px"}} variant="head">
+                        <StyledTableCell variant="head">
                             <StyledTableText variant="body2" textAlign="center" fontWeight="bold">
                                 {teamHome.selectedPlayers[row]?.name ?? ""}
                             </StyledTableText>
                         </StyledTableCell>
                         {[0, 1, 2].map((col) => (
-                            <StyledTableCell sx={{maxWidth: "60px"}} key={`box-${row}-${col}`}>
+                            <StyledTableCell key={`box-${row}-${col}`}>
                                 {/* <DiagonalSplitBox 
                                     left={<StyledTableText className="dsb2-left-text">{roundWins[(9-row*2+col*3) % 9][0]}</StyledTableText>}
                                     right={<StyledTableText className="dsb2-right-text">{roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>}
                                 /> */}
-                                <StyledTableText>{roundWins[(9-row*2+col*3) % 9][0]} - {roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>
+                                {/* <StyledTableText>{roundWins[(9-row*2+col*3) % 9][0]} - {roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText> */}
+                                <StyledTableText>
+                                    {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[0]} - {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[1]}
+                                </StyledTableText>
                             </StyledTableCell>
                         ))}
                     </TableRow>
@@ -109,7 +103,6 @@ const GameResultsTable: React.FC<{ roundWins: number[][]; runningScore: number[]
             </TableBody>
         </StyledTable>
         </Paper>
-        </Box>
     );
 }
 

@@ -5,25 +5,12 @@
 import { useEffect, useState } from "react";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { Container } from "@mui/material";
-import { fetchMatchData } from "../../utils/matchLoader";
+import { Team, fetchMatchData } from "../../utils/matchTools";
 import { Link } from "react-router-dom";
-
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
 
 type ResultFields = null | {
     id: number;
-    oldStatus: string;
+    status: string;
     teamHome: Team;
     teamAway: Team;
     date: string;

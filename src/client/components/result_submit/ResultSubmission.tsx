@@ -12,7 +12,7 @@ import { Scoresheet } from "../scoresheet/Scoresheet";
 import { serverFetch } from "../../utils/apiUtils";
 import { Backdrop, Box, CircularProgress, Container, Typography } from "@mui/material";
 import { parseMatch } from "../../../shared/parseMatch";
-import { fetchMatchData } from "../../utils/matchLoader";
+import { fetchMatchData } from "../../utils/matchTools";
 import { Link } from "react-router-dom";
 import { useSnackbar } from "../../utils/SnackbarContext";
 
@@ -39,7 +39,7 @@ type Team = {
 
 type ResultFields = {
     id: number;
-    oldStatus: string;
+    status: string;
     teamHome: Team;
     teamAway: Team;
     date: string;
@@ -62,7 +62,7 @@ const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 
 const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const [result, setResult] = useState<ResultFields>({
         id: -1,
-        oldStatus: 'T',
+        status: 'T',
         teamHome: {...emptyTeam, teamRole: "home"},
         teamAway: {...emptyTeam, teamRole: "away"},
         date: '',

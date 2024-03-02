@@ -3,7 +3,7 @@
  */
 
 // import { SubmitHandler, useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
@@ -36,6 +36,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
             date: ''
         },
     });
+    const sendButton = useRef<HTMLButtonElement>(null);
 
     const allFormValues = watch();
 
@@ -106,7 +107,17 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
         setValue(`selectionCategory`, category);
         setValue(`selectionIndex`, index);
         setValue(`date`, match.date);
+        sendButton.current?.focus();
     };
+
+    /**
+     * Muutetaan ottelun päivämäärä.
+     */
+    const handleSetDate = (value: string) => {
+        console.log("handleSetDate", value);
+        if (value)
+            setValue("date", value);
+    }
 
     const homeMatches = matches.filter((match) => (match.home == userTeam) && (match.status == 'T'));
     const awayMatches = matches.filter((match) => (match.away == userTeam) && (match.status == 'K'));
@@ -133,9 +144,9 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
             <Box sx={{ mb: 5 }}>
                 <Typography variant="h2" textAlign="center">Ilmoita tulos</Typography>
             </Box>
-            <Grid container spacing={5}>
+            <Grid container>
             {/* <Box display="flex" justifyContent="center" gap="50px"> */}
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
                     <Paper style={{ padding: "10px" }} elevation={5}>
                     <Typography variant="body1" textAlign="center" fontWeight="bold">Omat kotiottelut</Typography>
                     <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -155,7 +166,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                     </Box>
                     </Paper>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
                     <Paper style={{ padding: "10px" }} elevation={5}>
                     <Typography variant="body1" textAlign="center" fontWeight="bold">Omat vierasottelut</Typography>
                     <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -187,16 +198,14 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                         <Typography variant="body1">{getDayOfWeekStrings(new Date(allFormValues.date)).long}</Typography>
                         <input
                             type="date"
-                            id="datePicker"
-                            name="datePicker"
                             value={allFormValues.date}
-                            onChange={(event) => setValue("date", event.target.value)}
+                            onChange={(event) => handleSetDate(event.target.value)}
                         />
                     </Box>
                     </Box>
                 </Box>
                 <Box display="flex" justifyContent="right">
-                    <Button variant="contained" type="submit">Valitse</Button>
+                    <Button ref={sendButton} variant="contained" type="submit">Valitse</Button>
                 </Box>
             </>}
             </form>
