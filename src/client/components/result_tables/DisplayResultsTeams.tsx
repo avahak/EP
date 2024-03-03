@@ -5,6 +5,7 @@
 import { Link } from "react-router-dom";
 import { ResultTable } from "../tables/ResultTable";
 import { useInitialServerFetch } from "../../utils/apiUtils";
+import { Container } from "@mui/material";
 
 const DisplayResultsTeams: React.FC = () => {
     // Suorittaa api-kutsun joukkueiden tulosten hakuun sivun lataamisen yhteydessä:
@@ -16,14 +17,20 @@ const DisplayResultsTeams: React.FC = () => {
 
     console.log("results", results);
 
-    if (!results.status.ok)
-        return "Ei dataa."
-
     return (
         <>
         <Link to="/">Takaisin</Link>
-        <ResultTable rows={results.data.rows} tableName="Joukkueiden tulokset" maxWidth="1000px" />
-        </>);
+        <Container maxWidth="md">
+
+        {results.status.ok ?
+        <ResultTable rows={results.data.rows} tableName="Joukkueiden tulokset" />
+        : 
+        "Ei dataa."
+        }
+
+        </Container>
+        </>
+    );
 }
 
 export { DisplayResultsTeams };

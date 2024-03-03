@@ -25,8 +25,8 @@ const DisplayScoresheet: React.FC = () => {
             const matchData = await fetchMatchData(1);
             setResult(matchData);
         }
-        fetchMatch();
         console.log("useEffect");
+        fetchMatch();
     }, []);
 
 
@@ -34,8 +34,10 @@ const DisplayScoresheet: React.FC = () => {
         <Link to="/">Takaisin</Link>
         <Container maxWidth="md">
 
-        {result &&
+        {result ?
         <Scoresheet initialValues={result} mode="display" />
+        : 
+        "Ei dataa."
         }
 
         </Container>

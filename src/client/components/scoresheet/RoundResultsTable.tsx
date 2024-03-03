@@ -5,7 +5,7 @@
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
-import { GameRunningStats, Player, Team, gameIndexToPlayerIndexes } from "../../utils/matchTools";
+import { GameRunningStats, Team, gameIndexToPlayerIndexes, playerName } from "../../utils/matchTools";
 import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import './Scoresheet.css';
@@ -28,16 +28,6 @@ type RoundResultsTableProps = {
     formFields: FormFields;
     onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
     gameRunningStats: GameRunningStats;
-}
-
-/**
- * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
- */
-const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
-    const player = players[index];
-    if (!!player)
-        return player.name;
-    return `${defaultName} ${index+1}`;
 }
 
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, gameRunningStats }) => {

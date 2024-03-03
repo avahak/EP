@@ -10,6 +10,14 @@ const dateToISOString = (date: Date) => {
 };
 
 /**
+ * Muodostaa kopion sarjallistuvasta oliosta.
+ * Tämän voi toteuttaa tehokkaammin tarvittaessa, tässä käytetään vain JSON trikkiä.
+ */
+function deepCopy(object: any) {
+    return JSON.parse(JSON.stringify(object));
+}
+
+/**
  * Muuttaa muodossa YYYY-MM-DD annetun merkkijonon Date olioksi.
  */
 const ISOStringToDate = (dateString: string) => {
@@ -87,5 +95,5 @@ function getComparator<Key extends keyof any>(order: Order, orderBy: Key): (
 }
 
 export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
-    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator };
+    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy };
 export type { Order };

@@ -16,7 +16,6 @@ import { DBTest } from '../components/DBTest';
 import { ResultSubmission } from '../components/result_submit/ResultSubmission';
 import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsTeams';
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
-import { TestResultTable } from '../components/tables/ResultTable';
 import { MUITest } from '../components/sandbox/MUITest';
 import { DisplayScoresheet } from '../components/result_tables/DisplayScoresheet';
 import { SnackbarProvider } from '../utils/SnackbarContext';
@@ -43,7 +42,6 @@ const AppRouter = () => {
 
                 {/* Kehitystyökaluja */}
                 <Route path="/mui_test" element={<MUITest />} />
-                <Route path="/result_table" element={<TestResultTable />} />
                 <Route path="/upload" element={<FileUpload />} />
                 <Route path="/db" element={<DBTest />} />
 

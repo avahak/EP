@@ -37,8 +37,6 @@ const App = () => {
             </Box>
             <Box sx={{p: 2}}>
                 <Typography variant="h6">Työkalut</Typography>
-                <Link to="/result_table">Taulu</Link> 
-                <br />
                 <Link to="/mui_test">MUI testi</Link> 
                 <br />
                 <Link to="/upload">Upload</Link>

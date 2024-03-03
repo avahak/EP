@@ -5,7 +5,7 @@
 
 import mysql from 'mysql2/promise';
 import { myQuery } from './dbGeneral.js';
-import { dateToISOString } from '../../shared/generalUtils.js';
+import { dateToISOString, deepCopy } from '../../shared/generalUtils.js';
 // import { parseMatch } from '../../shared/parseMatch.js';
 
 /**
@@ -172,7 +172,7 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
  */
 async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) {
     const match = params.result;    // HUOM! Tämä tulisi tarkistaa vielä tässä!
-    const rounds = JSON.parse(JSON.stringify(match.rounds));    // deep copy trikki
+    const rounds = deepCopy(match.rounds);
     
     console.log("match", JSON.stringify(match));
     await new Promise(r => setTimeout(r, 2000));    // poista tämä (tässä vain testausta varten)

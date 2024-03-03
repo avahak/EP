@@ -12,6 +12,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchTools';
 import './GameDialog.css';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
+import { deepCopy } from '../../../shared/generalUtils';
 // import { useSnackbar } from '../../utils/SnackbarContext';
 
 type Player = {
@@ -55,8 +56,8 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     const [currentRound, setCurrentRound] = useState<number>(0);
 
     const [homePlayerIndex, awayPlayerIndex] = gameIndexToPlayerIndexes(state.gameIndex!);
-    const playerHome = formFields.teamHome.selectedPlayers[homePlayerIndex]?.name;
-    const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name;
+    const playerHome = formFields.teamHome.selectedPlayers[homePlayerIndex]?.name ?? `Koti ${homePlayerIndex+1}`;
+    const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name ?? `Vieras ${awayPlayerIndex+1}`
 
     const gameScore = computeGameScore(results);
     const invalidResult = checkGameResults(results);
@@ -77,7 +78,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     const setRoundResult = (round: number, playerIndex: number, result: string) => {
         if (round < 0 || round >= 5)
             return;
-        const newResults = JSON.parse(JSON.stringify(results));
+        const newResults = deepCopy(results);
         newResults[playerIndex][round] = result;
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
@@ -272,7 +273,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                             <TableRow>
                                 <TableCell>
                                     <Typography variant="body2">
-                                        {playerHome} (ylärivi)
+                                        {playerHome}
                                     </Typography>
                                 </TableCell>
                                 <TableCell>
@@ -284,7 +285,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                             <TableRow>
                                 <TableCell>
                                     <Typography variant="body2">
-                                        {playerAway} (alarivi)
+                                        {playerAway}
                                     </Typography>
                                 </TableCell>
                                 <TableCell>

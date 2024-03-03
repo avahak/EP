@@ -2,6 +2,7 @@
  * Kokoelma ottelupöytäkirjaa käsitteleviä apufunktioita.
  */
 
+import { deepCopy } from "../../shared/generalUtils";
 import { serverFetch } from "./apiUtils";
 
 type Player = {
@@ -34,6 +35,16 @@ type GameRunningStats = {
 }[];
 
 const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
+
+/**
+ * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
+ */
+const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
+    const player = players[index];
+    if (!!player)
+        return player.name;
+    return `${defaultName} ${index+1}`;
+}
 
 /**
  * Muuttaa pelin indeksin (0-8) koti- ja vieraspelaajan indekseiksi (0-2) samassa
@@ -145,7 +156,7 @@ const computeGameRunningStats = (scores: string[][][]): GameRunningStats => {
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
  */
 function parseScores(rawScores: any, teamHome: (Player | null)[], teamAway: (Player | null)[]) {
-    const results = JSON.parse(JSON.stringify(scoresDefaultValue)); // "deep copy" trikki
+    const results = deepCopy(scoresDefaultValue);
     for (const row of rawScores) {
         let indexHome = teamHome.findIndex((player) => player?.id == row.kp);
         let indexAway = teamAway.findIndex((player) => player?.id == row.vp);
@@ -286,5 +297,5 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
-export { computeGameRunningStats, fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };
+export { playerName, computeGameRunningStats, fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };
 export type { Player, Team, MatchData, GameRunningStats };
