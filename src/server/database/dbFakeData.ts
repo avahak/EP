@@ -128,11 +128,11 @@ function generate_pelaajat_jasenet(joukkueet: any[]) {
                 jasenno: jasenno,
                 etunimi: firstName,
                 suku: lastName,
-                pelaaja: `${firstName} ${lastName[0]}`
+                pelaaja: `${firstName} ${lastName.slice(0, 1)}`
             };
             const pelaaja = {
                 index: pelaajat.length,
-                nimi: `${firstName} ${lastName}`,
+                nimi: Math.random() < 0.75 ? `${firstName}` : `${firstName} ${lastName.slice(0, 1)}`,
                 joukkue: joukkueIndex,
                 jasen: jasen.index,
                 sukupuoli: ['-', 'M', 'N'][Math.floor(3*Math.random())]

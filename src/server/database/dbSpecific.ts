@@ -130,7 +130,11 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
             CAST(SUM((e.era1 = 'K3') + (e.era2 = 'K3') + (e.era3 = 'K3') + (e.era4 = 'K3') + (e.era5 = 'K3')) AS SIGNED) AS K3,
             CAST(SUM((e.era1 = 'K4') + (e.era2 = 'K4') + (e.era3 = 'K4') + (e.era4 = 'K4') + (e.era5 = 'K4')) AS SIGNED) AS K4,
             CAST(SUM((e.era1 = 'K5') + (e.era2 = 'K5') + (e.era3 = 'K5') + (e.era4 = 'K5') + (e.era5 = 'K5')) AS SIGNED) AS K5,
-            CAST(SUM((e.era1 = 'K6') + (e.era2 = 'K6') + (e.era3 = 'K6') + (e.era4 = 'K6') + (e.era5 = 'K6')) AS SIGNED) AS K6
+            CAST(SUM((e.era1 = 'K6') + (e.era2 = 'K6') + (e.era3 = 'K6') + (e.era4 = 'K6') + (e.era5 = 'K6')) AS SIGNED) AS K6,
+            CAST(SUM(COALESCE(p.ktulos, 0)) AS SIGNED) AS v_era_koti,
+            CAST(SUM(COALESCE(p.vtulos, 0)) AS SIGNED) AS h_era_koti,
+            CAST(SUM(IF(COALESCE(p.ktulos, 0) > COALESCE(p.vtulos, 0), 1, 0)) AS SIGNED) AS v_peli_koti,
+            CAST(SUM(IF(COALESCE(p.vtulos, 0) > COALESCE(p.ktulos, 0), 1, 0)) AS SIGNED) AS h_peli_koti
         FROM
             ep_erat AS e
             JOIN ep_peli AS p ON p.id = e.peli
@@ -149,7 +153,11 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
             CAST(SUM((e.era1 = 'V3') + (e.era2 = 'V3') + (e.era3 = 'V3') + (e.era4 = 'V3') + (e.era5 = 'V3')) AS SIGNED) AS V3,
             CAST(SUM((e.era1 = 'V4') + (e.era2 = 'V4') + (e.era3 = 'V4') + (e.era4 = 'V4') + (e.era5 = 'V4')) AS SIGNED) AS V4,
             CAST(SUM((e.era1 = 'V5') + (e.era2 = 'V5') + (e.era3 = 'V5') + (e.era4 = 'V5') + (e.era5 = 'V5')) AS SIGNED) AS V5,
-            CAST(SUM((e.era1 = 'V6') + (e.era2 = 'V6') + (e.era3 = 'V6') + (e.era4 = 'V6') + (e.era5 = 'V6')) AS SIGNED) AS V6
+            CAST(SUM((e.era1 = 'V6') + (e.era2 = 'V6') + (e.era3 = 'V6') + (e.era4 = 'V6') + (e.era5 = 'V6')) AS SIGNED) AS V6,
+            CAST(SUM(COALESCE(p.vtulos, 0)) AS SIGNED) AS v_era_vieras,
+            CAST(SUM(COALESCE(p.ktulos, 0)) AS SIGNED) AS h_era_vieras,
+            CAST(SUM(IF(COALESCE(p.vtulos, 0) > COALESCE(p.ktulos, 0), 1, 0)) AS SIGNED) AS v_peli_vieras,
+            CAST(SUM(IF(COALESCE(p.ktulos, 0) > COALESCE(p.vtulos, 0), 1, 0)) AS SIGNED) AS h_peli_vieras
         FROM
             ep_erat AS e
             JOIN ep_peli AS p ON p.id = e.peli

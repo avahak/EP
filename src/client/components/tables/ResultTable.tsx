@@ -26,18 +26,24 @@ import { Order } from '../../../shared/generalUtils';
 // Tyyli taulun otsikkoriville
 const customColumnStyleHeader = {
     backgroundColor: "#99aaff",
-    padding: "10px 5px",
+    padding: "2px 4px",
     margin: "0px 0",
     border: "1px solid black",
-    borderBottom: "3px solid black"
+    borderBottom: "3px solid black",
+    overflow: "hidden",
+    whiteSpace: "wrap",
+    fontWeight: "bold"
 };
 
 // Tyyli taulun parittomille riveille
 const customColumnStyleOdd = {
     backgroundColor: "#ffffff",
-    padding: "10px 5px",
+    padding: "2px 4px",
     margin: "0px 0",
-    border: "1px solid black"
+    border: "1px solid black",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
 };
 
 // Tyyli taulun parillisille riveille
@@ -67,6 +73,7 @@ type TableHeadProps = {
 type ResultTableProps = {
     tableName: string;
     headCells: HeadCell[];
+    minWidth: string;
     maxWidth: string;
     stripingId: string;     // määrää rivin värin, pitää olla integer
     rows: any[];
@@ -159,6 +166,7 @@ function SortableTableHead(props: TableHeadProps) {
 const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (props) => {
     // Erotetaan tableName, headCells, rows muuttujasta props:
     let tableName: string = props.tableName ?? "Table";
+    let minWidth: string = props.minWidth ?? "200px";
     let maxWidth: string = props.maxWidth ?? "750px";
     let headCells: HeadCell[] = [];
     let rows: any[] = props.rows;
@@ -217,7 +225,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
 
     return (
         <Box sx={{ display: 'flex' }}>
-        <Paper sx={{ width: maxWidth, px: 1, mx: 'auto' }} elevation={10}>
+        <Paper sx={{ minWidth: minWidth, width: maxWidth, px: 1, mx: 'auto' }} elevation={10}>
             <Typography sx={{width: '100%', textAlign: 'center', fontSize: '1.5rem'}}>{tableName}</Typography>
             <TableContainer>
             <Table
@@ -253,7 +261,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
                 {emptyRows > 0 && (
                     <TableRow
                     style={{
-                        height: `${(20 + 20 + 1) * emptyRows}px`,
+                        height: `${(25) * emptyRows}px`,
                     }}
                     >
                     <TableCell colSpan={headCells.length} />
@@ -263,7 +271,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
             </Table>
             </TableContainer>
             <TablePagination
-                rowsPerPageOptions={[10, 20]}
+                rowsPerPageOptions={[10, 25]}
                 component="div"
                 count={rows.length}
                 rowsPerPage={rowsPerPage}

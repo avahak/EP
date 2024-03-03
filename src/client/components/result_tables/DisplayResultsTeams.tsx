@@ -3,9 +3,9 @@
  */
 
 import { Link } from "react-router-dom";
-import { ResultTable } from "../tables/ResultTable";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 import { Container } from "@mui/material";
+import { TeamsTable } from "./TeamTables";
 
 const DisplayResultsTeams: React.FC = () => {
     // Suorittaa api-kutsun joukkueiden tulosten hakuun sivun lataamisen yhteydessä:
@@ -23,7 +23,7 @@ const DisplayResultsTeams: React.FC = () => {
         <Container maxWidth="md">
 
         {results.status.ok ?
-        <ResultTable rows={results.data.rows} tableName="Joukkueiden tulokset" />
+        <TeamsTable rows={results.data.rows} tableName="Sarjatilanne" />
         : 
         "Ei dataa."
         }
