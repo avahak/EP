@@ -407,7 +407,7 @@ app.get(BASE_URL + '/api/get_live_match_list', async (_req, res) => {
 });
 
 /**
- * SSE! TODO
+ * Alustetaan uusi SSE-yhteys live-seurantaa varten.
  */
 app.get(BASE_URL + '/api/live_match/:matchId', async (req, res) => {
     const matchId = parseInt(req.params.matchId);
@@ -426,8 +426,8 @@ app.get(BASE_URL + '/api/live_match/:matchId', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const connectionId = crypto.randomUUID();
     const now = Date.now();
+    const connectionId = now.toString() + Math.random().toString();
     liveMatchConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
 
     sendLiveMatchTo(liveMatch, connectionId);
