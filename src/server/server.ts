@@ -469,13 +469,11 @@ setInterval(() => {
     for (let key of liveMatchConnectionsToDelete)
         liveMatchConnections.delete(key);
 
-    console.log("liveMatches:")
     for (const [matchId, liveMatch] of liveMatches) {
         let hash = crudeHash(liveMatch);
         console.log(`id: ${matchId}, data hash: ${hash}`);
     }
 
-    console.log("liveMatchConnections:")
     for (const [connectionId, connection] of liveMatchConnections) {
         console.log(`id: ${connectionId}, matchId: ${connection.matchId}`);
     }
