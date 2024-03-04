@@ -119,10 +119,10 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
 
-            setSnackbarState?.({ isOpen: true, message: "Muutos kirjattu.", severity: "success", autoHideDuration: 1000 });
+            // setSnackbarState?.({ isOpen: true, message: "Muutos kirjattu.", severity: "success", autoHideDuration: 1000 });
         } catch(error) {
             console.error('Error:', error);
-            setSnackbarState?.({ isOpen: true, message: "Muutoksen kirjaus epäonnistui.", severity: "error", autoHideDuration: 2000 });
+            // setSnackbarState?.({ isOpen: true, message: "Muutoksen kirjaus epäonnistui.", severity: "error", autoHideDuration: 2000 });
         }
     };
 
