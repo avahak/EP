@@ -1,6 +1,19 @@
 /**
  * Express.js serveri Reactille ja SQL-kyselyille. Api-rajapinnan 
  * reittien esiliitteenä on /api.
+ * 
+ * HTTP status short list:
+ * -----------------------
+ * 200 OK: Request was successful.
+ * 201 Created: Request resulted in a new resource being created.
+ * 204 No Content: Request was successful, but no additional content to send.
+ * 400 Bad Request: Server could not understand the request due to invalid syntax.
+ * 401 Unauthorized: Authentication is required, and the client failed to provide valid credentials.
+ * 403 Forbidden: Server refuses to authorize the request.
+ * 404 Not Found: Server could not find the requested resource.
+ * 500 Internal Server Error: An unexpected condition was encountered on the server.
+ * 501 Not Implemented: Server does not support the functionality required to fulfill the request.
+ * 503 Service Unavailable: Server is not ready to handle the request.
  */
 
 import util from 'util';
@@ -18,6 +31,29 @@ import { createThumbnail } from './imageTools.js';
 import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './database/dbSpecific.js';
+import { base64JSONStringify, crudeHash } from '../shared/generalUtils.js';
+
+const SECOND = 1000;
+const MINUTE = 60*SECOND;
+//@ts-ignore
+const HOUR = 60*MINUTE;
+
+type LiveMatchConnection = {
+    startTime: number;
+    matchId: number;
+    res: any;           // yhteys clientiin
+};
+
+const liveMatchConnections: Map<string, LiveMatchConnection> = new Map();
+
+type LiveMatch = {
+    startTime: number;
+    lastActivity: number;
+    data: any;
+};
+
+// Kuvaus (ep_ottelu.id) -> LiveMatch
+const liveMatches: Map<number, LiveMatch> = new Map();
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä
 const KULUVA_KAUSI = 3;
@@ -211,10 +247,13 @@ app.get(BASE_URL + '/api/misc/:filename', (req, res) => serveFile(req, res, misc
  * SQL-tietokannan testausta
 */
 app.get(BASE_URL + '/api/db/schema', async (_req, res) => {
-    console.log(new Date(), "/api/db/schema requested")
+    console.log(new Date(), "/api/db/schema requested");
     try {
-        const sqlFile1 = fs.readFileSync('src/server/database/testaus_ep_tables.sql', 'utf-8');
-        const sqlFile2 = fs.readFileSync('src/server/database/testaus_ep_triggers.sql', 'utf-8');
+        const databaseName = process.env.DB_NAME;
+        if (!databaseName)
+            throw Error("Missing database info.");
+        const sqlFile1 = fs.readFileSync(`src/server/database/${databaseName}_tables.sql`, 'utf-8');
+        const sqlFile2 = fs.readFileSync(`src/server/database/${databaseName}_triggers.sql`, 'utf-8');
         const commands1 = parseSqlFileContent(sqlFile1);
         const commands2 = parseSqlFileContent(sqlFile2);
         // const commands = sqlFile.split(/\r\n/);
@@ -304,12 +343,144 @@ app.post(BASE_URL + '/api/db/specific_query', async (req, res) => {
 });
 
 /**
+ * Kirjoittaa yhteyteen ottelun tilan.
+ */
+function sendLiveMatchTo(liveMatch: LiveMatch, connectionId: string) {
+    const connection = liveMatchConnections.get(connectionId);
+    if (!connection)
+        return;
+    connection.res.write(`data: ${base64JSONStringify(liveMatch)}\n\n`);
+}
+
+/**
+ * Käy läpi liveMatchConnections ja kirjoittaa ottelua matchId vastaaviin
+ * yhteyksiin ottelun tilan.
+ */
+function broadcastLiveMatch(matchId: number) {
+    // käy läpi liveMatchConnections ja kirjoita jos matchId vastaavat
+    const liveMatch = liveMatches.get(matchId);
+    if (!liveMatch)
+        return;
+    
+    for (let [connectionId, connection] of liveMatchConnections) {
+        if (connection.matchId != matchId)
+            continue;
+        sendLiveMatchTo(liveMatch, connectionId);
+    }
+}
+
+/**
+ * Vastaanottaa keskeneräisen pöytäkirjan live-seurantaa varten.
+ */
+app.post(BASE_URL + '/api/submit_live_match', async (req, res) => {
+    if (!req.body.result)
+        res.status(400).send(`Missing result`);
+    const result = req.body.result;
+
+    const matchId = result.id;
+    const now = Date.now();
+
+    let liveMatch: LiveMatch | undefined = liveMatches.get(matchId);
+    if (liveMatch) {
+        // Päivitä olemassaolevaa liveMatch:
+        liveMatch.lastActivity = now;
+        liveMatch.data = result;
+    } else {
+        // Luodaan uusi liveMatch
+        liveMatch = { startTime: now, lastActivity: now, data: result };
+        liveMatches.set(matchId, liveMatch);
+    }
+    broadcastLiveMatch(matchId);
+
+    console.log("Server received live match data, matchId:", matchId);
+    res.json({ ok: true });
+});
+
+/**
+ * Palauttaa listan liveMatches otteluista
+ */
+app.get(BASE_URL + '/api/get_live_match_list', async (_req, res) => {
+    const matchList = [];
+    for (const [matchId, liveMatch] of liveMatches)
+        matchList.push({ id: matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName });
+    res.json({ data: matchList });
+});
+
+/**
+ * SSE! TODO
+ */
+app.get(BASE_URL + '/api/live_match/:matchId', async (req, res) => {
+    const matchId = parseInt(req.params.matchId);
+    if (isNaN(matchId)) {
+        res.status(400).send("Invalid matchId.");
+        return;
+    }
+    const liveMatch = liveMatches.get(matchId);
+    if (!liveMatch) {
+        res.status(404).send("Live match not found.");
+        return;
+    }
+
+    // Headers SSE varten:
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const connectionId = crypto.randomUUID();
+    const now = Date.now();
+    liveMatchConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
+
+    sendLiveMatchTo(liveMatch, connectionId);
+
+    // Handle client disconnect
+    req.on('close', () => {
+        liveMatchConnections.delete(connectionId);
+    });
+
+    console.log(`/api/live_match/${matchId} done`);
+});
+
+/**
  * Muissa reiteissä käytetään Reactin omaa reititystä.
  */
 app.get('*', (_req, res) => {
     console.log("*:", _req.url);
     res.sendFile(path.join(_dirname, 'dist', 'index.html'));
 });
+
+// Asetetaan periodisesti toistuva tehtävä SSE varten: poistetaan vanhentuneet
+// yhteydet ja live-ottelut.
+setInterval(() => {
+    const now = Date.now();
+
+    // Poistetaan vanhat liveMatches:
+    const liveMatchesToDelete = [];
+    for (const [matchId, liveMatch] of liveMatches) 
+        if ((now - liveMatch.lastActivity > 10*MINUTE) || (now - liveMatch.startTime > 1*HOUR))
+            liveMatchesToDelete.push(matchId);
+    for (let key of liveMatchesToDelete)
+        liveMatches.delete(key);
+
+    // Poistetaan vanhat liveMatchConnections:
+    const liveMatchConnectionsToDelete = [];
+    for (const [connectionId, connection] of liveMatchConnections) 
+        if (now - connection.startTime > 1*HOUR)
+            liveMatchConnectionsToDelete.push(connectionId);
+    for (let key of liveMatchConnectionsToDelete)
+        liveMatchConnections.delete(key);
+
+    console.log("liveMatches:")
+    for (const [matchId, liveMatch] of liveMatches) {
+        let hash = crudeHash(liveMatch);
+        console.log(`id: ${matchId}, data hash: ${hash}`);
+    }
+
+    console.log("liveMatchConnections:")
+    for (const [connectionId, connection] of liveMatchConnections) {
+        console.log(`id: ${connectionId}, matchId: ${connection.matchId}`);
+    }
+
+}, 10*MINUTE);
 
 // Käynnistetään express.js serveri:
 app.listen(PORT, () => {

@@ -63,7 +63,6 @@ function playerIndexesToGameIndex(playerHomeIndex: number, playerAwayIndex: numb
     return (9-playerHomeIndex*2+playerAwayIndex*3) % 9;
 };
 
-
 /**
  * Palauttaa pelin lopputuloksen muodossa [koti erävoitot, vieras erävoitot].
  */

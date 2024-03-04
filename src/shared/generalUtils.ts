@@ -94,6 +94,38 @@ function getComparator<Key extends keyof any>(order: Order, orderBy: Key): (
         : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
+/**
+ * Primitiivinen hash-funktio serializable objekteille.
+ * HUOM! Vain testauskäyttöön!
+ */
+function crudeHash(obj: any) {
+    const s = JSON.stringify(obj);
+    let hash = 0;
+    for (let k = 0; k < s.length; k++) {
+        const char = s.charCodeAt(k);
+        hash = (hash << 5) - hash + char;
+    }
+    hash = Math.abs(hash);
+    return hash.toString();
+}
+
+/**
+ * Muutetaan serializable objekti JSON muotoon ja käytetään base64 encoding.
+ */
+function base64JSONStringify(obj: any) {
+    const s = JSON.stringify(obj);
+    return btoa(s);
+}
+
+/**
+ * Palauttaa base64JSONStringify muunnetun objekti takaisin alkuperäiseksi.
+ */
+function base64JSONparse(s64: string) {
+    const s = atob(s64);
+    return JSON.parse(s);
+}
+
 export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
-    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy };
+    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy,
+    crudeHash, base64JSONStringify, base64JSONparse };
 export type { Order };

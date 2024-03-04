@@ -53,7 +53,7 @@ type ScoresheetMode = "modify" | "verify" | "display";
  * React komponentti tuloslomakkeelle.
  * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: FormFields) => void, rejectCallback?: () => void}> = ({initialValues, mode, submitCallback, rejectCallback}) => {
+const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: FormFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: FormFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
@@ -61,17 +61,22 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     // uusi pelaaja lisätään modaalin avulla:
     const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
     // Lomakkeen kenttien tila:
-    const { setValue, handleSubmit, watch } = useForm<FormFields>({
+    const { setValue, handleSubmit, watch, reset } = useForm<FormFields>({
         defaultValues: initialValues
     });
+    // Käytetään onChageCallback varten tarkistamaan onko muutkoksia tapahtunut:
+    const [dataString, setDataString] = useState("");
 
     const formFields = watch();
     // console.log("initialValues", initialValues);
     // console.log("formFields", formFields);
 
+    // Jos initialValues muuttuu, muutetaan lomakkeen tila siihen, tätä
+    // käytetään vain "display"-tilassa.
     useEffect(() => {
+        reset(initialValues);
         console.log("Scoresheet useEffect called");
-    }, []);
+    }, [initialValues]);
 
     // avaa AddPlayerDialog
     const handleOpenAddPlayerDialog = () => {
@@ -156,6 +161,25 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setValue("date", value);
     }
 
+    // Tarkistetaan onko kaikki pelaajat valittu.
+    let playersAllSelected = true;
+    if (formFields.teamHome.selectedPlayers.length != 3 || formFields.teamAway.selectedPlayers.length != 3)
+        playersAllSelected = false;
+    if (playersAllSelected) {
+        for (let k = 0; k < 3; k++)
+            if (!formFields.teamHome.selectedPlayers[k] || !formFields.teamAway.selectedPlayers[k])
+                playersAllSelected = false;
+    };
+
+    // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on
+    if (playersAllSelected && onChangeCallback) {
+        const newDataString = JSON.stringify(formFields);
+        if (onChangeCallback && (newDataString !== dataString)) {
+            onChangeCallback(formFields);
+            setDataString(newDataString);
+        };
+    };
+
     return (
         <Box>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -208,20 +232,24 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Grid>
             </Box>
 
+            {playersAllSelected &&
             <Box display="flex" justifyContent="center">
                 <Box width="100%" maxWidth="750px" minWidth="300px">
                     <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
                 </Box>
             </Box>
+            }
         </Box>
 
+        {playersAllSelected &&
         <Box display="flex" justifyContent="center">
             <Box width="100%" maxWidth="500px">
                 <GameResultsTable gameRunningStats={gameRunningStats} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
             </Box>
         </Box>
+        }
 
-        {/* Tuloslaatikko */}
+        {/* Napit */}
         <Box display="flex" justifyContent="space-between" marginTop="16px">
             <Box>
             </Box>
@@ -229,13 +257,15 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 <Box flexGrow={1}>
                 </Box>
                 <Box>
-                {mode == 'modify' &&
+                {(mode == 'modify' && playersAllSelected) &&
                 <Button type="submit" variant="contained" color="success">Lähetä</Button>}
 
                 {(mode == "verify") && 
                 <Box display="flex" gap="20px">
                     <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
+                    {playersAllSelected &&
                     <Button type="submit" variant="contained" color="success">Hyväksy</Button>
+                    }
                 </Box>}
                 </Box>
             </Box>

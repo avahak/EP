@@ -72,7 +72,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const setSnackbarState = useSnackbar();
 
     /**
-     * Hakee pelaajat joukkueeseen sen lyhenteen perusteella.
+     * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
      */
     const fetchSendResult = async (newStatus: string, result: ResultFields, oldPageState: PageState) => {
         console.log("fetchSendResult()");
@@ -104,6 +104,29 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     };
 
     /**
+     * Lähettää lomakkeen tiedot serverille live-seurantaa varten.
+     */
+    const fetchSendSSE = async (data: ResultFields) => {
+        console.log("fetchSendSSE()");
+        try {
+            const response = await serverFetch("/submit_live_match", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ result: data }),
+            });
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+
+            setSnackbarState?.({ isOpen: true, message: "Muutos kirjattu.", severity: "success", autoHideDuration: 1000 });
+        } catch(error) {
+            console.error('Error:', error);
+            setSnackbarState?.({ isOpen: true, message: "Muutoksen kirjaus epäonnistui.", severity: "error", autoHideDuration: 2000 });
+        }
+    };
+
+    /**
      * Tätä funktiota kutsutaan kun käyttäjä lähettää täytetyn/muokatun Scoresheet lomakkeen.
      */
     const handleSubmit = (data: ResultFields) => {
@@ -119,6 +142,14 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         const oldPageState = pageState;
         setPageState("scoresheet_submit");
         fetchSendResult(newStatus, data, oldPageState);
+    }
+
+    /**
+     * For SSE
+     */
+    const handleScoresheetSSE = (data: ResultFields) => {
+        console.log("handleScoresheetSSE", data);
+        fetchSendSSE(data);
     }
 
     /**
@@ -157,8 +188,12 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
             <MatchChooser userTeam={userTeam} submitCallback={matchChooserCallback} />}
 
         {/* Kotijoukkue kirjaa tulokset: */}
-        {/* tai vierasjoukkue haluaa tehdä muutoksia tuloksiin: */}
-        {(pageState == "scoresheet_fresh" || pageState == "scoresheet_modify") && 
+        {(pageState == "scoresheet_fresh") && 
+            <Scoresheet initialValues={result} mode="modify" onChangeCallback={handleScoresheetSSE}
+                submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
+
+        {/* Vierasjoukkue haluaa tehdä muutoksia tuloksiin: */}
+        {(pageState == "scoresheet_modify") && 
             <Scoresheet initialValues={result} mode="modify" 
                 submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
 

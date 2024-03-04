@@ -179,7 +179,10 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
  * @param params - Sisältää kentän result.
  */
 async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) {
-    const match = params.result;    // HUOM! Tämä tulisi tarkistaa vielä tässä!
+    const match = params.result;
+    if (!match.ok)
+        throw Error("Invalid match.");
+
     const rounds = deepCopy(match.rounds);
     
     console.log("match", JSON.stringify(match));
