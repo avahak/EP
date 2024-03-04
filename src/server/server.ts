@@ -31,7 +31,7 @@ import { createThumbnail } from './imageTools.js';
 import { /*myQuery,*/ parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
 // import { generateAndInsertToDatabase } from './database/dbFakeData.js';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './database/dbSpecific.js';
-import { base64JSONStringify, crudeHash } from '../shared/generalUtils.js';
+import { base64JSONStringify } from '../shared/generalUtils.js';
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
@@ -468,15 +468,6 @@ setInterval(() => {
             liveMatchConnectionsToDelete.push(connectionId);
     for (let key of liveMatchConnectionsToDelete)
         liveMatchConnections.delete(key);
-
-    for (const [matchId, liveMatch] of liveMatches) {
-        let hash = crudeHash(liveMatch);
-        console.log(`id: ${matchId}, data hash: ${hash}`);
-    }
-
-    for (const [connectionId, connection] of liveMatchConnections) {
-        console.log(`id: ${connectionId}, matchId: ${connection.matchId}`);
-    }
 
 }, 10*MINUTE);
 
