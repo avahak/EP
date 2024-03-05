@@ -6,6 +6,6 @@ export default defineConfig({
     plugins: [react()],
     base: '/test',
     define: {
-        BUILD_DATE: JSON.stringify(new Date().toLocaleDateString()),
+        BUILD_DATE: JSON.stringify(new Date().toLocaleDateString('en-FI')),
     },
 })
