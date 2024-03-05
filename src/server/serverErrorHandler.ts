@@ -1,9 +1,15 @@
+import fs from 'fs';
 import { Express, NextFunction, Request, Response } from 'express';
 import winston from 'winston';
 
 const MB = 1024*1024;
 
 const BASE_URL = process.env.BASE_URL || "";
+const LOG_FILE_DIRECTORY = process.env.LOG_FILE_DIRECTORY || '.';
+
+// Luodaan hakemisto lokitiedostoille, jos ei vielä olemassa.
+if (!fs.existsSync(LOG_FILE_DIRECTORY))
+    fs.mkdirSync(LOG_FILE_DIRECTORY, { recursive: true });
 
 /** 
  * Määrittää miten virheilmoitukset kirjoitetaan konsolille.

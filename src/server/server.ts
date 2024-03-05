@@ -2,8 +2,6 @@
  * Express.js serverin luonti.
  * HUOM! Tulee olla tarkkana eri app.use ja reittien lisäyksen järjestyksen kanssa!
  * 
- * TODO: Tee logitiedosto.
- * 
  * HTTP status lista, ks. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
  * --- Ranges ---
  * 100-199: Informational responses
@@ -35,8 +33,8 @@ import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import liveScoreRoutes from './liveScoreRoutes.js';
-import machineVisionRoutes from './machineVisionRoutes.js';
-import databaseRoutes from './databaseRoutes.js';
+import machineVisionRoutes from './machine_vision/machineVisionRoutes.js';
+import databaseRoutes from './database/databaseRoutes.js';
 import generalRoutes from './generalRoutes.js';
 import { logger, initializeErrorHandling } from './serverErrorHandler.js';
 import 'express-async-errors';
@@ -52,6 +50,7 @@ app.use(helmet());
 app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
+
 // Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist')));
 

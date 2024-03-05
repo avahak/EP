@@ -5,9 +5,9 @@
 import express, { Router } from 'express';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './database/dbSpecific.js';
-import { parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
-import { logger } from '../server/serverErrorHandler.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './dbSpecific.js';
+import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
+import { logger } from '../serverErrorHandler.js';
 
 const router: Router = express.Router();
 

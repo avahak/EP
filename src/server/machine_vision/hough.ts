@@ -1,5 +1,5 @@
 import sharp from 'sharp';       // https://sharp.pixelplumbing.com/
-import { GrayscaleImage } from "./imageTools.js";
+import { GrayscaleImage } from "../imageTools.js";
 
 /**
  * Luokka Hough-muunnoksien laskemisksi annetusta mustavalkoisesta kuvasta.
