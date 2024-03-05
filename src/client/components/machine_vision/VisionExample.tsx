@@ -23,6 +23,7 @@ const VisionExample: React.FC = () => {
         const ctx = canvas.getContext('2d')!;
         const image = new Image();
         image.src = `${apiUrl}/images/${imageName}`;
+        image.crossOrigin = 'anonymous';
         image.onload = () => {
             canvas.width = image.width;
             canvas.height = image.height;
@@ -80,7 +81,7 @@ const VisionExample: React.FC = () => {
         <div>
         <canvas ref={canvasRef} />
         <h1>Original image:</h1>
-        <img src={`${apiUrl}/images/IMG-20231128-WA0002.jpg`} />
+        <img crossOrigin="anonymous" src={`${apiUrl}/images/IMG-20231128-WA0002.jpg`} />
         </div>
         </>
     );

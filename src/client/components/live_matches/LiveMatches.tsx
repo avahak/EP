@@ -11,7 +11,7 @@ const LiveMatches: React.FC = () => {
     // Hakee live ottelut:
     const fetchLiveMatchList = async () => {
         try {
-            const response = await serverFetch("/get_live_match_list")
+            const response = await serverFetch("/live/get_match_list")
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();

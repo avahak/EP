@@ -109,7 +109,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const fetchSendSSE = async (data: ResultFields) => {
         console.log("fetchSendSSE()");
         try {
-            const response = await serverFetch("/submit_live_match", {
+            const response = await serverFetch("/live/submit_match", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

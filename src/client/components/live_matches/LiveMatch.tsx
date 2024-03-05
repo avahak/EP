@@ -7,13 +7,13 @@ const LiveMatch: React.FC<{ matchId: number }> = ({ matchId }) => {
     const [sseData, setSseData] = useState<any>(undefined);
 
     useEffect(() => {
-        const eventSource = new EventSource(`${getApiUrl()}/live_match/${matchId}`);
+        const eventSource = new EventSource(`${getApiUrl()}/live/watch_match/${matchId}`);
 
         eventSource.onmessage = (event) => {
             const newData = event.data;
-            console.log("1.", newData);
-            console.log("2.", base64JSONparse(newData));
-            console.log("3.", base64JSONparse(newData).data);
+            // console.log("1.", newData);
+            // console.log("2.", base64JSONparse(newData));
+            // console.log("3.", base64JSONparse(newData).data);
             const parsedData = base64JSONparse(newData).data;
             setSseData(parsedData);
         };

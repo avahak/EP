@@ -33,7 +33,7 @@ const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({ selectionCallback
         <div style={{ display: 'flex', height: '90vh' }}>
             <div style={{ width: '215px', height: '100%', overflowX: 'hidden', overflowY: 'scroll', border: '1px solid #ccc' }}>
                 {thumbnails.map((thumbnail, index) => (
-                    <img key={index} src={`${apiUrl}/thumbnails/${thumbnail}`} alt={`${thumbnail}`} onClick={() => selectionCallback(thumbnailToImageName(thumbnail))} />
+                    <img key={index} crossOrigin="anonymous" src={`${apiUrl}/thumbnails/${thumbnail}`} alt={`${thumbnail}`} onClick={() => selectionCallback(thumbnailToImageName(thumbnail))} />
                 ))}
             </div>
         </div>

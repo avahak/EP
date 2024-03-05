@@ -17,7 +17,7 @@ const Hough: React.FC = () => {
         try {
             console.log("imageName", imageName);
             
-            const apiUrl = `${getApiUrl()}/hough`;
+            const apiUrl = `${getApiUrl()}/vision/hough`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -65,7 +65,7 @@ const Hough: React.FC = () => {
             <ThumbnailSelector selectionCallback={(name) => setImageName(name)}/>
             <div>
                 {images.map((image, index) => (
-                <img key={index} src={image.dataUrl} alt={`Image ${index}`} />
+                <img key={index} crossOrigin="anonymous" src={image.dataUrl} alt={`Image ${index}`} />
                 ))}
             </div>
         </div>
