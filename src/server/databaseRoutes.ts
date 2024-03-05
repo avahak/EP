@@ -7,6 +7,7 @@ import fs from 'fs';
 import mysql from 'mysql2/promise';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer } from './database/dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './database/dbGeneral.js';
+import { logger } from '../server/serverErrorHandler.js';
 
 const router: Router = express.Router();
 
@@ -67,7 +68,7 @@ router.get('/schema', async (_req, res) => {
             schema2: sanitizedSchema2
         });
     } catch (error) {
-        console.error('Error executing query:', error);
+        logger.error('Error executing query:', error);
         res.status(500).send('Internal Server Error');
     }
 });
@@ -90,7 +91,7 @@ router.get('/recreate/:stage', async (req, res) => {
         console.log(`databaseRoutes: /recreate/${stage} done`);
         res.send("success!");
     } catch (error) {
-        console.error(`databaseRoutes: Error in /recreate/${stage}:`, error);
+        logger.error(`databaseRoutes: Error in /recreate/${stage}:`, error);
         res.status(500).send('Internal Server Error.');
     }
 });
@@ -127,7 +128,7 @@ router.post('/specific_query', async (req, res) => {
         res.json({ rows });
         console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {
-        console.error('databaseRoutes: Error in /specific_query:', error);
+        logger.error('databaseRoutes: Error in /specific_query:', error);
         res.status(500).send(`Error: ${error}`);
     }
 });

@@ -4,6 +4,7 @@
 
 import express, { Router } from 'express';
 import { base64JSONStringify } from '../shared/generalUtils.js';
+// import { logger } from '../server/serverErrorHandler.js';
 
 const router: Router = express.Router();
 

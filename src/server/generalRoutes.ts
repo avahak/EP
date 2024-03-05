@@ -5,10 +5,11 @@
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-
 import util from 'util';
 import express, { Router, Request, Response } from 'express';
 import { createThumbnail } from './imageTools';
+import { logger } from '../server/serverErrorHandler.js';
+
 const baseUploadDirectory = process.env.BASE_UPLOAD_DIRECTORY || "/home/userdata";
 const imageDirectory = `${baseUploadDirectory}/images`;
 const thumbnailDirectory = `${baseUploadDirectory}/images/thumbnails`;
@@ -43,7 +44,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // Tarkistetaan, että kaikki hakemistot ovat olemassa:
     if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory) || !fs.existsSync(miscDirectory)) {
         const errorMessage = `Upload directory does not exist.`;
-        console.error(errorMessage);
+        logger.error(errorMessage);
         res.status(500).send(errorMessage);
         return;
     }
@@ -61,7 +62,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         console.log(`File saved to: ${thumbnailBuffer ? imagePath : miscPath}`);
         res.status(200).send(`Received and saved: ${file.originalname}, size: ${file.size}`);
     } catch (error) {
-        console.error('Error saving file or thumbnail:', error);
+        logger.error('Error saving file or thumbnail:', error);
         res.status(500).send(`Error saving file or thumbnail: ${error}`);
     }
 });
@@ -75,7 +76,7 @@ router.get('/thumbnails', (_req, res) => {
         const thumbnailFiles = fs.readdirSync(thumbnailDirectory);
         res.json({ thumbnails: thumbnailFiles });
     } catch (error) {
-        console.error('Error listing thumbnails:', error);
+        logger.error('Error listing thumbnails:', error);
         res.status(500).send('Error listing thumbnails.');
     }
 });
@@ -94,7 +95,7 @@ const serveFile = (req: Request, res: Response, baseDirectory: string) => {
             res.status(404).send('File not found.');
         }
     } catch (error) {
-        console.error('Error serving file:', error);
+        logger.error('Error serving file:', error);
         res.status(500).send('Error serving file.');
     }
 };

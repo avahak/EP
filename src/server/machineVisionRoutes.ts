@@ -5,6 +5,7 @@
 import express, { Router, Request, Response } from "express";
 import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
+import { logger } from '../server/serverErrorHandler.js';
 
 const router: Router = express.Router();
 
@@ -31,7 +32,8 @@ router.post('/homography', async (req: Request, res: Response) => {
         console.log("h.data.matches.length", h.data.matches.length);
         res.json({"data": h.data});
     } catch (error) {
-        console.error('Hough transform failed.', error);
+        logger.error('Hough transform failed.', error);
+        // console.error('Hough transform failed.', error);
         res.status(500).send('Hough transform failed.');
     }
 });
@@ -53,7 +55,7 @@ router.post('/hough',  async (req: Request, res: Response) => {
         // Lähetä kuvat JSON-muodossa vastauksessa:
         res.json({ images: [image1, image2] });
     } catch (error) {
-        console.error('Hough transform failed.', error);
+        logger.error('Hough transform failed.', error);
         res.status(500).send('Hough transform failed.');
     }
 });

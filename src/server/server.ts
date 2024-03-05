@@ -1,6 +1,6 @@
 /**
- * Express.js serveri Reactille ja SQL-kyselyille. Api-rajapinnan 
- * reittien esiliitteenä on /api.
+ * Express.js serverin luonti.
+ * HUOM! Tulee olla tarkkana eri app.use ja reittien lisäyksen järjestyksen kanssa!
  * 
  * TODO: Tee logitiedosto.
  * 
@@ -27,8 +27,10 @@
 import dotenv from 'dotenv';
 // Ladataan ympäristömuuttuja heti, jotta ne ovat käytössä import komennoille:
 dotenv.config();
+if (!process.env.PORT)
+    throw new Error('Missing PORT environment variable, check server configuration.');
 
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
@@ -36,12 +38,12 @@ import liveScoreRoutes from './liveScoreRoutes.js';
 import machineVisionRoutes from './machineVisionRoutes.js';
 import databaseRoutes from './databaseRoutes.js';
 import generalRoutes from './generalRoutes.js';
+import { logger, initializeErrorHandling } from './serverErrorHandler.js';
 import 'express-async-errors';
 
 const app = express();
-const PORT = process.env.PORT;
 
-const _dirname = process.cwd();
+const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL || "";
 
 // Käytetään Helmet kirjastoa parantamaan turvallisuutta, asettaa HTTP headereita:
@@ -51,40 +53,21 @@ app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
 // Välitä staattisia tiedostoja 'dist' hakemistosta
-app.use(BASE_URL, express.static(path.join(_dirname, 'dist')));
+app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist')));
 
 // Lisätään live tulospalvelun reitit:
 app.use(BASE_URL + '/api/live', liveScoreRoutes);
-// Lisätään live tulospalvelun reitit:
+// Lisätään konenäön reitit:
 app.use(BASE_URL + '/api/vision', machineVisionRoutes);
-// Lisätään live tietokannan käsittelyyn:
+// Lisätään reitit tietokannan käsittelyyn:
 app.use(BASE_URL + '/api/db', databaseRoutes);
 // Lisätään sekalaiset reitit:
 app.use(BASE_URL + '/api', generalRoutes);
 
-app.get(BASE_URL + '/sync_error', (_req, _res) => {
-    throw Error('Sync error');
-});
-
-app.get(BASE_URL + '/async_error', async (_req, _res) => {
-    throw Error('Async error');
-});
-
-// Globaali virheenkäsittely:
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction): any => {
-    console.error("error intercepted: ", err);
-    res.status(500).send('Something went wrong..');
-});
-
-// Tapahtumankuuntelija, joka sieppaa käsittelemättömät lupaus-hylkäämiset:
-// HUOM! Tässä tulisi ehdottomasti kirjoittaa lokitiedostoon - serveri kaatuu.
-process.on('unhandledRejection', (reason, _promise) => {
-    console.error("Unhandled promise rejection:", reason);
-    // Pysäytetään serveri:
-    process.exit(1);
-});
+// Alustetaan virheenkäsittelijät:
+initializeErrorHandling(app);
 
 // Käynnistetään express.js serveri:
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    logger.info(`Server is running on port ${PORT}`);
 });
