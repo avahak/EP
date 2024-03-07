@@ -63,6 +63,14 @@ app.use(BASE_URL + '/api/db', databaseRouter);
 // Lisätään sekalaiset reitit:
 app.use(BASE_URL + '/api', generalRouter);
 
+/**
+ * Muissa reiteissä käytetään Reactin omaa reititystä.
+ */
+const wildcard = BASE_URL ? `${BASE_URL}/*` : '*';
+app.get(wildcard, (_req, res) => {
+    res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+});
+
 // Alustetaan virheenkäsittelijät:
 initializeErrorHandling(app);
 

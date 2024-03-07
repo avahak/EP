@@ -1,4 +1,4 @@
-import { Box, Container, Typography } from "@mui/material"
+import { Box, Container, Grid, Typography } from "@mui/material"
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getApiUrl } from "../../utils/apiUtils";
@@ -69,11 +69,13 @@ const LiveMatches: React.FC = () => {
                 <Typography textAlign="center" variant="h3">
                     Live ottelut
                 </Typography>
-                <Box display="flex" flexWrap="wrap" flexDirection="row" gap="10px" sx={{m: 2}}>
-                {liveMatchList.map((entry, index) => (
-                    <LiveMatchCard key={index} entry={entry} onSelect={(id) => setMatchId(id)} selected={entry.matchId == matchId} />
-                ))}
-                </Box>
+                <Grid container>
+                    {liveMatchList.map((entry, index) => (
+                        <Grid item xs={6} sm={4} md={3} p={2} key={index}>
+                            <LiveMatchCard entry={entry} onSelect={(id) => setMatchId(id)} selected={entry.matchId == matchId} />
+                        </Grid>
+                    ))}
+                </Grid>
             </>}
             {liveMatchList.length == 0 &&
                 <Typography textAlign="center" variant="h3">

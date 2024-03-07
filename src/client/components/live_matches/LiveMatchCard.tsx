@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Divider, Typography } from "@mui/material";
 import { LiveMatchEntry } from "../../../shared/commonTypes";
 
 type LiveMatchCardProps = { 
@@ -21,15 +21,14 @@ const LiveMatchCard: React.FC<LiveMatchCardProps> = (({ entry, onSelect, selecte
             style={{ 
                 cursor: 'pointer',
                 background: selected ? '#aaf' : 'inherit',
-                // minWidth: "200px",
             }} 
             elevation={10}
         >
             <CardContent>
-                <Typography textAlign="center" variant="h5">{`${entry.home} - ${entry.away}`}</Typography>
-                <Typography textAlign="center" variant="h5">{`${entry.score[0]} - ${entry.score[1]}`}</Typography>
-                <hr />
-                <Typography variant="body2">{`Kirjaus aloitettu kello ${startTime}`}</Typography>
+                <Typography textAlign="center" fontWeight="bold" variant="h6">{`${entry.home} - ${entry.away}`}</Typography>
+                <Typography textAlign="center" fontWeight="bold" variant="h6">{`${entry.score[0]} - ${entry.score[1]}`}</Typography>
+                <Divider sx={{m: 1}} />
+                <Typography sx={{ whiteSpace: "wrap" }} variant="body2">{`Kirjaus aloitettu kello ${startTime}`}</Typography>
             </CardContent>
         </Card>
       );

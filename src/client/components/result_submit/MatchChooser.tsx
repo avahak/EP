@@ -8,7 +8,7 @@ import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
 // import './MatchChooser.css';
-import { Box, Button, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
+import { Box, Button, Checkbox, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
 
 type SelectionCategory = "" | "home" | "away" | "other";
 
@@ -16,29 +16,32 @@ type FormFields = {
     selectionCategory: SelectionCategory;
     selectionIndex: number;
     date: string;
+    useLivescore: boolean;
 };
 
-type SubmitFields = {
+type MatchChooserSubmitFields = {
     match: any;
     date: string;
-}
+    useLivescore: boolean;
+};
 
 /**
  * Komponentti ilmoitettavan tuloksen ottelun valintaan
  */
-const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFields) => void }> = ({ userTeam, submitCallback }) => {
+const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ userTeam, submitCallback }) => {
     const [matches, setMatches] = useState<any[]>([]);
     // Lomakkeen kenttien tila:
     const { setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
             selectionCategory: '',
             selectionIndex: 0,
-            date: ''
+            date: '',
+            useLivescore: true,
         },
     });
     const sendButton = useRef<HTMLButtonElement>(null);
 
-    const allFormValues = watch();
+    const formValues = watch();
 
     /**
      * Palauttaa valitun ottelun tai null.
@@ -57,7 +60,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     // Funktio, joka kutsutaan kun lomake lähetetään:
     const onSubmit: SubmitHandler<any> = (data: FormFields) => {
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
-        submitCallback({ match, date: data.date });
+        submitCallback({ match, date: data.date, useLivescore: data.useLivescore });
     }
 
     // Hakee ottelut tietokannasta
@@ -129,17 +132,17 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
         return `${getDayOfWeekStrings(date).short} ${toDDMMYYYY(date)}`;
     };
 
-    let selectedMatch = getSelectedMatch(allFormValues.selectionCategory, allFormValues.selectionIndex);
+    let selectedMatch = getSelectedMatch(formValues.selectionCategory, formValues.selectionIndex);
     useEffect(() => {
         console.log("useEffect focus: sendButton.current is ", sendButton.current);
         sendButton.current?.focus();
     }, [selectedMatch]);
 
     let selectedRadioButton = "";
-    if (allFormValues.selectionCategory == "home")
-        selectedRadioButton = `home-${allFormValues.selectionIndex}`;
-    else if (allFormValues.selectionCategory == "away")
-        selectedRadioButton = `away-${allFormValues.selectionIndex}`;
+    if (formValues.selectionCategory == "home")
+        selectedRadioButton = `home-${formValues.selectionIndex}`;
+    else if (formValues.selectionCategory == "away")
+        selectedRadioButton = `away-${formValues.selectionIndex}`;
     console.log("selectedRadioButton:", selectedRadioButton);
 
     return (
@@ -197,16 +200,25 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
                 <Box sx={{ mb: 1, mt: 5 }}>
                     <Typography variant="h2" textAlign="center">{selectedMatch.home} - {selectedMatch.away}</Typography>
                     <Box sx={{ mt:4 }}>
-                    <Typography textAlign="center" variant="body1">Muuta päivämäärää tarvittaessa:</Typography>
-                    <Box display="flex" gap="10px" justifyContent="center">
-                        <Typography variant="body1">{getDayOfWeekStrings(new Date(allFormValues.date)).long}</Typography>
-                        <input
-                            type="date"
-                            value={allFormValues.date}
-                            onChange={(event) => handleSetDate(event.target.value)}
+                        <Typography textAlign="center" variant="body1">Muuta päivämäärää tarvittaessa:</Typography>
+                        <Box display="flex" gap="10px" justifyContent="center">
+                            <Typography variant="body1">{getDayOfWeekStrings(new Date(formValues.date)).long}</Typography>
+                            <input
+                                type="date"
+                                value={formValues.date}
+                                onChange={(event) => handleSetDate(event.target.value)}
+                            />
+                        </Box>
+                    </Box>
+                    {formValues.selectionCategory == "home" &&
+                    <Box sx={{ mt: 3 }} display="flex" justifyContent="center">
+                        <FormControlLabel
+                            control={<Checkbox checked={formValues.useLivescore} onChange={(event) => { setValue('useLivescore', event.target.checked) }} />}
+                            title="Valitse jos haluat tulosten näkyvän reaaliajassa otteluseuranta sivulla"
+                            label="Tulosten kirjaaminen reaaliajassa otteluseurantaan"
                         />
                     </Box>
-                    </Box>
+                    }
                 </Box>
                 <Box display="flex" justifyContent="right">
                     <Button ref={sendButton} variant="contained" type="submit">Valitse</Button>
@@ -217,4 +229,5 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: SubmitFi
     );
 }
 
+export type { MatchChooserSubmitFields };
 export { MatchChooser };

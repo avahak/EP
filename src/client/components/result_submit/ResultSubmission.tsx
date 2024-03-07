@@ -7,7 +7,7 @@
 
 // import { Scoresheet } from "./Scoresheet";
 import { useState } from "react";
-import { MatchChooser } from "./MatchChooser";
+import { MatchChooser, MatchChooserSubmitFields } from "./MatchChooser";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { serverFetch } from "../../utils/apiUtils";
 import { Backdrop, Box, CircularProgress, Container, Typography } from "@mui/material";
@@ -19,11 +19,6 @@ import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresh
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
-
-type MatchChooserSubmitFields = {
-    match: any;
-    date: string;
-};
 
 /**
  * Tulosten ilmoitussivu.
@@ -38,6 +33,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         scores: createEmptyScores(),
         isSubmitted: false,
     });
+    const [useLivescore, setUseLivescore] = useState<boolean>(true);
     const [pageState, setPageState] = useState<PageState>("choose_match");
     const setSnackbarState = useSnackbar();
 
@@ -112,15 +108,17 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         const oldPageState = pageState;
         setPageState("scoresheet_submit");
         fetchSendResult(newStatus, data, oldPageState);
-    }
+    };
 
     /**
-     * For SSE
+     * Kutsutaan kun ottelupöytäkirjaan tehdään muutoksia tilassa "scoresheet_fresh".
      */
     const handleScoresheetSSE = (data: ScoresheetFields) => {
+        if (!useLivescore)
+            return;
         console.log("handleScoresheetSSE", data);
         fetchSendSSE(data);
-    }
+    };
 
     /**
      * Tämä kutsutaan kun vierasjoukkueen edustaja hylkää kotijoukkueen antamat tulokset ja
@@ -129,19 +127,20 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const handleReject = () => {
         console.log("handleReject()");
         setPageState("scoresheet_modify");
-    }
+    };
 
     /**
      * Tämä funktio kutsutaan kun MatchChooser valinta tehdään.
      */
-    const matchChooserCallback = async ({match, date}: MatchChooserSubmitFields) => {
-        const matchData = await fetchMatchData(match.id);
-        matchData.date = date;
+    const matchChooserCallback = async (matchChooserValues: MatchChooserSubmitFields) => {
+        const matchData = await fetchMatchData(matchChooserValues.match.id);
+        matchData.date = matchChooserValues.date;
         setResult(matchData);
         console.log("matchData", matchData);
-        console.log("matchChooserCallback()", match, date);
+        console.log("matchChooserCallback()", matchChooserValues.match, matchChooserValues.date);
         console.log("result", result);
-        if (match.status == 'T')
+        setUseLivescore(matchChooserValues.useLivescore);
+        if (matchChooserValues.match.status == 'T')
             setPageState("scoresheet_fresh");
         else 
             setPageState("scoresheet_verify");
