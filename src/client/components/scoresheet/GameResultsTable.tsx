@@ -1,6 +1,7 @@
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
 import "./GameResultsTable.css";
-import { GameRunningStats, Team, playerIndexesToGameIndex } from "../../utils/matchTools";
+import { GameRunningStatRow, playerIndexesToGameIndex } from "../../utils/matchTools";
+import { ScoresheetTeam } from "./scoresheetTypes";
 
 const StyledTable = styled(Table)(({ }) => ({
     border: '2px solid black',
@@ -49,7 +50,7 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStats; teamHome: Team; teamAway: Team }> = ({gameRunningStats, teamHome, teamAway}) => {
+const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; teamHome: ScoresheetTeam; teamAway: ScoresheetTeam }> = ({gameRunningStats, teamHome, teamAway}) => {
     return (
         <Paper elevation={10} sx={{p: 1, m: 2}}>
         <Typography textAlign="center" fontWeight="bold">

@@ -14,25 +14,13 @@ import Button from '@mui/material/Button';
 import { serverFetch } from '../../utils/apiUtils';
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useSnackbar } from '../../utils/SnackbarContext';
-
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
+import { ScoresheetPlayer, ScoresheetTeam } from './scoresheetTypes';
 
 type AddPlayerDialogProps = {
     isOpen: boolean;
-    team: Team;
+    team: ScoresheetTeam;
     onClose: () => void;
-    onAddPlayer: (newPlayer: Player) => void;
+    onAddPlayer: (newPlayer: ScoresheetPlayer) => void;
 };
 
 type Sex = "-" | "M" | "N";

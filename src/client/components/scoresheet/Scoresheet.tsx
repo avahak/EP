@@ -16,52 +16,21 @@ import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material'
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
 import { computeGameRunningStats } from "../../utils/matchTools";
-
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
-type FormFields = {
-    id: number;
-    status: string;
-    teamHome: Team;
-    teamAway: Team;
-    date: string;
-    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-};
-
-const emptyTeam: Team = {
-    id: -1,
-    teamName: '',
-    teamRole: "home",
-    allPlayers: [],
-    selectedPlayers: [null, null, null],
-};
-
-type ScoresheetMode = "modify" | "verify" | "display";
+import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
 
 /**
  * React komponentti tuloslomakkeelle.
  * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: FormFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: FormFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
+const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: ScoresheetFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
     // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
     // uusi pelaaja lisätään modaalin avulla:
-    const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: Team, slot: number}>({team: emptyTeam, slot: 0});
+    const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: ScoresheetTeam, slot: number}>({team: createEmptyTeam(), slot: 0});
     // Lomakkeen kenttien tila:
-    const { setValue, handleSubmit, watch, reset } = useForm<FormFields>({
+    const { setValue, handleSubmit, watch, reset } = useForm<ScoresheetFields>({
         defaultValues: initialValues
     });
     // Käytetään onChageCallback varten tarkistamaan onko muutkoksia tapahtunut:
@@ -89,7 +58,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     }
 
     // Takaisinkutsufunktio AddPlayerDialog varten:
-    const handleAddPlayer = (player: Player, team: Team, slot: number) => {
+    const handleAddPlayer = (player: ScoresheetPlayer, team: ScoresheetTeam, slot: number) => {
         console.log("handleAddPlayer", player.name, team);
         console.log("currentPlayerSlot", currentPlayerSlot);
         const isHome = (team.teamRole == "home");
@@ -101,10 +70,15 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         console.log("handleAddPlayer selectedPlayers", isHome ? formFields.teamHome.selectedPlayers : formFields.teamAway.selectedPlayers);
     } 
 
-    // Funktio, joka kutsutaan kun lomake lähetetään:
-    const onSubmit: SubmitHandler<FormFields> = (data) => {
+    /** 
+     * Funktio, joka kutsutaan kun lomake lähetetään.
+     */
+    const onSubmit: SubmitHandler<ScoresheetFields> = (data) => {
+        // TODO form validation tässä!
+        if (onChangeCallback)
+            onChangeCallback({ ...data, isSubmitted: true });
         if (submitCallback) 
-            submitCallback(data);
+            submitCallback({ ...data, isSubmitted: true });
     }
 
     const gameRunningStats = computeGameRunningStats(formFields.scores);
@@ -135,7 +109,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
      * Kutsutaan kun käyttäjä valitsee pelaajan. Jos pelaaja on "newPlayer", 
      * avataan modaali pelaajan lisäämiseksi.
      */
-    const handleSelectPlayer = (event: SelectChangeEvent<any>, team: Team, slot: number) => {
+    const handleSelectPlayer = (event: SelectChangeEvent<any>, team: ScoresheetTeam, slot: number) => {
         const value = event.target.value;
         event.target.value = "";
         console.log("handleSelectPlayer", value);

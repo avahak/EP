@@ -15,58 +15,28 @@ import { parseMatch } from "../../../shared/parseMatch";
 import { fetchMatchData } from "../../utils/matchTools";
 import { Link } from "react-router-dom";
 import { useSnackbar } from "../../utils/SnackbarContext";
+import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresheet/scoresheetTypes";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
-
-type Player = {
-    id: number;
-    name: string;
-};
 
 type MatchChooserSubmitFields = {
     match: any;
     date: string;
 };
 
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
-type ResultFields = {
-    id: number;
-    status: string;
-    teamHome: Team;
-    teamAway: Team;
-    date: string;
-    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-};
-
-const emptyTeam: Team = {
-    id: -1,
-    teamName: '',
-    teamRole: "home",
-    allPlayers: [],
-    selectedPlayers: [],
-};
-
-const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
-
 /**
  * Tulosten ilmoitussivu.
  */
 const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
-    const [result, setResult] = useState<ResultFields>({
+    const [result, setResult] = useState<ScoresheetFields>({
         id: -1,
         status: 'T',
-        teamHome: {...emptyTeam, teamRole: "home"},
-        teamAway: {...emptyTeam, teamRole: "away"},
+        teamHome: {...createEmptyTeam(), teamRole: "home"},
+        teamAway: {...createEmptyTeam(), teamRole: "away"},
         date: '',
-        scores: [...scoresDefaultValue],
+        scores: createEmptyScores(),
+        isSubmitted: false,
     });
     const [pageState, setPageState] = useState<PageState>("choose_match");
     const setSnackbarState = useSnackbar();
@@ -74,7 +44,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     /**
      * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
      */
-    const fetchSendResult = async (newStatus: string, result: ResultFields, oldPageState: PageState) => {
+    const fetchSendResult = async (newStatus: string, result: ScoresheetFields, oldPageState: PageState) => {
         console.log("fetchSendResult()");
         try {
             const parsedResult = parseMatch(newStatus, result);
@@ -106,7 +76,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     /**
      * Lähettää lomakkeen tiedot serverille live-seurantaa varten.
      */
-    const fetchSendSSE = async (data: ResultFields) => {
+    const fetchSendSSE = async (data: ScoresheetFields) => {
         console.log("fetchSendSSE()");
         try {
             const response = await serverFetch("/live/submit_match", {
@@ -129,7 +99,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     /**
      * Tätä funktiota kutsutaan kun käyttäjä lähettää täytetyn/muokatun Scoresheet lomakkeen.
      */
-    const handleSubmit = (data: ResultFields) => {
+    const handleSubmit = (data: ScoresheetFields) => {
         console.log("handleSubmit()");
         let newStatus = '';
         if (pageState == "scoresheet_fresh")
@@ -147,7 +117,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     /**
      * For SSE
      */
-    const handleScoresheetSSE = (data: ResultFields) => {
+    const handleScoresheetSSE = (data: ScoresheetFields) => {
         console.log("handleScoresheetSSE", data);
         fetchSendSSE(data);
     }

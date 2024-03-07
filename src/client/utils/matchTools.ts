@@ -2,44 +2,20 @@
  * Kokoelma ottelupöytäkirjaa käsitteleviä apufunktioita.
  */
 
-import { deepCopy } from "../../shared/generalUtils";
+import { ScoresheetFields, ScoresheetPlayer, createEmptyScores } from "../components/scoresheet/scoresheetTypes";
 import { serverFetch } from "./apiUtils";
 
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
-type MatchData = {
-    id: number;
-    status: string;
-    teamHome: Team;
-    teamAway: Team;
-    date: string;
-    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-};
-
-type GameRunningStats = {
+type GameRunningStatRow = {
     isValidGame: boolean;
     isAllGamesValid: boolean;
     roundWins: number[];
     runningMatchScore: number[];
-}[];
-
-const scoresDefaultValue = Array.from({ length: 9 }, () => Array.from({ length: 2 }, () => Array.from({ length: 5 }, () => ' ')));
+};
 
 /**
  * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
  */
-const playerName = (players: (Player | null)[], index: number, defaultName: string) => {
+const playerName = (players: (ScoresheetPlayer | null)[], index: number, defaultName: string) => {
     const player = players[index];
     if (!!player)
         return player.name;
@@ -116,8 +92,8 @@ function checkGameResults(gameResult: string[][]) {
  * roundWins kertoo kummankin pelaajan voitettujen erien lukumäärän pelissä, ja
  * runningMatchScore kertoo ottelun tilanteen pelin jälkeen.
  */
-const computeGameRunningStats = (scores: string[][][]): GameRunningStats => {
-    const stats = [];
+function computeGameRunningStats(scores: string[][][]): GameRunningStatRow[] {
+    const stats: GameRunningStatRow[] = [];
     let runningMatchScore = [0, 0];
     let isAllGamesValid = true;
     for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
@@ -147,15 +123,27 @@ const computeGameRunningStats = (scores: string[][][]): GameRunningStats => {
 
         stats.push({ isValidGame, roundWins, runningMatchScore: [...runningMatchScore], isAllGamesValid });
     }
-    console.log("stats", stats);
     return stats;
+}
+
+/**
+ * Palauttaa viimeisimmän kirjatun tilanteen.
+ */
+function currentScore(scores: string[][][]) {
+    const runningStats = computeGameRunningStats(scores);
+    let score = [0, 0];
+    for (let k = 0; k < 9; k++) {
+        if (runningStats[k].runningMatchScore[0] != -1)
+            score = runningStats[k].runningMatchScore;
+    }
+    return score;
 }
 
 /**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
  */
-function parseScores(rawScores: any, teamHome: (Player | null)[], teamAway: (Player | null)[]) {
-    const results = deepCopy(scoresDefaultValue);
+function parseScores(rawScores: any, teamHome: (ScoresheetPlayer | null)[], teamAway: (ScoresheetPlayer | null)[]) {
+    const results = createEmptyScores();
     for (const row of rawScores) {
         let indexHome = teamHome.findIndex((player) => player?.id == row.kp);
         let indexAway = teamAway.findIndex((player) => player?.id == row.vp);
@@ -249,13 +237,13 @@ const fetchMatchData = async (matchId: number) => {
     console.log("playersAway fetch: ", playersAway);
     console.log("rawScores fetch: ", rawScores);
 
-    const idToName: (id: number, players: Player[]) => string = (id, players) => {
+    const idToName: (id: number, players: ScoresheetPlayer[]) => string = (id, players) => {
         const index = players.findIndex((player) => player.id == id);
         return (index == -1) ? "" : players[index].name;
     }
 
-    const playingHome: Player[] = [];
-    const playingAway: Player[] = [];
+    const playingHome: ScoresheetPlayer[] = [];
+    const playingAway: ScoresheetPlayer[] = [];
     for (const row of rawScores) {
         const playerHome = { id: row.kp, name: idToName(row.kp, playersHome) };
         const playerAway = { id: row.vp, name: idToName(row.vp, playersAway) };
@@ -291,10 +279,12 @@ const fetchMatchData = async (matchId: number) => {
             selectedPlayers: playingAway
         }, 
         date: matchInfo.date,
-        scores: parseScores(rawScores, playingHome, playingAway)
-    } as MatchData;
+        scores: parseScores(rawScores, playingHome, playingAway),
+        isSubmitted: matchInfo.status != "T",
+    } as ScoresheetFields;
 };
 
 
-export { playerName, computeGameRunningStats, fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, computeGameScore, checkGameResults };
-export type { Player, Team, MatchData, GameRunningStats };
+export { playerName, computeGameRunningStats, fetchMatchData, gameIndexToPlayerIndexes, 
+    playerIndexesToGameIndex, computeGameScore, checkGameResults, currentScore };
+export type { GameRunningStatRow };

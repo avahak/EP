@@ -13,29 +13,8 @@ import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '..
 import './GameDialog.css';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
 import { deepCopy } from '../../../shared/generalUtils';
+import { ScoresheetFields } from './scoresheetTypes';
 // import { useSnackbar } from '../../utils/SnackbarContext';
-
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
-type FormFields = {
-    id: number;
-    status: string;
-    teamHome: Team;
-    teamAway: Team;
-    date: string;
-    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-};
 
 type GameDialogState = {
     isOpen: boolean;
@@ -45,7 +24,7 @@ type GameDialogState = {
 
 type GameDialogProps = {
     state: GameDialogState;
-    formFields: FormFields;
+    formFields: ScoresheetFields;
     onClose: () => void;
     onSubmit: (gameIndex: number, gameResults: string[][]) => void;
 };

@@ -5,29 +5,19 @@
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
-import { GameRunningStats, Team, gameIndexToPlayerIndexes, playerName } from "../../utils/matchTools";
+import { GameRunningStatRow, gameIndexToPlayerIndexes, playerName } from "../../utils/matchTools";
 import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
 import EditIcon from '@mui/icons-material/Edit';
+import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
 import './Scoresheet.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
-type FormFields = {
-    id: number;
-    status: string;
-    teamHome: Team;
-    teamAway: Team;
-    date: string;
-    scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-};
-
-type ScoresheetMode = "modify" | "verify" | "display";
-
 type RoundResultsTableProps = {
     mode: ScoresheetMode;
-    formFields: FormFields;
+    formFields: ScoresheetFields;
     onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
-    gameRunningStats: GameRunningStats;
+    gameRunningStats: GameRunningStatRow[];
 }
 
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, gameRunningStats }) => {

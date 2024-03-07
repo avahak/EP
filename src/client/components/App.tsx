@@ -45,7 +45,7 @@ const App = () => {
                 <br />
                 <Link to="/db">DB Testaus</Link>
             </Box>
-            <Typography variant="body2">Koottu: {BUILD_DATE}</Typography>
+            <Typography variant="body2">Koottu: {BUILD_TIMESTAMP}</Typography>
         </Container>
     );
 }

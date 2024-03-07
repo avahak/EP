@@ -1,50 +1,90 @@
-import { Box, Button, Container, Typography } from "@mui/material"
+import { Box, Container, Typography } from "@mui/material"
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { serverFetch } from "../../utils/apiUtils";
-import { LiveMatch } from "./LiveMatch";
+import { getApiUrl } from "../../utils/apiUtils";
+import { base64JSONparse } from "../../../shared/generalUtils";
+import { LiveMatchEntry } from "../../../shared/commonTypes";
+import { Scoresheet } from "../scoresheet/Scoresheet";
+import { LiveMatchCard } from "./LiveMatchCard";
 
 const LiveMatches: React.FC = () => {
     const [matchId, setMatchId] = useState<number | undefined>(undefined);
-    const [liveMatchList, setLiveMatchList] = useState<Array<any>>([]);
+    const [matchData, setMatchData] = useState<any>(undefined);
+    const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
 
     // Hakee live ottelut:
-    const fetchLiveMatchList = async () => {
-        try {
-            const response = await serverFetch("/live/get_match_list")
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            const jsonData = await response.json();
-            setLiveMatchList(jsonData.data);
-        } catch(error) {
-            console.error('Error:', error);
-            setLiveMatchList([]);
-        }
-    };
+    // const fetchLiveMatchList = async () => {
+    //     try {
+    //         const response = await serverFetch("/live/get_match_list")
+    //         if (!response.ok) 
+    //             throw new Error(`HTTP error! Status: ${response.status}`);
+    //         const jsonData = await response.json();
+    //         setLiveMatchList(jsonData.data);
+    //     } catch(error) {
+    //         console.error('Error:', error);
+    //         setLiveMatchList([]);
+    //     }
+    // };
 
     useEffect(() => {
-        fetchLiveMatchList();
-    }, []);
+        const eventSource = new EventSource(`${getApiUrl()}/live/watch_match/${matchId}`);
 
-    console.log("liveMatchList", liveMatchList);
+        eventSource.onmessage = (event) => {
+            const eventData = event.data;
+            const parsedData = base64JSONparse(eventData);
+            const type = parsedData.type;
+            const data = parsedData.data;
+
+            if (type == "matchListUpdate") 
+                setLiveMatchList(data);
+            else if (type == "matchUpdate")
+                setMatchData(data);
+
+            console.log(`Received: type: ${type}, data: ${JSON.stringify(data)}`);
+        };
+
+        eventSource.onerror = (error) => {
+            console.log("EventSource failed:", error);
+            eventSource.close();
+            setMatchData(undefined);
+            setLiveMatchList([]);
+        };
+
+        // Suljetaan eventSource lopuksi:
+        return () => {
+            eventSource.close();
+            setMatchData(undefined);
+            setLiveMatchList([]);
+        };
+    }, [matchId]);
+
     console.log("matchId", matchId);
 
     return (
         <>
         <Link to="/">Takaisin</Link>
         <Container maxWidth="md">
-            <Box display="flex" flexDirection="row" gap="10px">
-            {liveMatchList.map((liveMatch, index) => (
-                <Button key={index} variant="outlined" onClick={() => setMatchId(liveMatch.id)}>
-                    <Typography>{liveMatch.id}: {liveMatch.home}-{liveMatch.away}</Typography>
-                </Button>
-            ))}
-            </Box>
-                {matchId &&
-                    <Box sx={{mt: 2}}>
-                        <LiveMatch matchId={matchId} />
-                    </Box>
-                }
+            {liveMatchList.length > 0 &&
+            <>
+                <Typography textAlign="center" variant="h3">
+                    Live ottelut
+                </Typography>
+                <Box display="flex" flexWrap="wrap" flexDirection="row" gap="10px" sx={{m: 2}}>
+                {liveMatchList.map((entry, index) => (
+                    <LiveMatchCard key={index} entry={entry} onSelect={(id) => setMatchId(id)} selected={entry.matchId == matchId} />
+                ))}
+                </Box>
+            </>}
+            {liveMatchList.length == 0 &&
+                <Typography textAlign="center" variant="h3">
+                    Ei live otteluita
+                </Typography>
+            }
+            {matchData &&
+                <Box sx={{mt: 6}}>
+                    <Scoresheet initialValues={matchData} mode="display" />
+                </Box>
+            }
         </Container>
         </>
     );

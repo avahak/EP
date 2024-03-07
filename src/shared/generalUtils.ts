@@ -125,7 +125,15 @@ function base64JSONparse(s64: string) {
     return JSON.parse(s);
 }
 
+/**
+ * Palauttaa uniikin merkkijonon.
+ * Käytä tämän sijasta esim. crypto.randomUUID() jos käyttötarkoitus on tärkeä.
+ */
+function createRandomUniqueIdentifier() {
+    return Date.now().toString() + Math.random().toString().slice(2);
+}
+
 export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
     getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy,
-    crudeHash, base64JSONStringify, base64JSONparse };
+    crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier };
 export type { Order };

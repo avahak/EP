@@ -65,7 +65,8 @@ function parseMatch(newStatus: string, match: any) {
         playersHome: match.teamHome.selectedPlayers.map((player: any) => player.id), 
         playersAway: match.teamAway.selectedPlayers.map((player: any) => player.id), 
         games, 
-        rounds
+        rounds,
+        isSubmitted: match.isSubmitted
     };
 }
 

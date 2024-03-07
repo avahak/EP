@@ -32,10 +32,10 @@ import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
-import liveScoreRoutes from './liveScoreRoutes.js';
-import machineVisionRoutes from './machine_vision/machineVisionRoutes.js';
-import databaseRoutes from './database/databaseRoutes.js';
-import generalRoutes from './generalRoutes.js';
+import liveScoreRouter from './liveScoreRoutes.js';
+import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
+import databaseRouter from './database/databaseRoutes.js';
+import generalRouter from './generalRoutes.js';
 import { logger, initializeErrorHandling } from './serverErrorHandler.js';
 import 'express-async-errors';
 
@@ -55,13 +55,13 @@ app.use(express.json());
 app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist')));
 
 // Lisätään live tulospalvelun reitit:
-app.use(BASE_URL + '/api/live', liveScoreRoutes);
+app.use(BASE_URL + '/api/live', liveScoreRouter);
 // Lisätään konenäön reitit:
-app.use(BASE_URL + '/api/vision', machineVisionRoutes);
+app.use(BASE_URL + '/api/vision', machineVisionRouter);
 // Lisätään reitit tietokannan käsittelyyn:
-app.use(BASE_URL + '/api/db', databaseRoutes);
+app.use(BASE_URL + '/api/db', databaseRouter);
 // Lisätään sekalaiset reitit:
-app.use(BASE_URL + '/api', generalRoutes);
+app.use(BASE_URL + '/api', generalRouter);
 
 // Alustetaan virheenkäsittelijät:
 initializeErrorHandling(app);

@@ -20,6 +20,7 @@ const winstonConsoleFormat = winston.format.prettyPrint();
  * Määrittää miten virheilmoitukset kirjoitetaan lokitiedostoon.
  */
 const winstonFileFormat = winston.format.combine(
+    winston.format.errors({ stack: true }),
     winston.format.timestamp({ format: 'DD-MM-YYYYTHH:mm:ss' }),
     winston.format.printf(info => {
         const { timestamp, ...restInfo } = info;
@@ -61,7 +62,7 @@ function initializeErrorHandling(app: Express) {
 
     // Globaali virheenkäsittely:
     app.use((err: Error, _req: Request, res: Response, _next: NextFunction): any => {
-        logger.error("global error handler:", err, err.stack);
+        logger.error("global error handler:", err);
         res.status(500).send('Something went wrong.');
     });
 

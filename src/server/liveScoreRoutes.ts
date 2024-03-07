@@ -1,9 +1,18 @@
 /**
  * Live tulospalveluun liittyvät reitit ja muu tarvittava.
+ * 
+ * TODO! Tarkista että koodi on thread-safe!!!
+ * 
+ * HUOM! Tietorakenteet ja muu menettely voi toteuttaa usealla eri tavalla.
+ * Nyt käytössä oleva koodi on tehty mahdollisimman yksinkertaiseksi. Jos koodin
+ * tehokkuus tai tietoliikenteen määrä tulee ongelmaksi, niitä voi parantaa usealla 
+ * tavalla.
  */
 
 import express, { Router } from 'express';
-import { base64JSONStringify } from '../shared/generalUtils.js';
+import { base64JSONStringify, createRandomUniqueIdentifier } from '../shared/generalUtils.js';
+import { LiveMatchEntry } from '../shared/commonTypes.js';
+import { currentScore } from '../client/utils/matchTools.js';
 // import { logger } from '../server/serverErrorHandler.js';
 
 const router: Router = express.Router();
@@ -14,48 +23,97 @@ const MINUTE = 60*SECOND;
 //@ts-ignore
 const HOUR = 60*MINUTE;
 
-type LiveMatchConnection = {
+const MAINTENANCE_INTERVAL = 5*MINUTE;
+const MAX_LIVE_CONNECTION_DURATION = 6*HOUR;
+const MAX_LIVE_MATCH_DURATION = 6*HOUR;
+const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR;
+
+type LiveConnection = {
     startTime: number;
-    matchId: number;
-    res: any;           // yhteys clientiin
+    matchId: number | undefined;
+    res: any;           // yhteys clientiin, tähän kirjoitetaan päivityksiä
 };
 
-const liveMatchConnections: Map<string, LiveMatchConnection> = new Map();
+/**
+ * Kuvaus, jonka avulla aktiiviset live yhteydet pidetään muistissa.
+ */
+const liveConnections: Map<string, LiveConnection> = new Map();
 
 type LiveMatch = {
     startTime: number;
     lastActivity: number;
+    score: number[];
     data: any;
 };
 
-// Kuvaus (ep_ottelu.id) -> LiveMatch
+/**
+ * Kuvaus (ep_ottelu.id) -> LiveMatch.
+ */
 const liveMatches: Map<number, LiveMatch> = new Map();
 
 /**
  * Kirjoittaa yhteyteen ottelun tilan.
  */
-function sendLiveMatchTo(liveMatch: LiveMatch, connectionId: string) {
-    const connection = liveMatchConnections.get(connectionId);
+function sendLiveMatch(connectionId: string, liveMatch: LiveMatch) {
+    const connection = liveConnections.get(connectionId);
     if (!connection)
         return;
-    connection.res.write(`data: ${base64JSONStringify(liveMatch)}\n\n`);
+    const data = { type: "matchUpdate", data: liveMatch.data };
+    connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
 }
 
 /**
- * Käy läpi liveMatchConnections ja kirjoittaa ottelua matchId vastaaviin
+ * Kirjoittaa yhteyteen listan otteluista.
+ */
+function sendMatchList(connectionId: string, matchList: any[]) {
+    const connection = liveConnections.get(connectionId);
+    if (!connection)
+        return;
+    const data = { type: "matchListUpdate", data: matchList };
+    connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+}
+
+/**
+ * Käy läpi liveConnections ja kirjoittaa ottelua matchId vastaaviin
  * yhteyksiin ottelun tilan.
+ * 
+ * HUOM! Tässä tehdään ylimääräistä työtä koska jokainen liveConnections
+ * käydään läpi mutta tämä on hyvin yksinkertainen ratkaisu. Jos tietoliikennettä 
+ * olisi paljon enemmän, tulisi käyttää lisätietorakennetta toimen tehostamiseen.
  */
 function broadcastLiveMatch(matchId: number) {
-    // käy läpi liveMatchConnections ja kirjoita jos matchId vastaavat
+    // Käy läpi liveConnections ja kirjoita siihen jos matchId vastaavat.
     const liveMatch = liveMatches.get(matchId);
     if (!liveMatch)
         return;
     
-    for (let [connectionId, connection] of liveMatchConnections) {
+    for (let [connectionId, connection] of liveConnections) {
         if (connection.matchId != matchId)
             continue;
-        sendLiveMatchTo(liveMatch, connectionId);
+        sendLiveMatch(connectionId, liveMatch);
     }
+}
+
+/**
+ * Luo listan live otteluista yhteyksiin lähetettävässä muodossa.
+ */
+function createMatchList() {
+    const matchList: LiveMatchEntry[] = [];
+    for (const [matchId, liveMatch] of liveMatches) {
+        const startTimeAsDate = new Date(liveMatch.startTime);
+        matchList.push({ matchId: matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
+    }
+    return matchList;
+}
+
+/**
+ * Lähettää listan live otteluista kaikkiin yhteyksiin.
+ */
+function broadcastMatchList() {
+    const matchList = createMatchList();
+
+    for (let [connectionId, _connection] of liveConnections)
+        sendMatchList(connectionId, matchList);
 }
 
 /**
@@ -65,20 +123,36 @@ router.post('/submit_match', async (req, res) => {
     if (!req.body.result)
         res.status(400).send(`Missing result`);
     const result = req.body.result;
+    const score = currentScore(result.scores);
 
     const matchId = result.id;
     const now = Date.now();
 
     let liveMatch: LiveMatch | undefined = liveMatches.get(matchId);
+    let isMatchListChanged = false;
     if (liveMatch) {
+        if (liveMatch.score[0] != score[0] || liveMatch.score[1] != score[1])
+            isMatchListChanged = true;
         // Päivitä olemassaolevaa liveMatch:
         liveMatch.lastActivity = now;
+        liveMatch.score = score;
         liveMatch.data = result;
     } else {
         // Luodaan uusi liveMatch
-        liveMatch = { startTime: now, lastActivity: now, data: result };
+        liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
         liveMatches.set(matchId, liveMatch);
+        isMatchListChanged = true;
     }
+    
+    // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
+    if (liveMatch && liveMatch.data.isSubmitted) {
+        console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
+        liveMatches.delete(matchId);
+        isMatchListChanged = true;
+    }
+
+    if (isMatchListChanged)
+        broadcastMatchList();
     broadcastLiveMatch(matchId);
 
     console.log("Server received live match data, matchId:", matchId);
@@ -89,25 +163,22 @@ router.post('/submit_match', async (req, res) => {
  * Palauttaa listan liveMatches otteluista
  */
 router.get('/get_match_list', async (_req, res) => {
-    const matchList = [];
-    for (const [matchId, liveMatch] of liveMatches)
-        matchList.push({ id: matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName });
+    const matchList = createMatchList();
     res.json({ data: matchList });
 });
 
 /**
  * Alustetaan uusi SSE-yhteys live-seurantaa varten.
  */
-router.get('/watch_match/:matchId', async (req, res) => {
-    const matchId = parseInt(req.params.matchId);
-    if (isNaN(matchId)) {
-        res.status(400).send("Invalid matchId.");
-        return;
-    }
-    const liveMatch = liveMatches.get(matchId);
-    if (!liveMatch) {
-        res.status(404).send("Live match not found.");
-        return;
+router.get('/watch_match/:matchId?', async (req, res) => {
+    let liveMatch: LiveMatch | undefined = undefined;
+    let matchId = undefined;
+    if (req.params.matchId) {
+        matchId = parseInt(req.params.matchId);
+        if (isNaN(matchId))
+            matchId = undefined;
+        else
+            liveMatch = liveMatches.get(matchId);
     }
 
     // Headers SSE varten:
@@ -116,14 +187,16 @@ router.get('/watch_match/:matchId', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     const now = Date.now();
-    const connectionId = now.toString() + Math.random().toString();
-    liveMatchConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
+    const connectionId = createRandomUniqueIdentifier();
+    liveConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
 
-    sendLiveMatchTo(liveMatch, connectionId);
+    sendMatchList(connectionId, createMatchList());
+    if (liveMatch)
+        sendLiveMatch(connectionId, liveMatch);
 
     // Handle client disconnect
     req.on('close', () => {
-        liveMatchConnections.delete(connectionId);
+        liveConnections.delete(connectionId);
     });
 
     console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
@@ -134,22 +207,30 @@ router.get('/watch_match/:matchId', async (req, res) => {
 setInterval(() => {
     const now = Date.now();
 
-    // Poistetaan vanhat liveMatches:
+    // Poistetaan liian vanhat liveMatches:
     const liveMatchesToDelete = [];
-    for (const [matchId, liveMatch] of liveMatches) 
-        if ((now - liveMatch.lastActivity > 10*MINUTE) || (now - liveMatch.startTime > 1*HOUR))
+    for (const [matchId, liveMatch] of liveMatches) {
+        if ((now - liveMatch.lastActivity > MAX_LIVE_MATCH_INACTIVITY) 
+            || (now - liveMatch.startTime > MAX_LIVE_MATCH_DURATION))
             liveMatchesToDelete.push(matchId);
+    }
     for (let key of liveMatchesToDelete)
         liveMatches.delete(key);
 
-    // Poistetaan vanhat liveMatchConnections:
-    const liveMatchConnectionsToDelete = [];
-    for (const [connectionId, connection] of liveMatchConnections) 
-        if (now - connection.startTime > 1*HOUR)
-            liveMatchConnectionsToDelete.push(connectionId);
-    for (let key of liveMatchConnectionsToDelete)
-        liveMatchConnections.delete(key);
+    // Jos listaan tehtiin muutoksia, lähetetään uusi lista kaikille:
+    if (liveMatchesToDelete.length > 0)
+        broadcastMatchList();
 
-}, 10*MINUTE);
+    // Poistetaan vanhat liveConnections:
+    const liveConnectionsToDelete = [];
+    for (const [connectionId, connection] of liveConnections) 
+        if (now - connection.startTime > MAX_LIVE_CONNECTION_DURATION)
+            liveConnectionsToDelete.push(connectionId);
+    for (let key of liveConnectionsToDelete)
+        liveConnections.delete(key);
+
+    console.log("#liveMatches: ", liveMatches.size, "#liveConnections: ", liveConnections.size);
+
+}, MAINTENANCE_INTERVAL);
 
 export default router;

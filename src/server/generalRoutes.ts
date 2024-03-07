@@ -30,10 +30,8 @@ const writeFileAsync = util.promisify(fs.writeFile);
  */
 router.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
-    if (!file) {
-        res.status(400).send('No file uploaded.');
-        return;
-    }
+    if (!file)
+        return res.status(400).send('No file uploaded.');
 
     // Tallennushakemistot:
     const imagePath = path.join(imageDirectory, file.originalname);
@@ -45,8 +43,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     if (!fs.existsSync(imageDirectory) || !fs.existsSync(thumbnailDirectory) || !fs.existsSync(miscDirectory)) {
         const errorMessage = `Upload directory does not exist.`;
         logger.error(errorMessage);
-        res.status(500).send(errorMessage);
-        return;
+        return res.status(500).send(errorMessage);
     }
 
     try {

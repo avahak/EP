@@ -1,26 +1,12 @@
 import { Box, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Typography } from "@mui/material";
 import React from "react";
-
-type Player = {
-    id: number;
-    name: string;
-};
-
-type Team = {
-    id: number;
-    teamName: string;
-    teamRole: "home" | "away";
-    allPlayers: (Player | null)[];
-    selectedPlayers: (Player | null)[];
-};
-
-type ScoresheetMode = "modify" | "verify" | "display";
+import { ScoresheetMode, ScoresheetTeam } from "./scoresheetTypes";
 
 /**
  * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
  * ja pelaajien valintaan käytettävät select-elementit.
  */
-const TeamSelection: React.FC<{ mode: ScoresheetMode, team: Team, handleSelectPlayer: (event: SelectChangeEvent<any>, team: Team, playerIndex: number) => any }> = ({ mode, team, handleSelectPlayer }) => {
+const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, handleSelectPlayer: (event: SelectChangeEvent<any>, team: ScoresheetTeam, playerIndex: number) => any }> = ({ mode, team, handleSelectPlayer }) => {
     const teamText = (team.teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
     const playerText = (team.teamRole == "home") ? "Kotipelaaja" : "Vieraspelaaja";
     // const defaultOptionText = (team.teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
@@ -71,10 +57,5 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: Team, handleSelectPl
         </Box>
     );
 };
-
-// {[0, 1, 2].map((playerIndex) => (
-//     <label key={`label-${playerIndex}`}>{playerIndex+1}. {team.selectedPlayers[playerIndex]?.name ?? ''}</label>
-// ))}
-// </> }
 
 export { TeamSelection };
