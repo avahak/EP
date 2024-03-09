@@ -6,26 +6,43 @@ import { Link } from "react-router-dom";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 import { Container } from "@mui/material";
 import { TeamsTable } from "./TeamTables";
+import { crudeHash } from "../../../shared/generalUtils";
 
 const DisplayResultsTeams: React.FC = () => {
     // Suorittaa api-kutsun joukkueiden tulosten hakuun sivun lataamisen yhteydessä:
-    const results = useInitialServerFetch({ 
+    const resultsOld = useInitialServerFetch({ 
+        route: "/db/specific_query", 
+        method: "POST", 
+        params: { queryName: "get_results_teams_old" },
+    });
+
+    const resultsNew = useInitialServerFetch({ 
         route: "/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_teams" },
     });
 
-    console.log("results", results);
+    console.log("resultsOld", resultsOld);
+    console.log("resultsNew", resultsNew);
+
+    console.log("hash for old:", crudeHash(resultsOld));
+    console.log("hash for new:", crudeHash(resultsNew));
 
     return (
         <>
         <Link to="/">Takaisin</Link>
         <Container maxWidth="md">
 
-        {results.status.ok ?
-        <TeamsTable rows={results.data.rows} tableName="Sarjatilanne" />
+        {resultsOld.status.ok ?
+        <TeamsTable rows={resultsOld.data.rows} tableName="Sarjatilanne" />
         : 
-        "Ei dataa."
+        "Ladataan.."
+        }
+
+        {resultsNew.status.ok ?
+        <TeamsTable rows={resultsNew.data.rows} tableName="Sarjatilanne" />
+        : 
+        "Ladataan.."
         }
 
         </Container>

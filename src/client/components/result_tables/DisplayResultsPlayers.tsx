@@ -7,7 +7,7 @@
 import { Link } from "react-router-dom";
 
 // import { ResultTable } from "../tables/ResultTable";
-import { deepCopy, extractKeys } from "../../../shared/generalUtils";
+import { crudeHash, deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
@@ -83,15 +83,8 @@ function CustomTabPanel(props: TabPanelProps) {
     );
 }
 
-const DisplayResultsPlayers: React.FC = () => {
+const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
     const [activeTab, setActiveTab] = useState<number>(0);
-
-    const results = useInitialServerFetch({ 
-        route: "/db/specific_query", 
-        method: "POST", 
-        params: { queryName: "get_results_players" },
-        dataProcessor: playerDataProcessor
-    });
 
     /**
      * Kutsutaan kun tab vaihtuu.
@@ -100,15 +93,8 @@ const DisplayResultsPlayers: React.FC = () => {
         setActiveTab(newValue);
     };
 
-    console.log("results", results);
-
     return (
-        <>
-        <Link to="/">Takaisin</Link>
-        <Container maxWidth="md">
-
-        {results.status.ok ?
-        <>
+        <Box>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs 
                 value={activeTab} 
@@ -202,9 +188,46 @@ const DisplayResultsPlayers: React.FC = () => {
             </Typography>
             <DesignationWinsTable designation={"away"} rows={results.data} tableName={"Vierasotteluiden Pistepörssi"} />
         </CustomTabPanel>
-        </>
+    </Box>
+    );
+}
+
+const DisplayResultsPlayers: React.FC = () => {
+    const resultsOld = useInitialServerFetch({ 
+        route: "/db/specific_query", 
+        method: "POST", 
+        params: { queryName: "get_results_players_old" },
+        dataProcessor: playerDataProcessor
+    });
+
+    const resultsNew = useInitialServerFetch({ 
+        route: "/db/specific_query", 
+        method: "POST", 
+        params: { queryName: "get_results_players" },
+        dataProcessor: playerDataProcessor
+    });
+
+    console.log("resultsOld", resultsOld);
+    console.log("resultsNew", resultsNew);
+
+    console.log("hash for old:", crudeHash(resultsOld));
+    console.log("hash for new:", crudeHash(resultsNew));
+
+    return (
+        <>
+        <Link to="/">Takaisin</Link>
+        <Container maxWidth="md">
+
+        {resultsOld.status.ok ?
+        <PlayerResults results={resultsOld}/>
         : 
-        "Ei dataa."
+        "Ladataan.."
+        }
+
+        {resultsNew.status.ok ?
+        <PlayerResults results={resultsNew}/>
+        : 
+        "Ladataan.."
         }
 
         </Container>

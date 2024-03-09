@@ -63,7 +63,7 @@ const DBTest: React.FC = () => {
             {/* Ottelut: 
             {!!data ? <DataTable data={data.matches} />: "-"}
             <br /> */}
-            Kaavio tauluille: 
+            {/*Kaavio tauluille: 
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema1) : "No data" }}>
             </pre>
             <br />
@@ -72,16 +72,31 @@ const DBTest: React.FC = () => {
             <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema2) : "No data" }}>
             </pre>
             <br />
-            <hr />
+            <hr />*/}
             Tietokannan luonti: 
+            <hr style={{marginTop: "100px", marginBottom: "100px"}} />
             {!!data ? data.commands1.map((query: string, queryIndex: number) => (
                 <Fragment key={queryIndex}>
                 <li key={queryIndex}>{query}</li><br />
                 </Fragment>
             ))
             : "-"}
-            <hr />
+            <hr style={{marginTop: "100px", marginBottom: "100px"}} />
             {!!data ? data.commands2.map((query: string, queryIndex: number) => (
+                <Fragment key={queryIndex}>
+                <li key={queryIndex}>{query}</li><br />
+                </Fragment>
+            ))
+             : "-"}
+            <hr style={{marginTop: "100px", marginBottom: "100px"}} />
+            {!!data ? data.commands3.map((query: string, queryIndex: number) => (
+                <Fragment key={queryIndex}>
+                <li key={queryIndex}>{query}</li><br />
+                </Fragment>
+            ))
+             : "-"}
+            <hr style={{marginTop: "100px", marginBottom: "100px"}} />
+            {!!data ? data.commands4.map((query: string, queryIndex: number) => (
                 <Fragment key={queryIndex}>
                 <li key={queryIndex}>{query}</li><br />
                 </Fragment>

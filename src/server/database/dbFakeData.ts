@@ -6,7 +6,14 @@
 
 import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
-import { dateToISOString, pickRandomDistinctElements } from "../../shared/generalUtils.js";
+import { dateToISOString, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
+
+const RAVINTOLAT = 5;       // max 7
+const MIN_KAUSI = 37;
+const MAX_KAUSI = 38;
+const MAX_TEAMS_IN_RAVINTOLA = 5;
+const MIN_PLAYERS_IN_TEAM = 3;
+const MAX_PLAYERS_IN_TEAM = 6;
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
@@ -14,7 +21,9 @@ import { dateToISOString, pickRandomDistinctElements } from "../../shared/genera
 function generate_raflat() {
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
-    const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
+    let names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
+    names = names.slice(0, Math.min(RAVINTOLAT, names.length));
+
     const raflat: any[] = [];
     names.forEach(([name, shortName]) => {
         const rafla = { 
@@ -37,7 +46,7 @@ function generate_raflat() {
  */
 function generate_kaudet() {
     let kaudet: any[] = [];
-    for (let k = /*1*/36; k <= 38; k++) {
+    for (let k = /*1*/MIN_KAUSI; k <= MAX_KAUSI; k++) {
         const vuosi = Math.ceil(k/2);
         const kausi = {
             index: kaudet.length,
@@ -75,7 +84,7 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
     const sarjat: any[] = [];
     lohkot.forEach((lohko) => {
         raflat.forEach((rafla) => {
-            let count = 1 + Math.round(5 * Math.random());
+            let count = randomIntBetween(1, MAX_TEAMS_IN_RAVINTOLA);
             for (let k = 1; k <= count; k++) {
                 const joukkue = {
                     index: joukkueet.length,
@@ -118,7 +127,7 @@ function generate_pelaajat_jasenet(joukkueet: any[]) {
     // lisätään pelaaja ja jasen samalla:
     let jasenno = 1;
     joukkueet.forEach((_joukkue, joukkueIndex) => {
-        const pelaajienLkm = Math.floor(3+Math.random()*3);
+        const pelaajienLkm = randomIntBetween(MIN_PLAYERS_IN_TEAM, MAX_PLAYERS_IN_TEAM);
         for (let k = 0; k < pelaajienLkm; k++) {
             jasenno = (jasenno*29) % 9973;
             const firstName = faker.person.firstName();
@@ -447,8 +456,13 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
-
             console.log(`ep_erat batch n=${batch.length}, first: ${batch[0]}`);
+
+            // Kutsu procedure_update_all_from_erat kaikille lisätyille riveille:
+            sql = `CALL procedure_update_all_old_from_all_erat_slow`;
+            await connection.query(sql);
+            console.log(`\"CALL procedure_update_all_old_from_all_erat_slow\" finished`);
+
             await connection.commit();
             console.log("generateAndInsertToDatabase success");
         } catch (error) {

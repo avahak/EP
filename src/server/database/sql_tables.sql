@@ -1,7 +1,7 @@
--- Kaavio tietokannalle testaus_ep
+-- Kaavio tietokannalle takaisku_testaus_ep
 
-CREATE DATABASE IF NOT EXISTS testaus_ep CHARACTER SET utf8 COLLATE utf8_swedish_ci;
-USE testaus_ep;
+CREATE DATABASE IF NOT EXISTS takaisku_testaus_ep CHARACTER SET utf8 COLLATE utf8_swedish_ci;
+USE takaisku_testaus_ep;
 
 -- ep_rafla (ravintolat)
 DROP TABLE IF EXISTS ep_rafla;
@@ -154,4 +154,50 @@ CREATE TABLE userpw (
     Joukkue VARCHAR(3) NOT NULL,
     MD5 VARCHAR(50) NOT NULL,
     PRIMARY KEY (Nimi, Joukkue)
+) ENGINE=InnoDB;
+
+-- ep_peli_tulokset
+DROP TABLE IF EXISTS ep_peli_tulokset;
+CREATE TABLE ep_peli_tulokset (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    peli INT NOT NULL,
+    ktulos INT DEFAULT 0,
+    vtulos INT DEFAULT 0,
+    FOREIGN KEY (peli) REFERENCES ep_peli(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ep_ottelu_tulokset
+DROP TABLE IF EXISTS ep_ottelu_tulokset;
+CREATE TABLE ep_ottelu_tulokset (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    ottelu INT NOT NULL,
+    ktulos INT DEFAULT 0,
+    vtulos INT DEFAULT 0,
+    FOREIGN KEY (ottelu) REFERENCES ep_ottelu(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ep_pelaaja_tulokset
+DROP TABLE IF EXISTS ep_pelaaja_tulokset;
+CREATE TABLE ep_pelaaja_tulokset (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pelaaja INT NOT NULL,
+    v_era INT DEFAULT 0,
+    h_era INT DEFAULT 0,
+    v_peli INT DEFAULT 0,
+    h_peli INT DEFAULT 0,
+    FOREIGN KEY (pelaaja) REFERENCES ep_pelaaja(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ep_joukkue_tulokset
+DROP TABLE IF EXISTS ep_joukkue_tulokset;
+CREATE TABLE ep_joukkue_tulokset (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    joukkue INT NOT NULL,
+    v_era INT DEFAULT 0,
+    h_era INT DEFAULT 0,
+    v_peli INT DEFAULT 0,
+    h_peli INT DEFAULT 0,
+    voitto INT DEFAULT 0,
+    tappio INT DEFAULT 0,
+    FOREIGN KEY (joukkue) REFERENCES ep_joukkue(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

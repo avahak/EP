@@ -86,13 +86,13 @@ async function getAllMatches(pool: mysql.Pool, _params: Record<string, any>) {
 }
 
 /**
- * Tuloskysely joukkueiden tilanteesta (ep_sarjat taulu).
+ * Tuloskysely joukkueiden tilanteesta, käyttää ep_sarjat taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>) {
+async function getResultsTeamsOld(pool: mysql.Pool, params: Record<string, any>) {
     const query = `
-        SELECT ep_sarjat.id, ep_sarjat.joukkue, ep_sarjat.nimi, ep_sarjat.lyhenne, 
-            ep_sarjat.ottelu, ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
+        SELECT ep_sarjat.nimi, ep_sarjat.lyhenne, 
+            ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
             ep_sarjat.h_era, ep_sarjat.v_peli, ep_sarjat.h_peli
         FROM ep_sarjat
         JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
@@ -102,10 +102,28 @@ async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>) {
 }
 
 /**
- * Tuloskysely pelaajien tilanteesta.
+ * Tuloskysely joukkueiden tilanteesta, käyttää ep_joukkue_tulokset taulua.
+ * @param params - Sisältää kentän _current_kausi.
+ */
+async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>) {
+    const query = `
+        SELECT ep_joukkue.nimi, ep_joukkue.lyhenne, 
+            ep_joukkue_tulokset.voitto, ep_joukkue_tulokset.tappio, 
+            ep_joukkue_tulokset.v_era, ep_joukkue_tulokset.h_era, 
+            ep_joukkue_tulokset.v_peli, ep_joukkue_tulokset.h_peli
+        FROM ep_joukkue_tulokset
+        JOIN ep_joukkue ON ep_joukkue.id = ep_joukkue_tulokset.joukkue
+        WHERE ep_joukkue.kausi = ?
+    `;
+    return myQuery(pool, query, [params._current_kausi]);
+}
+
+/**
+ * Tuloskysely pelaajien tilanteesta, käyttää suoraan tauluissa kirjattuja tuloksia,
+ * eli ei käytä x_tulokset tauluja.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) {
+async function getResultsPlayersOld(pool: mysql.Pool, params: Record<string, any>) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -141,7 +159,7 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ?
+            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
         GROUP BY
             p.kp
     `;
@@ -164,7 +182,83 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ?
+            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+        GROUP BY
+            p.vp
+    `;
+    const resultGeneral = await myQuery(pool, queryGeneral, [params._current_kausi]);
+    const resultHome = await myQuery(pool, queryHome, [params._current_kausi]);
+    const resultAway = await myQuery(pool, queryAway, [params._current_kausi]);
+    return [resultGeneral, resultHome, resultAway];
+}
+
+/**
+ * Tuloskysely pelaajien tilanteesta, käyttäen _tulokset tauluja.
+ * @param params Sisältää kentän _current_kausi.
+ */
+async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) {
+    const queryGeneral = `
+        SELECT 
+            ep_pelaaja.id,
+            ep_pelaaja.nimi,
+            ep_joukkue.lyhenne,
+            ep_pelaaja_tulokset.v_peli + ep_pelaaja_tulokset.h_peli AS pelit,
+            ep_pelaaja_tulokset.v_era,
+            ep_pelaaja_tulokset.h_era,
+            ep_pelaaja_tulokset.v_peli,
+            ep_pelaaja_tulokset.h_peli
+        FROM
+            ep_pelaaja
+            JOIN ep_pelaaja_tulokset ON ep_pelaaja_tulokset.pelaaja = ep_pelaaja.id
+            JOIN ep_joukkue ON ep_joukkue.id = ep_pelaaja.joukkue
+        WHERE 
+            ep_joukkue.kausi = ?
+    `;
+    const queryHome = `
+        SELECT
+            p.kp AS id,
+            CAST(SUM((e.era1 = 'K1') + (e.era2 = 'K1') + (e.era3 = 'K1') + (e.era4 = 'K1') + (e.era5 = 'K1')) AS SIGNED) AS K1,
+            CAST(SUM((e.era1 = 'K2') + (e.era2 = 'K2') + (e.era3 = 'K2') + (e.era4 = 'K2') + (e.era5 = 'K2')) AS SIGNED) AS K2,
+            CAST(SUM((e.era1 = 'K3') + (e.era2 = 'K3') + (e.era3 = 'K3') + (e.era4 = 'K3') + (e.era5 = 'K3')) AS SIGNED) AS K3,
+            CAST(SUM((e.era1 = 'K4') + (e.era2 = 'K4') + (e.era3 = 'K4') + (e.era4 = 'K4') + (e.era5 = 'K4')) AS SIGNED) AS K4,
+            CAST(SUM((e.era1 = 'K5') + (e.era2 = 'K5') + (e.era3 = 'K5') + (e.era4 = 'K5') + (e.era5 = 'K5')) AS SIGNED) AS K5,
+            CAST(SUM((e.era1 = 'K6') + (e.era2 = 'K6') + (e.era3 = 'K6') + (e.era4 = 'K6') + (e.era5 = 'K6')) AS SIGNED) AS K6,
+            CAST(SUM(pt.ktulos) AS SIGNED) AS v_era_koti,
+            CAST(SUM(pt.vtulos) AS SIGNED) AS h_era_koti,
+            CAST(SUM(IF(pt.ktulos > pt.vtulos, 1, 0)) AS SIGNED) AS v_peli_koti,
+            CAST(SUM(IF(pt.vtulos > pt.ktulos, 1, 0)) AS SIGNED) AS h_peli_koti
+        FROM
+            ep_erat AS e
+            JOIN ep_peli AS p ON p.id = e.peli
+            JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
+            JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
+            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
+        WHERE
+            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+        GROUP BY
+            p.kp
+    `;
+    const queryAway = `
+        SELECT
+            p.vp AS id,
+            CAST(SUM((e.era1 = 'V1') + (e.era2 = 'V1') + (e.era3 = 'V1') + (e.era4 = 'V1') + (e.era5 = 'V1')) AS SIGNED) AS V1,
+            CAST(SUM((e.era1 = 'V2') + (e.era2 = 'V2') + (e.era3 = 'V2') + (e.era4 = 'V2') + (e.era5 = 'V2')) AS SIGNED) AS V2,
+            CAST(SUM((e.era1 = 'V3') + (e.era2 = 'V3') + (e.era3 = 'V3') + (e.era4 = 'V3') + (e.era5 = 'V3')) AS SIGNED) AS V3,
+            CAST(SUM((e.era1 = 'V4') + (e.era2 = 'V4') + (e.era3 = 'V4') + (e.era4 = 'V4') + (e.era5 = 'V4')) AS SIGNED) AS V4,
+            CAST(SUM((e.era1 = 'V5') + (e.era2 = 'V5') + (e.era3 = 'V5') + (e.era4 = 'V5') + (e.era5 = 'V5')) AS SIGNED) AS V5,
+            CAST(SUM((e.era1 = 'V6') + (e.era2 = 'V6') + (e.era3 = 'V6') + (e.era4 = 'V6') + (e.era5 = 'V6')) AS SIGNED) AS V6,
+            CAST(SUM(pt.vtulos) AS SIGNED) AS v_era_vieras,
+            CAST(SUM(pt.ktulos) AS SIGNED) AS h_era_vieras,
+            CAST(SUM(IF(pt.vtulos > pt.ktulos, 1, 0)) AS SIGNED) AS v_peli_vieras,
+            CAST(SUM(IF(pt.ktulos > pt.vtulos, 1, 0)) AS SIGNED) AS h_peli_vieras
+        FROM
+            ep_erat AS e
+            JOIN ep_peli AS p ON p.id = e.peli
+            JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
+            JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
+            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
+        WHERE
+            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
         GROUP BY
             p.vp
     `;
@@ -231,17 +325,25 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
             // Lisätään uudet rivit tauluun ep_peli:
             for (let k = 0; k < 9; k++) {
                 const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
-                const [insertedRow] = await connection.query(query3, match.games[k]);
+                let [insertedRow] = await connection.query(query3, match.games[k]);
                 // Liitetään rounds taulukkoon lisätyn rivin id:
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
-                    throw Error("Error during ep_peli INSERT.")
+                    throw Error("Error during ep_peli INSERT.");
+
+                // Lisätään uusi rivi tauluun ep_erat:
+                const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
+                await connection.query(query4_1, rounds[k]);
+                
+                // Jos status on 'H', niin päivitetään varsinaisten taulujen
+                // tulosmuuttujat:
+                if (match.newStatus == 'H') {
+                    const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
+                    await connection.query(query4_2, [insertedRow.insertId]);
+                }
             }
 
-            // Lisätään uudet rivit tauluun ep_erat:
-            const query4 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`;
-            await connection.query(query4, [rounds]);
 
             // Muutetaan ottelun päivämäärä:
             const query5 = `UPDATE ep_ottelu SET paiva = ? WHERE id = ?`;
@@ -281,4 +383,5 @@ async function AddPlayer(pool: mysql.Pool, params: Record<string, any>) {
 }
 
 export { getAllMatches, getMatchInfo, getMatchesToReport, getPlayersInTeam, getScores, 
-    getResultsTeams, getResultsPlayers, submitMatchResult, AddPlayer }
+    getResultsTeams, getResultsTeamsOld, getResultsPlayersOld, getResultsPlayers,
+    submitMatchResult, AddPlayer }

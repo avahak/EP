@@ -78,10 +78,10 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
 }
 
 /**
- * Poistaa ja luo tietokannan ja sen taulut testaus_ep_tables.sql mukaisesti.
+ * Poistaa ja luo tietokannan ja sen taulut skeeman mukaisesti.
  * Kutsu parametreilla
  *      stage=1 (taulujen luonti)
- *      stage=2 (herättimien luonti)
+ *      stage=2 (proseduurien ja herättimien luonti)
  *      stage=3 (testidatan luonti ja lisäys tietokantaan).
  * Koko tietokanta luodaan kutsumalla ensin parametrilla stage=1, sitten 2 ja 3.
  * HUOM! Käytä varovaisesti, tuhoaa tietoa!
@@ -90,7 +90,7 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
     console.log(`starting recreateDatabase ${databaseName} stage ${stage}..`);
     try {
         if (stage == 1) {
-            let sqlFile = fs.readFileSync(`src/server/database/${databaseName}_tables.sql`, 'utf-8');
+            let sqlFile = fs.readFileSync(`src/server/database/sql_tables.sql`, 'utf-8');
             const queries = parseSqlFileContent(sqlFile);
 
             const connection = await poolNoDatabase.getConnection();
@@ -109,12 +109,24 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
             }
             // console.log(queries);
         } else if (stage == 2) {
-            let sqlFile = fs.readFileSync(`src/server/database/${databaseName}_triggers.sql`, 'utf-8');
-            const queries = parseSqlFileContent(sqlFile);
+            let sqlFile1 = fs.readFileSync(`src/server/database/sql_procedures.sql`, 'utf-8');
+            let sqlFile2 = fs.readFileSync(`src/server/database/sql_tulokset_1.sql`, 'utf-8');
+            let sqlFile3 = fs.readFileSync(`src/server/database/sql_tulokset_2.sql`, 'utf-8');
+            const queries1 = parseSqlFileContent(sqlFile1);
+            const queries2 = parseSqlFileContent(sqlFile2);
+            const queries3 = parseSqlFileContent(sqlFile3);
 
             const connection = await pool.getConnection();
             try {
-                for (const query of queries) {
+                for (const query of queries1) {
+                    console.log("query: ", query);
+                    await connection.query(query);
+                }
+                for (const query of queries2) {
+                    console.log("query: ", query);
+                    await connection.query(query);
+                }
+                for (const query of queries3) {
                     console.log("query: ", query);
                     await connection.query(query);
                 }
@@ -129,7 +141,7 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
             await generateAndInsertToDatabase(pool);
 
             // const data = generateFakeData();
-            // const filePath = path.join(miscDirectory, `testaus_ep_data.json`);
+            // const filePath = path.join(miscDirectory, `db_data.json`);
             // fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
             // Jos tiedosto vielä halutaan, luo callback ja callback kirjoittaa tiedoston.
         }

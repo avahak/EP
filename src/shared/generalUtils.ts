@@ -133,7 +133,17 @@ function createRandomUniqueIdentifier() {
     return Date.now().toString() + Math.random().toString().slice(2);
 }
 
+/**
+ * Palauttaa satunnaisen kokonaisluvun annetulta kokonaislukuväliltä.
+ */
+function randomIntBetween(minValue: number, maxValue: number) {
+    if (!Number.isInteger(minValue) || !Number.isInteger(maxValue))
+        throw Error("Invalid range.");
+    return minValue + Math.floor(Math.random()*(1+maxValue-minValue));
+}
+
 export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
     getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy,
-    crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier };
+    crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
+    randomIntBetween };
 export type { Order };

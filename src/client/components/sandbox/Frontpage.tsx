@@ -4,7 +4,7 @@
 // import { Link, useNavigate } from 'react-router-dom';
 
 const Frontpage: React.FC = () => {
-    return "test";
+    return <></>;
 };
 
 export default Frontpage;

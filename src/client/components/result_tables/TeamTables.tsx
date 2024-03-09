@@ -10,7 +10,7 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
     for (const row of rows) {
         const newRow = { 
             nimi: `${row.nimi}`,
-            ottelut: row.ottelu,
+            ottelut: row.voitto + row.tappio,
             voitto: row.voitto,
             tappio: row.tappio,
             v_peli: row.v_peli,
