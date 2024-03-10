@@ -8,50 +8,12 @@
 --     ep_ottelu: ktulos, vtulos
 --     ep_pelaaja: v_era, h_era, v_peli, h_peli, pelit
 --     ep_sarjat: v_era, h_era, v_peli, h_peli, ottelu, voitto, tappio.
--- HUOM! _tulokset tauluja ei muuteta tai käytetä.
+-- HUOM! _tulokset tauluja ei tässä muuteta tai käytetä.
 -- 
 -- Proseduuria ei kutsuta automaattisesti vaan sitä käytetään kutsumalla
 -- manuaalisesti tulosten hyväksymisen yhteydessä.
 
 DELIMITER //
-
--- Lisää kt/vt yhdellä jos erä on koti/vieras voitto.
-DROP PROCEDURE IF EXISTS procedure_count_round_win //
-CREATE PROCEDURE procedure_count_round_win(IN era VARCHAR(2), INOUT kt INT, INOUT vt INT)
-BEGIN
-    IF era IS NOT NULL THEN
-        IF era REGEXP 'K[1-6]$' THEN
-            SET kt = kt + 1;
-        ELSEIF era != 'V0' THEN
-            SET vt = vt + 1;
-        END IF;
-    END IF;
-END //
-
--- Laskee pelin tuloksen laskemalla erävoitot yhteen.
-DROP PROCEDURE IF EXISTS procedure_calculate_peli_result //
-CREATE PROCEDURE procedure_calculate_peli_result(
-    IN era1 VARCHAR(2),
-    IN era2 VARCHAR(2),
-    IN era3 VARCHAR(2),
-    IN era4 VARCHAR(2),
-    IN era5 VARCHAR(2),
-    INOUT ktulos INT,
-    INOUT vtulos INT
-)
-BEGIN
-    DECLARE new_ktulos INT DEFAULT 0;
-    DECLARE new_vtulos INT DEFAULT 0;
-
-    CALL procedure_count_round_win(era1, new_ktulos, new_vtulos);
-    CALL procedure_count_round_win(era2, new_ktulos, new_vtulos);
-    CALL procedure_count_round_win(era3, new_ktulos, new_vtulos);
-    CALL procedure_count_round_win(era4, new_ktulos, new_vtulos);
-    CALL procedure_count_round_win(era5, new_ktulos, new_vtulos);
-
-    SET ktulos = new_ktulos;
-    SET vtulos = new_vtulos;
-END //
 
 -- Ottaa vastaan pelin uuden tuloksen ja päivittää tauluja
 -- ep_peli, ep_ottelu, ep_pelaaja, ep_sarjat 
@@ -74,7 +36,7 @@ BEGIN
     DECLARE old_peli_ktulos INT;
     DECLARE old_peli_vtulos INT;
 
-    -- Vanha ja uusi ktulos, vtulos ep_peli taulussa:
+    -- Vanha ja uusi ktulos, vtulos ep_ottelu taulussa:
     DECLARE old_ottelu_ktulos INT;
     DECLARE old_ottelu_vtulos INT;
     DECLARE new_ottelu_ktulos INT;
@@ -185,13 +147,13 @@ END //
 
 -- Ottaa vastaan ep_peli id ja päivittää tauluja
 -- ep_peli, ep_ottelu, ep_pelaaja, ep_sarjat 
--- kumoamalla vanhat pelin vaikutukset ja ottamalla uudet erätulokset huomioon.
+-- kumoamalla vanhat pelin vaikutukset ja ottamalla pelin erätulokset huomioon.
 DROP PROCEDURE IF EXISTS procedure_update_all_old_from_erat //
 CREATE PROCEDURE procedure_update_all_old_from_erat(
     IN peli_id INT
 )
 BEGIN
-    -- Muuttujat ep_erat riville kentille:
+    -- Muuttujat ep_erat rivin kentille:
     DECLARE era1_value VARCHAR(2);
     DECLARE era2_value VARCHAR(2);
     DECLARE era3_value VARCHAR(2);
@@ -215,7 +177,8 @@ BEGIN
     CALL procedure_update_all_old_from_peli(peli_id, ktulos, vtulos);
 END //
 
--- Kutsuu procedure_update_all_from_erat jokaiselle ep_erat riville.
+-- Kutsuu procedure_update_all_old_from_erat jokaiselle ep_erat riville,
+-- joka liittyy hyväksyttyyn otteluun.
 -- HUOM! Hidas, käytä vain testaukseen.
 DROP PROCEDURE IF EXISTS procedure_update_all_old_from_all_erat_slow //
 CREATE PROCEDURE procedure_update_all_old_from_all_erat_slow()

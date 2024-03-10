@@ -22,9 +22,12 @@ src/server/database/ - Hakemisto SQL-tietokantaan liittyvälle koodille
         dbGeneral.ts - Kokoelma yleisiä tietokantaa käsitteleviä funktioita
         dbSpecific.ts - Kokoelma tätä tiettyä tietokantaa käsitteleviä funktioita
         dbFakeData.ts - Tietokannan testidatan generointia
-        testaus_ep_tables.sql - Testaustietokannan taulut määrittelevä kaavio
-        testaus_ep_triggers.sql - Idea tulosten automaattiselle laskulle
-                käyttäen pelkästään ep_erat dataa ja johtaen/laskien muut näistä.
+        sql_tables.sql - Testaustietokannan taulut määrittelevä kaavio
+        sql_procedures.sql - Manuaalisesti kutsuttavia proseduureja 
+                päivittämään varsinaisten taulujen tuloskenttiä
+        sql_tulokset_1.sql - Automaattisesti kutsuttavia proseduureja 
+                päivittämään _tulokset taulujen kenttiä
+        sql_tulokset_2.sql - Triggereitä laukaisemaan muutoksia _tulokset tauluissa.
 
 src/shared/ - Yhteinen kansio Express.js ja Reactille
         dbTypes.ts - Typescript tyypit tietokannan tauluille

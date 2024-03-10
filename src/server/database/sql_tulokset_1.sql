@@ -12,9 +12,47 @@
 
 DELIMITER //
 
+-- Lisää kt/vt yhdellä jos erä on koti/vieras voitto.
+DROP PROCEDURE IF EXISTS procedure_count_round_win //
+CREATE PROCEDURE procedure_count_round_win(IN era VARCHAR(2), INOUT kt INT, INOUT vt INT)
+BEGIN
+    IF era IS NOT NULL THEN
+        IF era REGEXP 'K[1-6]$' THEN
+            SET kt = kt + 1;
+        ELSEIF era != 'V0' THEN
+            SET vt = vt + 1;
+        END IF;
+    END IF;
+END //
+
+-- Laskee pelin tuloksen laskemalla erävoitot yhteen.
+DROP PROCEDURE IF EXISTS procedure_calculate_peli_result //
+CREATE PROCEDURE procedure_calculate_peli_result(
+    IN era1 VARCHAR(2),
+    IN era2 VARCHAR(2),
+    IN era3 VARCHAR(2),
+    IN era4 VARCHAR(2),
+    IN era5 VARCHAR(2),
+    OUT ktulos INT,
+    OUT vtulos INT
+)
+BEGIN
+    DECLARE new_ktulos INT DEFAULT 0;
+    DECLARE new_vtulos INT DEFAULT 0;
+
+    CALL procedure_count_round_win(era1, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era2, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era3, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era4, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era5, new_ktulos, new_vtulos);
+
+    SET ktulos = new_ktulos;
+    SET vtulos = new_vtulos;
+END //
+
 -- Ottaa vastaan pelin uuden tuloksen ja päivittää tauluja
--- ep_peli, ep_ottelu, ep_pelaaja, ep_sarjat 
--- kumoamalla vanhan tuloksen vaikutukset ja ottamalla uusi huomioon.
+-- ep_peli_tulokset, ep_ottelu_tulokset, ep_pelaaja_tulokset, ep_joukkue_tulokset 
+-- kumoamalla vanhan tuloksen vaikutukset ja ottamalla uusi tulos huomioon.
 DROP PROCEDURE IF EXISTS procedure_update_all_tulokset_from_peli //
 CREATE PROCEDURE procedure_update_all_tulokset_from_peli(
     IN peli_id INT,
@@ -24,17 +62,19 @@ CREATE PROCEDURE procedure_update_all_tulokset_from_peli(
 BEGIN
     -- Muuttujia säilyttämään id-kenttiä:
     DECLARE ottelu_id INT;
-    DECLARE ottelu_status VARCHAR(1);
     DECLARE koti_pelaaja_id INT;
     DECLARE vieras_pelaaja_id INT;
     DECLARE koti_joukkue_id INT;
     DECLARE vieras_joukkue_id INT;
 
-    -- Vanha ktulos, vtulos ep_peli taulussa:
+    -- Muuttuja ottelun statukselle:
+    DECLARE ottelu_status VARCHAR(1);
+
+    -- Vanha ktulos, vtulos ep_peli_tulokset taulussa:
     DECLARE old_peli_ktulos INT;
     DECLARE old_peli_vtulos INT;
 
-    -- Vanha ja uusi ktulos, vtulos ep_peli taulussa:
+    -- Vanha ja uusi ktulos, vtulos ep_ottelu_tulokset taulussa:
     DECLARE old_ottelu_ktulos INT;
     DECLARE old_ottelu_vtulos INT;
     DECLARE new_ottelu_ktulos INT;
@@ -59,12 +99,12 @@ BEGIN
         FROM ep_peli
         WHERE id = peli_id;
 
-    -- Alustetaan koti_joukkue_id, vieras_joukkue_id:
+    -- Alustetaan ottelu_status, koti_joukkue_id, vieras_joukkue_id:
     SELECT status, koti, vieras INTO ottelu_status, koti_joukkue_id, vieras_joukkue_id
         FROM ep_ottelu
         WHERE id = ottelu_id;
 
-    -- Jos status ei ole 'H', niin ei tehdä mitään:
+    -- Jos status ei ole 'H', niin ei tehdä mitään (tuloksia ei vielä ole vahvistettu):
     IF ottelu_status = 'H' THEN 
 
         -- Alustetaan old_peli_ktulos, old_peli_vtulos:

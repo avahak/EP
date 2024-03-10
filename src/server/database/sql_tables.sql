@@ -127,9 +127,9 @@ CREATE TABLE ep_peli (
     vp INT DEFAULT NULL,
     ktulos INT DEFAULT NULL,
     vtulos INT DEFAULT NULL,
-    FOREIGN KEY (ottelu) REFERENCES ep_ottelu(id) ON DELETE CASCADE,
-    FOREIGN KEY (kp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE,
-    FOREIGN KEY (vp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE
+    FOREIGN KEY (ottelu) REFERENCES ep_ottelu(id) ON DELETE CASCADE
+    -- FOREIGN KEY (kp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (vp) REFERENCES ep_pelaaja(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ep_erat

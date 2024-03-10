@@ -15,7 +15,7 @@ import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material'
 // import { parseMatch } from '../../../shared/parseMatch';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
-import { computeGameRunningStats } from "../../utils/matchTools";
+import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
 import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
 
 /**
@@ -50,12 +50,12 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     // avaa AddPlayerDialog
     const handleOpenAddPlayerDialog = () => {
         setIsAddPlayerDialogOpen(true);
-    }
+    };
 
     // sulkee AddPlayerDialog
     const handleCloseAddPlayerDialog = () => {
         setIsAddPlayerDialogOpen(false);
-    }
+    };
 
     // Takaisinkutsufunktio AddPlayerDialog varten:
     const handleAddPlayer = (player: ScoresheetPlayer, team: ScoresheetTeam, slot: number) => {
@@ -68,7 +68,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         console.log("handleAddPlayer isHome", isHome);
         console.log("handleAddPlayer allPlayers", isHome ? formFields.teamHome.allPlayers : formFields.teamAway.allPlayers);
         console.log("handleAddPlayer selectedPlayers", isHome ? formFields.teamHome.selectedPlayers : formFields.teamAway.selectedPlayers);
-    } 
+    };
 
     /** 
      * Funktio, joka kutsutaan kun lomake lähetetään.
@@ -79,9 +79,34 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             onChangeCallback({ ...data, isSubmitted: true });
         if (submitCallback) 
             submitCallback({ ...data, isSubmitted: true });
-    }
+    };
+
+    /**
+     * Resetoi erätulokset annetuille peleille.
+     */
+    const resetGameScores = (isHome: boolean, playerSlot: number) => {
+        for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
+            const homePlayerIndex = gameIndexToPlayerIndexes(gameIndex)[0];
+            const awayPlayerIndex = gameIndexToPlayerIndexes(gameIndex)[1];
+            if (!((isHome && playerSlot == homePlayerIndex) || (!isHome && playerSlot == awayPlayerIndex)))
+                continue;
+            console.log("resetting gameIndex:", gameIndex);
+            for (let playerIndex = 0; playerIndex < 2; playerIndex++) {
+                const isPlayerEmpty = isEmptyPlayer(formFields, gameIndex, playerIndex);
+                const isOtherPlayerEmpty = isEmptyPlayer(formFields, gameIndex, 1-playerIndex);
+                for (let roundIndex = 0; roundIndex < 5; roundIndex++) {
+                    let score = ' ';
+                    if (isOtherPlayerEmpty && !isPlayerEmpty && (roundIndex < 3))
+                        score = '1';
+                    if (formFields.scores[gameIndex][playerIndex][roundIndex] != score)
+                        setValue(`scores.${gameIndex}.${playerIndex}.${roundIndex}`, score);
+                }
+            }
+        }
+    };
 
     const gameRunningStats = computeGameRunningStats(formFields.scores);
+    console.log("gameRunningStats", gameRunningStats);
 
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
@@ -114,7 +139,11 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         event.target.value = "";
         console.log("handleSelectPlayer", value);
         const isHome = (team.teamRole == "home");
-        if (value == "newPlayer") {
+        const oldPlayer = isHome ? getPlayerName(formFields.teamHome.selectedPlayers, slot, "Koti") : getPlayerName(formFields.teamAway.selectedPlayers, slot, "Vieras");
+        if (value == "noPlayer") {
+            // Valittu 3. pelaaja tyhjäksi
+            setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, {id: -1, name: "-"});
+        } else if (value == "newPlayer") {
             // Tyhjennetään pelaajan valinta:
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);
             setCurrentPlayerSlot({team, slot});
@@ -124,6 +153,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 
                 team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(value))]);
         }
+        if (value == "noPlayer" || oldPlayer == "-")
+            resetGameScores(isHome, slot);
     };
 
     /**

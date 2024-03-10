@@ -50,9 +50,9 @@ router.get('/schema', async (_req, res) => {
         if (!databaseName)
             throw Error("Missing database info.");
         const sqlFile1 = fs.readFileSync(`src/server/database/sql_tables.sql`, 'utf-8');
-        const sqlFile2 = fs.readFileSync(`src/server/database/sql_procedures.sql`, 'utf-8');
-        const sqlFile3 = fs.readFileSync(`src/server/database/sql_tulokset_1.sql`, 'utf-8');
-        const sqlFile4 = fs.readFileSync(`src/server/database/sql_tulokset_2.sql`, 'utf-8');
+        const sqlFile2 = fs.readFileSync(`src/server/database/sql_tulokset_1.sql`, 'utf-8');
+        const sqlFile3 = fs.readFileSync(`src/server/database/sql_tulokset_2.sql`, 'utf-8');
+        const sqlFile4 = fs.readFileSync(`src/server/database/sql_procedures.sql`, 'utf-8');
         const commands1 = parseSqlFileContent(sqlFile1);
         const commands2 = parseSqlFileContent(sqlFile2);
         const commands3 = parseSqlFileContent(sqlFile3);

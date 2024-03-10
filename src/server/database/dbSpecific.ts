@@ -344,7 +344,6 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
                 }
             }
 
-
             // Muutetaan ottelun päivämäärä:
             const query5 = `UPDATE ep_ottelu SET paiva = ? WHERE id = ?`;
             await connection.query(query5, [match.date, match.id]);

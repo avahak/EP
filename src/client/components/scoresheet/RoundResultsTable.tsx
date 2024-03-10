@@ -5,7 +5,7 @@
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { useState } from "react";
-import { GameRunningStatRow, gameIndexToPlayerIndexes, playerName } from "../../utils/matchTools";
+import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
 import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
@@ -105,23 +105,16 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
                 <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
                     <Typography variant="body1" textAlign="center">
                         {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
-                        {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[0]+1}`}
+                        {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[1]+1}`}
                     </Typography>
                 </BasicTableCellLow>
             }
 
             {/* Pelaaja */}
             <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`player-${gameIndex}-${playerIndex}`}>
-                {playerIndex == 0 ? 
-                    <BasicNameTypography>
-                        {playerName(formFields.teamHome.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[0], "Koti")}
-                    </BasicNameTypography>
-                    : 
-                    <>
-                    <BasicNameTypography>
-                        {playerName(formFields.teamAway.selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[1], "Vieras")}
-                    </BasicNameTypography>
-                    </>}
+                <BasicNameTypography>
+                    {getSelectedPlayerName(formFields, gameIndex, playerIndex)}
+                </BasicNameTypography>
             </BasicTableCellLow>
 
             {/* Erätulokset */}
@@ -152,6 +145,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             }
 
             {(mode == "modify" && playerIndex == 0) &&
+            (!gameHasEmptyPlayer(formFields, gameIndex) ? 
             <TableCell 
                 sx={{p: 0, width: "40px", border: "1px solid black"}} 
                 rowSpan={2} 
@@ -174,6 +168,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
                 </IconButton>
                 </Box>
             </TableCell>
+            : <TableCell key={`edit-${gameIndex}`} className={`${PARITY[gameIndex]}`} rowSpan={2}/>)
             }
 
             </TableRow>))

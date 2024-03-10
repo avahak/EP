@@ -15,12 +15,35 @@ type GameRunningStatRow = {
 /**
  * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
  */
-const playerName = (players: (ScoresheetPlayer | null)[], index: number, defaultName: string) => {
+const getPlayerName = (players: (ScoresheetPlayer | null)[], index: number, defaultName: string) => {
     const player = players[index];
     if (!!player)
         return player.name;
     return `${defaultName} ${index+1}`;
 }
+
+/**
+ * Palauttaa tekstin pelaajan nimelle.
+ */
+const getSelectedPlayerName = (results: ScoresheetFields, gameIndex: number, playerIndex: number) => {
+    const selectedPlayers = playerIndex == 0 ? results.teamHome.selectedPlayers : results.teamAway.selectedPlayers;
+    const defaultText = playerIndex == 0 ? "Koti" : "Vieras";
+    return getPlayerName(selectedPlayers, gameIndexToPlayerIndexes(gameIndex)[playerIndex], defaultText);
+};
+
+/** 
+ * Palauttaa true joss pelaaja on tyhjä.
+ */
+const isEmptyPlayer = (formFields: ScoresheetFields, gameIndex: number, playerIndex: number) => {
+    return getSelectedPlayerName(formFields, gameIndex, playerIndex) == "-";
+};
+
+/** 
+ * Palauttaa true joss jompikumpi pelaajista on tyhjä.
+ */
+const gameHasEmptyPlayer = (results: ScoresheetFields, gameIndex: number) => {
+    return (isEmptyPlayer(results, gameIndex, 0)) || (isEmptyPlayer(results, gameIndex, 1));
+};
 
 /**
  * Muuttaa pelin indeksin (0-8) koti- ja vieraspelaajan indekseiksi (0-2) samassa
@@ -285,6 +308,8 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
-export { playerName, computeGameRunningStats, fetchMatchData, gameIndexToPlayerIndexes, 
-    playerIndexesToGameIndex, computeGameScore, checkGameResults, currentScore };
+export { getPlayerName, getSelectedPlayerName, computeGameRunningStats, 
+    fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, 
+    computeGameScore, checkGameResults, currentScore,
+    isEmptyPlayer, gameHasEmptyPlayer };
 export type { GameRunningStatRow };

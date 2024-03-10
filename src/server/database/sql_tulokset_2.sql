@@ -119,7 +119,7 @@ BEGIN
     CALL procedure_update_all_tulokset_from_erat(NEW.peli);
 END //
 
--- Otetaan huomioon ep_erat tulokset kun uusi rivi lisätään.
+-- Otetaan huomioon ep_erat tulokset kun rivi muutetaan.
 DROP TRIGGER IF EXISTS trigger_update_tulokset_on_erat_update //
 CREATE TRIGGER trigger_update_tulokset_on_erat_update
 AFTER UPDATE ON ep_erat

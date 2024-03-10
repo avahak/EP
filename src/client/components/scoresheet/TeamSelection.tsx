@@ -10,6 +10,19 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
     const teamText = (team.teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
     const playerText = (team.teamRole == "home") ? "Kotipelaaja" : "Vieraspelaaja";
     // const defaultOptionText = (team.teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
+
+    /**
+     * Palauttaa <Select> elementin valitun arvon.
+     */
+    const getSelectValue = (playerIndex: number) => {
+        let id = team.selectedPlayers[playerIndex]?.id;
+        if (id == -1)
+            return 'noPlayer';
+        if (!id)
+            return '';
+        return `${id}`;
+    }
+
     console.log("team", team);
     return (
         <Box>
@@ -28,7 +41,7 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
                     <Select
                         labelId="pelaaja-label"
                         id="pelaaja"
-                        value={`${team.selectedPlayers[playerIndex]?.id ?? ''}`}
+                        value={getSelectValue(playerIndex)}
                         onChange={(event, _child) => handleSelectPlayer(event, team, playerIndex)}
                         label={`${playerText} ${playerIndex+1}`}
                     >
@@ -42,6 +55,9 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
                                 {playerOption.name}
                             </MenuItem>
                         ))}
+                        {playerIndex == 2 && 
+                        <MenuItem value="noPlayer">Ei 3. pelaajaa</MenuItem>
+                        }
                         <MenuItem value="newPlayer">Lisää uusi pelaaja</MenuItem>
                     </Select>
                 </FormControl>

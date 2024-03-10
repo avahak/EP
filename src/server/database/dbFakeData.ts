@@ -8,10 +8,10 @@ import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
 import { dateToISOString, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
 
-const RAVINTOLAT = 5;       // max 7
+const RAVINTOLAT = 7;       // max 7
 const MIN_KAUSI = 37;
 const MAX_KAUSI = 38;
-const MAX_TEAMS_IN_RAVINTOLA = 5;
+const MAX_TEAMS_IN_RAVINTOLA = 6;
 const MIN_PLAYERS_IN_TEAM = 3;
 const MAX_PLAYERS_IN_TEAM = 6;
 
