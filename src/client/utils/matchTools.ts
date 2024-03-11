@@ -5,11 +5,17 @@
 import { ScoresheetFields, ScoresheetPlayer, createEmptyScores } from "../components/scoresheet/scoresheetTypes";
 import { serverFetch } from "./apiUtils";
 
+// Odotetut tulokset kun yksi tai molemmat pelaajat ovat tyhjiä:
+const PLAYER_1_EMPTY_SCORES = JSON.stringify([[' ',' ',' ',' ',' '], ['1','1','1',' ',' ']]);
+const PLAYER_2_EMPTY_SCORES = JSON.stringify([['1','1','1',' ',' '], [' ',' ',' ',' ',' ']]);
+const BOTH_PLAYERS_EMPTY_SCORES = JSON.stringify([[' ',' ',' ',' ',' '], [' ',' ',' ',' ',' ']]);
+
 type GameRunningStatRow = {
     isValidGame: boolean;
     isAllGamesValid: boolean;
     roundWins: number[];
     runningMatchScore: number[];
+    gameErrorMessage: string;
 };
 
 /**
@@ -81,7 +87,20 @@ function computeGameScore(results: string[][]) {
 /**
  * Tarkistaa, että erien tulokset ovat oikein ja päättyy kolmeen voittoon.
  */
-function checkGameResults(gameResult: string[][]) {
+function checkGameResults(gameResult: string[][], playerId1: number, playerId2: number) {
+    if (playerId1 == -1 && playerId2 == -1) 
+        return (JSON.stringify(gameResult) != BOTH_PLAYERS_EMPTY_SCORES) ? 
+            "Virheellinen tulos." + JSON.stringify(gameResult) + BOTH_PLAYERS_EMPTY_SCORES
+            : "";
+    if (playerId1 == -1)
+        return (JSON.stringify(gameResult) != PLAYER_1_EMPTY_SCORES) ? 
+            "Virheellinen tulos." + JSON.stringify(gameResult) + PLAYER_1_EMPTY_SCORES
+            : "";
+    if (playerId2 == -1)
+        return (JSON.stringify(gameResult) != PLAYER_2_EMPTY_SCORES) ?
+            "Virheellinen tulos." + JSON.stringify(gameResult) + PLAYER_2_EMPTY_SCORES
+            : "";
+
     let firstEmptyRound = 5;
     let gameFinishedRound = 5;
     let score = [0, 0];
@@ -115,19 +134,22 @@ function checkGameResults(gameResult: string[][]) {
  * roundWins kertoo kummankin pelaajan voitettujen erien lukumäärän pelissä, ja
  * runningMatchScore kertoo ottelun tilanteen pelin jälkeen.
  */
-function computeGameRunningStats(scores: string[][][]): GameRunningStatRow[] {
+function computeGameRunningStats(data: ScoresheetFields): GameRunningStatRow[] {
     const stats: GameRunningStatRow[] = [];
     let runningMatchScore = [0, 0];
     let isAllGamesValid = true;
     for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
-        const isValidGame = !checkGameResults(scores[gameIndex]);
+        const playerIndexes = gameIndexToPlayerIndexes(gameIndex);
+        console.log("zzz", gameIndex, data.teamHome.selectedPlayers[playerIndexes[0]]?.id ?? -1, data.teamAway.selectedPlayers[playerIndexes[1]]?.id ?? -1);
+        const gameErrorMessage = checkGameResults(data.scores[gameIndex], data.teamHome.selectedPlayers[playerIndexes[0]]?.id ?? -1, data.teamAway.selectedPlayers[playerIndexes[1]]?.id ?? -1);
+        const isValidGame = !gameErrorMessage;
         isAllGamesValid = isAllGamesValid && isValidGame;
 
         let roundWins = [0, 0];
         for (let playerIndex = 0; playerIndex < 2; playerIndex++) {
             let playerRoundWins = 0;
             for (let roundIndex = 0; roundIndex < 5; roundIndex++) {
-                if (scores[gameIndex][playerIndex][roundIndex] != " ")
+                if (data.scores[gameIndex][playerIndex][roundIndex] != " ")
                     playerRoundWins += 1;
             }
             roundWins[playerIndex] = playerRoundWins;
@@ -144,7 +166,7 @@ function computeGameRunningStats(scores: string[][][]): GameRunningStatRow[] {
                 runningMatchScore[1] += 1;
         }
 
-        stats.push({ isValidGame, roundWins, runningMatchScore: [...runningMatchScore], isAllGamesValid });
+        stats.push({ isValidGame, roundWins, runningMatchScore: [...runningMatchScore], isAllGamesValid, gameErrorMessage });
     }
     return stats;
 }
@@ -152,8 +174,8 @@ function computeGameRunningStats(scores: string[][][]): GameRunningStatRow[] {
 /**
  * Palauttaa viimeisimmän kirjatun tilanteen.
  */
-function currentScore(scores: string[][][]) {
-    const runningStats = computeGameRunningStats(scores);
+function currentScore(data: ScoresheetFields) {
+    const runningStats = computeGameRunningStats(data);
     let score = [0, 0];
     for (let k = 0; k < 9; k++) {
         if (runningStats[k].runningMatchScore[0] != -1)

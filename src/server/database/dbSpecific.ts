@@ -287,33 +287,32 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
         await connection.beginTransaction();
         try {
             // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_erat:
-            // const query1 = `
-            //     DELETE e 
+            const query1 = `
+                DELETE e 
+                FROM ep_erat e
+                JOIN ep_peli p ON e.peli = p.id
+                WHERE p.ottelu = ?
+            `;
+            await connection.query(query1, [match.id]);
+
+            // Herättimen "trigger_modify_peli_on_erat_delete" takia 
+            // ei voida poistaa rivejä taulusta ep_erat kyselyllä, jossa esiintyy ep_peli.
+            // Tämän takia käytetään väliaikaista taulua apuna:
+            // const query1_1 = `CREATE TEMPORARY TABLE temp_ids (id INT)`;
+            // const query1_2 = `
+            //     INSERT INTO temp_ids (id)
+            //     SELECT e.id
             //     FROM ep_erat e
             //     JOIN ep_peli p ON e.peli = p.id
             //     JOIN ep_ottelu o ON p.ottelu = o.id
             //     WHERE o.id = ?
             // `;
-            // await connection.query(query1, [match.id]);
-
-            // Herättimen "trigger_modify_peli_on_erat_delete" takia 
-            // ei voida poistaa rivejä taulusta ep_erat kyselyllä, jossa esiintyy ep_peli.
-            // Tämän takia käytetään väliaikaista taulua apuna:
-            const query1_1 = `CREATE TEMPORARY TABLE temp_ids (id INT)`;
-            const query1_2 = `
-                INSERT INTO temp_ids (id)
-                SELECT e.id
-                FROM ep_erat e
-                JOIN ep_peli p ON e.peli = p.id
-                JOIN ep_ottelu o ON p.ottelu = o.id
-                WHERE o.id = ?
-            `;
-            const query1_3 = `DELETE FROM ep_erat WHERE id IN (SELECT * FROM temp_ids)`;
-            const query1_4 = `DROP TEMPORARY TABLE temp_ids`;
-            await connection.query(query1_1);
-            await connection.query(query1_2, [match.id]);
-            await connection.query(query1_3);
-            await connection.query(query1_4);
+            // const query1_3 = `DELETE FROM ep_erat WHERE id IN (SELECT * FROM temp_ids)`;
+            // const query1_4 = `DROP TEMPORARY TABLE temp_ids`;
+            // await connection.query(query1_1);
+            // await connection.query(query1_2, [match.id]);
+            // await connection.query(query1_3);
+            // await connection.query(query1_4);
 
             // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_peli:
             const query2 = `
@@ -324,6 +323,10 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
 
             // Lisätään uudet rivit tauluun ep_peli:
             for (let k = 0; k < 9; k++) {
+                // Ei talleteta kahden tyhjän pelaajan peliä:
+                if (match.games[k][1] == -1 && match.games[k][2] == -1)
+                    continue;
+
                 const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
                 let [insertedRow] = await connection.query(query3, match.games[k]);
                 // Liitetään rounds taulukkoon lisätyn rivin id:
@@ -344,13 +347,9 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
                 }
             }
 
-            // Muutetaan ottelun päivämäärä:
-            const query5 = `UPDATE ep_ottelu SET paiva = ? WHERE id = ?`;
-            await connection.query(query5, [match.date, match.id]);
-
-            // Muutetaan ottelun status:
-            const query6 = `UPDATE ep_ottelu SET status = ? WHERE id = ?`;
-            await connection.query(query6, [match.newStatus, match.id]);
+            // Muutetaan ottelun päivämäärä ja status:
+            const query5 = `UPDATE ep_ottelu SET paiva = ?, status = ? WHERE id = ?`;
+            await connection.query(query5, [match.date, match.newStatus, match.id]);
 
             await connection.commit();
             // await connection.rollback();

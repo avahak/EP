@@ -4,7 +4,7 @@
 
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
 import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
 import EditIcon from '@mui/icons-material/Edit';
@@ -15,12 +15,13 @@ const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
 type RoundResultsTableProps = {
     mode: ScoresheetMode;
+    displayErrors: boolean;
     formFields: ScoresheetFields;
     onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
     gameRunningStats: GameRunningStatRow[];
 }
 
-const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields, onGameDialogSubmit, gameRunningStats }) => {
+const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErrors, formFields, onGameDialogSubmit, gameRunningStats }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
 
     /**
@@ -38,6 +39,13 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
         onGameDialogSubmit(gameIndex, results);
         setGameDialogState({ isOpen: false });
     };
+
+    /**
+     * Returns className string for the row.
+     */
+    const rowBaseClassName = (gameIndex: number) => {
+        return `${(displayErrors && !gameRunningStats[gameIndex].isValidGame) && "error"} ${PARITY[gameIndex]}`;
+    }
 
     return (
     // <div id="table-box">
@@ -98,11 +106,12 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
     </TableHead>
     <TableBody>
         {formFields.scores.map((_game, gameIndex) => (
-        Array.from({ length: 2 }, (_, playerIndex) => (
-            <TableRow key={`row-${gameIndex}-${playerIndex}`} sx={{borderBottom: playerIndex == 1 ? "2px solid black" : ""}}>
+        <Fragment key={`rounds-${gameIndex}`}>
+        {Array.from({ length: 2 }, (_, playerIndex) => (
+            <TableRow key={`rounds-row-${gameIndex}-${playerIndex}`} sx={{borderBottom: playerIndex == 1 ? "2px solid black" : "", borderTop: playerIndex == 0 ? "2px solid black" : ""}}>
             {/* Peli */}
             {playerIndex == 0 &&
-                <BasicTableCellLow className={`${PARITY[gameIndex]}`} rowSpan={2}>
+                <BasicTableCellLow className={rowBaseClassName(gameIndex)} rowSpan={2}>
                     <Typography variant="body1" textAlign="center">
                         {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
                         {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[1]+1}`}
@@ -111,7 +120,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             }
 
             {/* Pelaaja */}
-            <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`player-${gameIndex}-${playerIndex}`}>
+            <BasicTableCellLow className={rowBaseClassName(gameIndex)} key={`player-${gameIndex}-${playerIndex}`}>
                 <BasicNameTypography>
                     {getSelectedPlayerName(formFields, gameIndex, playerIndex)}
                 </BasicNameTypography>
@@ -119,7 +128,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
 
             {/* Erätulokset */}
             {Array.from({ length: 5 }, (_, roundIndex) => (
-                <BasicTableCellLow className={`${PARITY[gameIndex]}`} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`} sx={{borderLeft: roundIndex == 0 ? "3px solid black" : "1px solid black", borderRight: roundIndex == 4 ? "3px solid black" : "1px solid black"}}>
+                <BasicTableCellLow className={rowBaseClassName(gameIndex)} key={`cell2-${gameIndex}-${playerIndex}-${roundIndex}`} sx={{borderLeft: roundIndex == 0 ? "3px solid black" : "1px solid black", borderRight: roundIndex == 4 ? "3px solid black" : "1px solid black"}}>
                     <BasicTypography>
                         {formFields.scores[gameIndex][playerIndex][roundIndex]}
                     </BasicTypography>
@@ -127,7 +136,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             ))}
 
             {/* Voitot */}
-            <BasicTableCellLow className={`${gameRunningStats[gameIndex].roundWins[playerIndex] >= 3 ? "winner" : ""} ${PARITY[gameIndex]} table-col-4`} key={`voitot-${gameIndex}-${playerIndex}`}>
+            <BasicTableCellLow className={`${rowBaseClassName(gameIndex)} ${gameRunningStats[gameIndex].roundWins[playerIndex] >= 3 ? "winner" : ""}`} key={`voitot-${gameIndex}-${playerIndex}`}>
                 <BasicTypography>
                     {gameRunningStats[gameIndex].roundWins[playerIndex]}
                 </BasicTypography>
@@ -135,7 +144,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
 
             {/* Tilanne */}
             {playerIndex == 0 &&
-            <BasicTableCellLow rowSpan={2} className={`${PARITY[gameIndex]}`} key={`running-score-${gameIndex}`}>
+            <BasicTableCellLow rowSpan={2} className={rowBaseClassName(gameIndex)} key={`running-score-${gameIndex}`}>
                 <Typography variant="body1" textAlign="center">
                     {gameRunningStats[gameIndex].isAllGamesValid ? 
                         `${gameRunningStats[gameIndex].runningMatchScore[0]} - ${gameRunningStats[gameIndex].runningMatchScore[1]}`
@@ -149,7 +158,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
             <TableCell 
                 sx={{p: 0, width: "40px", border: "1px solid black"}} 
                 rowSpan={2} 
-                className={`${PARITY[gameIndex]}`} 
+                className={rowBaseClassName(gameIndex)} 
                 key={`edit-${gameIndex}`}
                 onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}
             >
@@ -168,10 +177,21 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, formFields,
                 </IconButton>
                 </Box>
             </TableCell>
-            : <TableCell key={`edit-${gameIndex}`} className={`${PARITY[gameIndex]}`} rowSpan={2}/>)
+            : <TableCell key={`edit-${gameIndex}`} className={rowBaseClassName(gameIndex)} rowSpan={2}/>)
             }
-
-            </TableRow>))
+            </TableRow>
+            ))
+        }
+        {(displayErrors && !gameRunningStats[gameIndex].isValidGame) &&
+        <TableRow key={`error-rounds-row-${gameIndex}`}>
+            <TableCell colSpan={mode == "modify" ? 10 : 9} sx={{pt: 0, pb: 2}}>
+                <Typography textAlign="center" color="error">
+                    {gameRunningStats[gameIndex].gameErrorMessage}
+                </Typography>
+            </TableCell>
+        </TableRow>
+        }
+        </Fragment>
         ))}
     </TableBody>
     </BasicTable>

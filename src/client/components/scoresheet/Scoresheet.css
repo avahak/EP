@@ -5,3 +5,7 @@
 .odd {
     background: lightgray;
 }
+
+.error {
+    background: #faa;
+}

@@ -50,7 +50,18 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
  * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
  * pöytäkirjassa.
  */
-const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; teamHome: ScoresheetTeam; teamAway: ScoresheetTeam }> = ({gameRunningStats, teamHome, teamAway}) => {
+const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; displayErrors: boolean; teamHome: ScoresheetTeam; teamAway: ScoresheetTeam }> = ({gameRunningStats, displayErrors, teamHome, teamAway}) => {
+
+    /**
+     * Palauttaa taustavärin tulokselle - punainen väri virheelle.
+     */
+    const cellBackgroundColor = (theme: Theme, row: number, col: number) => {
+        const gameIndex = playerIndexesToGameIndex(row, col);
+        if (displayErrors && !gameRunningStats[gameIndex].isValidGame)
+            return theme.palette.error.light;
+        return theme.palette.background.default;
+    };
+
     return (
         <Paper elevation={10} sx={{p: 1, m: 2}}>
         <Typography textAlign="center" fontWeight="bold">
@@ -88,7 +99,10 @@ const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; teamH
                             </StyledTableText>
                         </StyledTableCell>
                         {[0, 1, 2].map((col) => (
-                            <StyledTableCell key={`box-${row}-${col}`}>
+                            <StyledTableCell 
+                                key={`box-${row}-${col}`}
+                                sx={{backgroundColor: (theme) => cellBackgroundColor(theme, row, col)}}
+                            >
                                 {/* <DiagonalSplitBox 
                                     left={<StyledTableText className="dsb2-left-text">{roundWins[(9-row*2+col*3) % 9][0]}</StyledTableText>}
                                     right={<StyledTableText className="dsb2-right-text">{roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>}

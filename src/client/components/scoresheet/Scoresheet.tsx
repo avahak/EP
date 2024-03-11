@@ -12,11 +12,11 @@ import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
 import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
-// import { parseMatch } from '../../../shared/parseMatch';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
 import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
 import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
+import { useSnackbar } from "../../utils/SnackbarContext";
 
 /**
  * React komponentti tuloslomakkeelle.
@@ -35,10 +35,14 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     });
     // Käytetään onChageCallback varten tarkistamaan onko muutkoksia tapahtunut:
     const [dataString, setDataString] = useState("");
+    // Kun lomake yritetään lähettää epäonnistuneesti, aletaan näyttää virheilmoituksia:
+    const [displayErrors, setDisplayErrors] = useState<boolean>(false);
 
     const formFields = watch();
     // console.log("initialValues", initialValues);
     // console.log("formFields", formFields);
+
+    const setSnackbarState = useSnackbar();
 
     // Jos initialValues muuttuu, muutetaan lomakkeen tila siihen, tätä
     // käytetään vain "display"-tilassa.
@@ -46,6 +50,9 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         reset(initialValues);
         console.log("Scoresheet useEffect called");
     }, [initialValues]);
+
+    const gameRunningStats = computeGameRunningStats(formFields);
+    console.log("gameRunningStats", gameRunningStats);
 
     // avaa AddPlayerDialog
     const handleOpenAddPlayerDialog = () => {
@@ -74,11 +81,20 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
      * Funktio, joka kutsutaan kun lomake lähetetään.
      */
     const onSubmit: SubmitHandler<ScoresheetFields> = (data) => {
-        // TODO form validation tässä!
-        if (onChangeCallback)
-            onChangeCallback({ ...data, isSubmitted: true });
-        if (submitCallback) 
-            submitCallback({ ...data, isSubmitted: true });
+        if (!gameRunningStats[8].isAllGamesValid) {
+            // Käyttäjä yritti lähettää virheellisen lomakkeen - näytä virheet:
+            setDisplayErrors(true);
+            setSnackbarState?.({ 
+                isOpen: true, 
+                message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", 
+                severity: "error" 
+            });
+        } else {
+            if (onChangeCallback)
+                onChangeCallback({ ...data, isSubmitted: true });
+            if (submitCallback) 
+                submitCallback({ ...data, isSubmitted: true });
+        }
     };
 
     /**
@@ -104,9 +120,6 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             }
         }
     };
-
-    const gameRunningStats = computeGameRunningStats(formFields.scores);
-    console.log("gameRunningStats", gameRunningStats);
 
     /**
      * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
@@ -240,7 +253,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             {playersAllSelected &&
             <Box display="flex" justifyContent="center">
                 <Box width="100%" maxWidth="750px" minWidth="300px">
-                    <RoundResultsTable mode={mode} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
+                    <RoundResultsTable mode={mode} displayErrors={displayErrors} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
                 </Box>
             </Box>
             }
@@ -249,7 +262,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         {playersAllSelected &&
         <Box display="flex" justifyContent="center">
             <Box width="100%" maxWidth="500px">
-                <GameResultsTable gameRunningStats={gameRunningStats} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
+                <GameResultsTable gameRunningStats={gameRunningStats} displayErrors={displayErrors} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
             </Box>
         </Box>
         }

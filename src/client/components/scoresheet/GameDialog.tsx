@@ -39,7 +39,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name ?? `Vieras ${awayPlayerIndex+1}`
 
     const gameScore = computeGameScore(results);
-    const invalidResult = checkGameResults(results);
+    const invalidResult = checkGameResults(results, formFields.teamHome.selectedPlayers[homePlayerIndex]?.id ?? -1, formFields.teamAway.selectedPlayers[awayPlayerIndex]?.id ?? -1);
 
     let isFinished = (currentRound >= 5);
     if (gameScore[0] >= 3 || gameScore[1] >= 3) {

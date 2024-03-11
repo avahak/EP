@@ -123,7 +123,7 @@ router.post('/submit_match', async (req, res) => {
     if (!req.body.result)
         res.status(400).send(`Missing result`);
     const result = req.body.result;
-    const score = currentScore(result.scores);
+    const score = currentScore(result);
 
     const matchId = result.id;
     const now = Date.now();
