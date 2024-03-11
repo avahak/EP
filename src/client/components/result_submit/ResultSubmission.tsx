@@ -44,6 +44,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         console.log("fetchSendResult()");
         try {
             const parsedResult = parseMatch(newStatus, result);
+            console.log("parsedResult", parsedResult);
             const response = await serverFetch("/db/specific_query", {
                 method: 'POST',
                 headers: {

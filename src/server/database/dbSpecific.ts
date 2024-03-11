@@ -6,6 +6,7 @@
 import mysql from 'mysql2/promise';
 import { myQuery } from './dbGeneral.js';
 import { dateToISOString, deepCopy } from '../../shared/generalUtils.js';
+import { validateParsedMatch } from '../../shared/parseMatch.js';
 // import { parseMatch } from '../../shared/parseMatch.js';
 
 /**
@@ -274,13 +275,15 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>) 
  */
 async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) {
     const match = params.result;
-    if (!match.ok)
+    if (!match.ok || !validateParsedMatch(match))
         throw Error("Invalid match.");
 
     const rounds = deepCopy(match.rounds);
     
     console.log("match", JSON.stringify(match));
-    await new Promise(r => setTimeout(r, 2000));    // poista tämä (tässä vain testausta varten)
+    // await new Promise(r => setTimeout(r, 20000));    // poista tämä (tässä vain testausta varten)
+    // if (1 == 1)
+    //     throw Error("Invalid match.");
 
     try {
         const connection = await pool.getConnection();

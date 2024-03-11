@@ -90,16 +90,13 @@ function computeGameScore(results: string[][]) {
 function checkGameResults(gameResult: string[][], playerId1: number, playerId2: number) {
     if (playerId1 == -1 && playerId2 == -1) 
         return (JSON.stringify(gameResult) != BOTH_PLAYERS_EMPTY_SCORES) ? 
-            "Virheellinen tulos." + JSON.stringify(gameResult) + BOTH_PLAYERS_EMPTY_SCORES
-            : "";
+            "Virheellinen tulos." : "";
     if (playerId1 == -1)
         return (JSON.stringify(gameResult) != PLAYER_1_EMPTY_SCORES) ? 
-            "Virheellinen tulos." + JSON.stringify(gameResult) + PLAYER_1_EMPTY_SCORES
-            : "";
+            "Virheellinen tulos." : "";
     if (playerId2 == -1)
         return (JSON.stringify(gameResult) != PLAYER_2_EMPTY_SCORES) ?
-            "Virheellinen tulos." + JSON.stringify(gameResult) + PLAYER_2_EMPTY_SCORES
-            : "";
+            "Virheellinen tulos." : "";
 
     let firstEmptyRound = 5;
     let gameFinishedRound = 5;
@@ -140,7 +137,6 @@ function computeGameRunningStats(data: ScoresheetFields): GameRunningStatRow[] {
     let isAllGamesValid = true;
     for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
         const playerIndexes = gameIndexToPlayerIndexes(gameIndex);
-        console.log("zzz", gameIndex, data.teamHome.selectedPlayers[playerIndexes[0]]?.id ?? -1, data.teamAway.selectedPlayers[playerIndexes[1]]?.id ?? -1);
         const gameErrorMessage = checkGameResults(data.scores[gameIndex], data.teamHome.selectedPlayers[playerIndexes[0]]?.id ?? -1, data.teamAway.selectedPlayers[playerIndexes[1]]?.id ?? -1);
         const isValidGame = !gameErrorMessage;
         isAllGamesValid = isAllGamesValid && isValidGame;
@@ -183,6 +179,19 @@ function currentScore(data: ScoresheetFields) {
     }
     return score;
 }
+
+/**
+ * Check the scoresheet data for errors.
+ */
+// function validateAll(data: ScoresheetFields): boolean {
+//     const runningStats = computeGameRunningStats(data);
+//     if ((data.teamHome.selectedPlayers[0]?.id ?? -1 == -1) || (data.teamHome.selectedPlayers[1]?.id ?? -1 == -1)
+//         || (data.teamAway.selectedPlayers[0]?.id ?? -1 == -1) || (data.teamAway.selectedPlayers[0]?.id ?? -1 == -1))
+//         return false;
+//     if (!runningStats[8].isAllGamesValid)
+//         return false;
+//     return true;
+// }
 
 /**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.

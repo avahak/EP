@@ -1,14 +1,17 @@
+import { ScoresheetFields } from "../client/components/scoresheet/scoresheetTypes";
+import { checkGameResults } from "../client/utils/matchTools";
+
 const symbols = {"1": 1, "A": 2, "9": 3, "K": 4, "C": 5, "V": 6};
-// const symbolsInverted = {1: "1", 2: "A", 3: "9", 4: "K", 5: "C", 6: "V"};
+const symbolsInverted = {1: "1", 2: "A", 3: "9", 4: "K", 5: "C", 6: "V"};
 
 /**
  * Kääntää lomakkeella olevan erän (koti, vieras) tietokannassa käytettäväksi symboliksi.
  */
-function translateSymbol(symbolHome: keyof typeof symbols, symbolAway: keyof typeof symbols) {
-    if (symbols[symbolHome])
-        return `K${symbols[symbolHome]}`;
-    if (symbols[symbolAway])
-        return `V${symbols[symbolAway]}`;
+function translateSymbol(symbolHome: string, symbolAway: string) {
+    if (symbolHome in symbols)
+        return `K${symbols[symbolHome as keyof typeof symbols]}`;
+    if (symbolAway in symbols)
+        return `V${symbols[symbolAway as keyof typeof symbols]}`;
     return 'V0';
 }
 
@@ -16,12 +19,12 @@ function translateSymbol(symbolHome: keyof typeof symbols, symbolAway: keyof typ
  * Muokkaa ottelun tiedot Scoresheet lomakkeella käytetystä muodosta
  * tietokannassa käytettävään muotoon.
  */
-function parseMatch(newStatus: string, match: any) {
+function parseMatch(newStatus: string, match: ScoresheetFields) {
     if (!match || !match.id)
         return { ok: false };
     if (match.teamHome.selectedPlayers.length != 3 || match.teamAway.selectedPlayers.length != 3)
         return { ok: false };
-    for (let k = 0; k < 3; k++)
+    for (let k = 0; k < 3; k++) 
         if (!match.teamHome.selectedPlayers[k] || !match.teamAway.selectedPlayers[k])
             return { ok: false };
            
@@ -31,8 +34,8 @@ function parseMatch(newStatus: string, match: any) {
         for (let vpIndex = 0; vpIndex < 3; vpIndex++) {
             games.push([
                 match.id, 
-                match.teamHome.selectedPlayers[kpIndex].id, 
-                match.teamAway.selectedPlayers[vpIndex].id
+                match.teamHome.selectedPlayers[kpIndex]?.id, 
+                match.teamAway.selectedPlayers[vpIndex]?.id
             ]);
         }
     }
@@ -70,4 +73,46 @@ function parseMatch(newStatus: string, match: any) {
     };
 }
 
-export { parseMatch };
+/**
+ * Tarkistetaan, että lähetetyt tiedot vastaavat oikein täytettyä lomaketta.
+ */
+function validateParsedMatch(match: any) {
+    try {
+        if (match.playersHome[0] == -1 || match.playersHome[1] == -1 
+            || match.playersAway[0] == -1 || match.playersAway[1] == -1)
+            return false;
+        for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
+            const playerId1 = match.playersHome[Math.floor(gameIndex / 3)];
+            const playerId2 = match.playersAway[gameIndex % 3];
+
+            const gameRounds: string[][] = [[], []];
+            for (let round = 0; round < 5; round++) {
+                let symbol = match.rounds[gameIndex][round+1];
+                let winTeamIndex = symbol[0] == 'K' ? 0 : 1;
+                let winType = parseInt(symbol[1]);
+                if (winType >= 1 && winType <= 6) {
+                    gameRounds[winTeamIndex].push(symbolsInverted[winType as keyof typeof symbolsInverted]);
+                    gameRounds[1-winTeamIndex].push(` `);
+                } else {
+                    gameRounds[0].push(` `);
+                    gameRounds[1].push(` `);
+                }
+            }
+            // console.log("p1, p2", playerId1, playerId2);
+            // console.log("match.rounds[gameIndex]", match.rounds[gameIndex]);
+            // console.log("gameRounds", gameRounds);
+
+            const errorMessage = checkGameResults(gameRounds, playerId1, playerId2);
+            if (errorMessage) {
+                // console.log("error", errorMessage);
+                return false;
+            }
+        }
+        // console.log(match);
+    } catch (error) {
+        return false;
+    }
+    return true;
+}
+
+export { parseMatch, validateParsedMatch };
