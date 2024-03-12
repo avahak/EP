@@ -2,7 +2,6 @@
  * Testisivu joukkueiden tulosten esittämiselle.
  */
 
-import { Link } from "react-router-dom";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 import { Container } from "@mui/material";
 import { TeamsTable } from "./TeamTables";
@@ -30,7 +29,7 @@ const DisplayResultsTeams: React.FC = () => {
 
     return (
         <>
-        <Link to="/">Takaisin</Link>
+        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
         {resultsOld.status.ok ?

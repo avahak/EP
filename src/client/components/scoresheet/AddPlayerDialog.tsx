@@ -3,7 +3,7 @@
  * pelaajan lisäämiseksi joukkueeseen.
  */
 
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -13,7 +13,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { serverFetch } from '../../utils/apiUtils';
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { useSnackbar } from '../../utils/SnackbarContext';
+import { SnackbarContext } from '../../contexts/SnackbarContext';
 import { ScoresheetPlayer, ScoresheetTeam } from './scoresheetTypes';
 
 type AddPlayerDialogProps = {
@@ -29,7 +29,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
     const [newPlayerName, setNewPlayerName] = useState<string>('');
     const [newPlayerSex, setNewPlayerSex] = useState<Sex>('-');
     // const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
-    const setSnackbarState = useSnackbar();
+    const setSnackbarState = useContext(SnackbarContext);
 
     /**
      * Lisää uuden pelaajan tietokantaan.

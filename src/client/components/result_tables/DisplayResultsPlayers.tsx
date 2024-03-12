@@ -3,10 +3,6 @@
  * Tabs lähde: https://mui.com/material-ui/react-tabs/
  */
 
-// import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-
-// import { ResultTable } from "../tables/ResultTable";
 import { crudeHash, deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { useInitialServerFetch } from "../../utils/apiUtils";
 import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
@@ -215,7 +211,7 @@ const DisplayResultsPlayers: React.FC = () => {
 
     return (
         <>
-        <Link to="/">Takaisin</Link>
+        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
         {resultsOld.status.ok ?

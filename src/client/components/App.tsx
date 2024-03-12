@@ -28,6 +28,8 @@ const App = () => {
                 <br />
                 <Link to="/display_match">Näytä yksittäisen ottelun tulos</Link> 
                 <br />
+                <Link to="/">Etusivu</Link> 
+                <br />
             </Box>
             <Box sx={{p: 2}}>
                 <Typography variant="h6">Konenäkö</Typography>

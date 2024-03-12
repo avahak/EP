@@ -7,7 +7,7 @@
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
 import { useForm, SubmitHandler } from "react-hook-form";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
 import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
@@ -16,7 +16,7 @@ import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
 import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
 import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
-import { useSnackbar } from "../../utils/SnackbarContext";
+import { SnackbarContext } from "../../contexts/SnackbarContext";
 
 /**
  * React komponentti tuloslomakkeelle.
@@ -42,7 +42,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     // console.log("initialValues", initialValues);
     // console.log("formFields", formFields);
 
-    const setSnackbarState = useSnackbar();
+    const setSnackbarState = useContext(SnackbarContext);
 
     // Jos initialValues muuttuu, muutetaan lomakkeen tila siihen, tätä
     // käytetään vain "display"-tilassa.

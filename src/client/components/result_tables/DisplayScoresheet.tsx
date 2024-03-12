@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { Container } from "@mui/material";
 import { fetchMatchData } from "../../utils/matchTools";
-import { Link } from "react-router-dom";
 import { ScoresheetFields } from "../scoresheet/scoresheetTypes";
 
 const DisplayScoresheet: React.FC = () => {
@@ -23,7 +22,7 @@ const DisplayScoresheet: React.FC = () => {
 
 
     return (<>
-        <Link to="/">Takaisin</Link>
+        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
         {result ?

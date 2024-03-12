@@ -79,7 +79,10 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
 function validateParsedMatch(match: any) {
     try {
         if (match.playersHome[0] == -1 || match.playersHome[1] == -1 
-            || match.playersAway[0] == -1 || match.playersAway[1] == -1)
+            || match.playersAway[0] == -1 || match.playersAway[1] == -1
+            || match.playersHome[0] == match.playersHome[1] || match.playersHome[0] == match.playersHome[2]
+            || match.playersHome[1] == match.playersHome[2] || match.playersAway[0] == match.playersAway[1]
+            || match.playersAway[1] == match.playersAway[2] || match.playersAway[0] == match.playersAway[2])
             return false;
         for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
             const playerId1 = match.playersHome[Math.floor(gameIndex / 3)];

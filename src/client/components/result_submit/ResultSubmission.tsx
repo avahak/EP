@@ -6,15 +6,14 @@
  */
 
 // import { Scoresheet } from "./Scoresheet";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { MatchChooser, MatchChooserSubmitFields } from "./MatchChooser";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { serverFetch } from "../../utils/apiUtils";
 import { Backdrop, Box, CircularProgress, Container, Typography } from "@mui/material";
 import { parseMatch } from "../../../shared/parseMatch";
 import { fetchMatchData } from "../../utils/matchTools";
-import { Link } from "react-router-dom";
-import { useSnackbar } from "../../utils/SnackbarContext";
+import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresheet/scoresheetTypes";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
@@ -35,7 +34,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     });
     const [useLivescore, setUseLivescore] = useState<boolean>(true);
     const [pageState, setPageState] = useState<PageState>("choose_match");
-    const setSnackbarState = useSnackbar();
+    const setSnackbarState = useContext(SnackbarContext);
 
     /**
      * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
@@ -151,7 +150,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     console.log("result", result);
 
     return (<>
-        <Link to="/">Takaisin</Link>
+        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
         {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 

@@ -58,7 +58,7 @@ const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; displ
     const cellBackgroundColor = (theme: Theme, row: number, col: number) => {
         const gameIndex = playerIndexesToGameIndex(row, col);
         if (displayErrors && !gameRunningStats[gameIndex].isValidGame)
-            return theme.palette.error.light;
+            return "#faa";
         return theme.palette.background.default;
     };
 

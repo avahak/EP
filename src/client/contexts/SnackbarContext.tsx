@@ -3,8 +3,8 @@
  * ilmoitusviestejä.
  */
 
-import { Alert, Snackbar } from '@mui/material';
-import React, { createContext, useContext, useState } from 'react';
+import { Alert, Slide, Snackbar } from '@mui/material';
+import React, { createContext, useState } from 'react';
 
 type SnackbarState = {
     isOpen: boolean;
@@ -15,16 +15,9 @@ type SnackbarState = {
 
 const SnackbarContext = createContext<React.Dispatch<React.SetStateAction<SnackbarState>> | undefined>(undefined);
 
-/** 
- * Hook, jolla voi käyttää Snackbarin tilaa komponentissa.
- */
-const useSnackbar = () => {
-    return useContext(SnackbarContext);
-};
-
 /**
  * Määrittää ilmoitusviestien tilan ja tarjoaa sen sovelluksen laajuiseen käyttöön
- * käyttäen useSnackbar-hookia.
+ * käyttäen SnackbarContext kontekstia.
  */
 const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [snackbarState, setSnackbarState] = useState<SnackbarState>({ isOpen: false });
@@ -35,11 +28,13 @@ const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ children })
             <Snackbar
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
                 open={snackbarState.isOpen}
-                autoHideDuration={snackbarState.autoHideDuration ?? 3000}
-                onClose={() => setSnackbarState({ isOpen: false })}
+                transitionDuration={500}
+                autoHideDuration={snackbarState.autoHideDuration ?? 4000}
+                onClose={() => setSnackbarState({...snackbarState, isOpen: false })}
+                TransitionComponent={Slide}
             >
                 <Alert
-                    onClose={() => setSnackbarState({ isOpen: false })}
+                    onClose={() => setSnackbarState({...snackbarState, isOpen: false })}
                     severity={snackbarState.severity ?? "info"}
                     variant="filled"
                     sx={{ width: '100%' }}
@@ -51,4 +46,4 @@ const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ children })
     );
 };
 
-export { useSnackbar, SnackbarProvider };
+export { SnackbarContext, SnackbarProvider };

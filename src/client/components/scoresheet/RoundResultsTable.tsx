@@ -185,7 +185,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
         {(displayErrors && !gameRunningStats[gameIndex].isValidGame) &&
         <TableRow key={`error-rounds-row-${gameIndex}`}>
             <TableCell colSpan={mode == "modify" ? 10 : 9} sx={{pt: 0, pb: 2}}>
-                <Typography textAlign="center" color="error">
+                <Typography textAlign="center" fontWeight="bold" color="error">
                     {gameRunningStats[gameIndex].gameErrorMessage}
                 </Typography>
             </TableCell>

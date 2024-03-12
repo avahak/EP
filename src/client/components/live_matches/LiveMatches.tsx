@@ -1,6 +1,5 @@
 import { Box, Container, Grid, Typography } from "@mui/material"
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getApiUrl } from "../../utils/apiUtils";
 import { base64JSONparse } from "../../../shared/generalUtils";
 import { LiveMatchEntry } from "../../../shared/commonTypes";
@@ -62,7 +61,7 @@ const LiveMatches: React.FC = () => {
 
     return (
         <>
-        <Link to="/">Takaisin</Link>
+        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
             {liveMatchList.length > 0 &&
             <>

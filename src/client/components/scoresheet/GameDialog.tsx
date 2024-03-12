@@ -14,7 +14,7 @@ import './GameDialog.css';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
 import { deepCopy } from '../../../shared/generalUtils';
 import { ScoresheetFields } from './scoresheetTypes';
-// import { useSnackbar } from '../../utils/SnackbarContext';
+// import { SnackbarContext } from '../../utils/SnackbarContext';
 
 type GameDialogState = {
     isOpen: boolean;

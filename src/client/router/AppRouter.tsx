@@ -18,24 +18,42 @@ import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsT
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
 import { MUITest } from '../components/sandbox/MUITest';
 import { DisplayScoresheet } from '../components/result_tables/DisplayScoresheet';
-import { SnackbarProvider } from '../utils/SnackbarContext';
+import { SnackbarProvider } from '../contexts/SnackbarContext';
 import { LiveMatches } from '../components/live_matches/LiveMatches';
+import { LayoutWrapper } from '../components/layout/LayoutWrapper';
+import { ReactNode, useContext, useEffect } from 'react';
+import { PageNameContext, PageNameProvider } from '../contexts/PageNameContext';
+
+const Wrap: React.FC<{ children: ReactNode, pageName?: string }> = ({ children, pageName }) => {
+    const pageNameContext = useContext(PageNameContext);
+
+    useEffect(() => {
+        pageNameContext.setPageName(pageName ?? "Tuntematon sivu");
+    }, [pageName, pageNameContext]);
+    
+    return (
+        <LayoutWrapper>
+            {children}
+        </LayoutWrapper>
+    );
+};
 
 const AppRouter = () => {
     return (<>
+        <PageNameProvider>
         <SnackbarProvider>
-        <BrowserRouter basename='/test'>
+        <BrowserRouter basename='/test/'>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
-                <Route path="/report_fx1" element={<ResultSubmission userTeam="FX1" />} />
-                <Route path="/report_aa1" element={<ResultSubmission userTeam="AA1" />} />
-                <Route path="/report_mg1" element={<ResultSubmission userTeam="MG1" />} />
-                <Route path="/report_kp1" element={<ResultSubmission userTeam="KP1" />} />
-                <Route path="/report_tp1" element={<ResultSubmission userTeam="TP1" />} />
-                <Route path="/results_teams" element={<DisplayResultsTeams />} />
-                <Route path="/results_players" element={<DisplayResultsPlayers />} />
-                <Route path="/live_matches" element={<LiveMatches />} />
-                <Route path="/display_match" element={<DisplayScoresheet />} />
+                <Route path="/report_fx1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="FX1" /></Wrap>} />
+                <Route path="/report_aa1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="AA1" /></Wrap>} />
+                <Route path="/report_mg1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="MG1" /></Wrap>} />
+                <Route path="/report_kp1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="KP1" /></Wrap>} />
+                <Route path="/report_tp1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="TP1" /></Wrap>} />
+                <Route path="/results_teams" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams /></Wrap>} />
+                <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
+                <Route path="/live_matches" element={<Wrap pageName="Live ottelut"><LiveMatches /></Wrap>} />
+                <Route path="/display_match" element={<Wrap pageName="Esimerkki ottelusta"><DisplayScoresheet /></Wrap>} />
 
                 {/* Konenäkö */}
                 <Route path="/hough" element={<HoughDemo />} />
@@ -48,10 +66,11 @@ const AppRouter = () => {
                 <Route path="/db" element={<DBTest />} />
 
                 {/* Juuri */}
-                <Route path="/" element={<App />} />
+                <Route path="/" element={<Wrap pageName="Etusivu"><App /></Wrap>} />
             </Routes>
         </BrowserRouter>
         </SnackbarProvider>
+        </PageNameProvider>
     </>);
 }
 
