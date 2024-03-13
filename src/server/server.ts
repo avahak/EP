@@ -32,6 +32,7 @@ import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
+import authRouter from './auth/authRoutes.js';
 import liveScoreRouter from './liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/databaseRoutes.js';
@@ -52,7 +53,10 @@ app.use(cors());
 app.use(express.json());
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta
-app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist')));
+app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist'), {
+    // 3600000 on yksi tunti. Huom. Tämän voi poistaa production versiossa
+    maxAge: 12*3600000
+}));
 
 // Lisätään live tulospalvelun reitit:
 app.use(BASE_URL + '/api/live', liveScoreRouter);
@@ -60,6 +64,8 @@ app.use(BASE_URL + '/api/live', liveScoreRouter);
 app.use(BASE_URL + '/api/vision', machineVisionRouter);
 // Lisätään reitit tietokannan käsittelyyn:
 app.use(BASE_URL + '/api/db', databaseRouter);
+// Lisätään autentikaatioon liittyvät reitit:
+app.use(BASE_URL + '/auth', authRouter);
 // Lisätään sekalaiset reitit:
 app.use(BASE_URL + '/api', generalRouter);
 
