@@ -117,17 +117,19 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
 }
 
 /**
- * Luodaan testauksessa käytettävää sisältöä ep_pelaaja, ep_jasen tauluihin.
+ * Luodaan testauksessa käytettävää sisältöä ep_pelaaja, ep_jasen, userpw tauluihin.
  * HUOM: Tässä pelaajat, jasenet taulukot vastaavat 1-1 toisiansa.
  */
-function generate_pelaajat_jasenet(joukkueet: any[]) {
+function generate_pelaajat_jasenet_users(joukkueet: any[]) {
     const pelaajat: any[] = [];
     const jasenet: any[] = [];
+    const users: any[] = [];
     
     // lisätään pelaaja ja jasen samalla:
     let jasenno = 1;
-    joukkueet.forEach((_joukkue, joukkueIndex) => {
+    joukkueet.forEach((joukkue, joukkueIndex) => {
         const pelaajienLkm = randomIntBetween(MIN_PLAYERS_IN_TEAM, MAX_PLAYERS_IN_TEAM);
+        const newPelaajat: any[] = [];
         for (let k = 0; k < pelaajienLkm; k++) {
             jasenno = (jasenno*29) % 9973;
             const firstName = faker.person.firstName();
@@ -148,9 +150,24 @@ function generate_pelaajat_jasenet(joukkueet: any[]) {
             };
             pelaajat.push(pelaaja);
             jasenet.push(jasen);
+
+            if (joukkue.kausi+1 == (process.env.KULUVA_KAUSI ?? 2))
+                newPelaajat.push(pelaaja);
+        }
+
+        // Lisätään tunnukset pelaajille, jotka käyttävät verkkosivua:
+        const websiteUsingPelaajat = pickRandomDistinctElements(newPelaajat, randomIntBetween(1, Math.min(3, pelaajat.length)));
+        for (let player of websiteUsingPelaajat) {
+            const user = {
+                index: users.length,
+                Nimi: player.nimi,
+                Joukkue: joukkue.lyhenne,
+                MD5: faker.string.alphanumeric(50)
+            }
+            users.push(user);
         }
     });
-    return [pelaajat, jasenet];
+    return [pelaajat, jasenet, users];
 }
 
 /**
@@ -295,11 +312,11 @@ function generateFakeData() {
     const kaudet = generate_kaudet();
     const lohkot = generate_lohkot(kaudet);
     const [joukkueet, sarjat] = generate_joukkueet(raflat, lohkot);
-    const [pelaajat, jasenet] = generate_pelaajat_jasenet(joukkueet);
+    const [pelaajat, jasenet, users] = generate_pelaajat_jasenet_users(joukkueet);
     const ottelut = generate_ottelut(joukkueet, kaudet, lohkot);
     const [pelit, erat] = generate_pelit(ottelut, pelaajat);
 
-    const data = { raflat, kaudet, lohkot, joukkueet, sarjat, pelaajat, jasenet, ottelut, pelit, erat };
+    const data = { raflat, kaudet, lohkot, joukkueet, sarjat, pelaajat, jasenet, users, ottelut, pelit, erat };
     return data;
 }
 
@@ -415,7 +432,19 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
                 ];
             });
             await connection.query(sql, [batch]);
-            console.log(`ep_erat pelaaja n=${batch.length}, first: ${batch[0]}`);
+            console.log(`ep_pelaaja batch n=${batch.length}, first: ${batch[0]}`);
+
+            // Lisää tauluun ep_userpw:
+            sql = `INSERT INTO userpw (Nimi, Joukkue, MD5) VALUES ? ON DUPLICATE KEY UPDATE MD5=MD5`;
+            batch = data.users.map((user) => {
+                return [
+                    user.Nimi.slice(0, 12),
+                    user.Joukkue.slice(0, 3),
+                    user.MD5.slice(0, 50)
+                ];
+            });
+            await connection.query(sql, [batch]);
+            console.log(`userpw batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_ottelu:
             sql = `INSERT INTO ep_ottelu (lohko, paiva, koti, vieras, status) VALUES ?`;

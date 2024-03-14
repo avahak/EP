@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 // import Draw from './DrawHough.js';
-import { getApiUrl } from "../../utils/apiUtils";
+import { getBackendUrl } from "../../utils/apiUtils";
 import ThumbnailSelector from '../ThumbnailSelector';
 import { Link } from 'react-router-dom';
 
@@ -17,7 +17,7 @@ const Hough: React.FC = () => {
         try {
             console.log("imageName", imageName);
             
-            const apiUrl = `${getApiUrl()}/vision/hough`;
+            const apiUrl = `${getBackendUrl()}/vision/hough`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {

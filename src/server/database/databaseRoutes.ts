@@ -5,14 +5,14 @@
 import express, { Router } from 'express';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer, getResultsTeamsOld, getResultsPlayersOld } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 
 const router: Router = express.Router();
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä:
-const KULUVA_KAUSI = 2;
+const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -122,7 +122,8 @@ const queryFunctions: Record<string, any> = {
     "get_results_players": getResultsPlayers,
     "get_scores": getScores,
     "submit_match_result": submitMatchResult,
-    "add_player": AddPlayer,
+    "add_player": addPlayer,
+    "get_users": getUsers,
 };
 
 /**

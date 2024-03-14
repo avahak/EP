@@ -10,13 +10,13 @@ import { crudeHash } from "../../../shared/generalUtils";
 const DisplayResultsTeams: React.FC = () => {
     // Suorittaa api-kutsun joukkueiden tulosten hakuun sivun lataamisen yhteydessä:
     const resultsOld = useInitialServerFetch({ 
-        route: "/db/specific_query", 
+        route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_teams_old" },
     });
 
     const resultsNew = useInitialServerFetch({ 
-        route: "/db/specific_query", 
+        route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_teams" },
     });

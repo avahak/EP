@@ -32,7 +32,7 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
 
     const fetchData = useCallback(async () => {
         try {
-            let apiUrl = `${getApiUrl()}${route}`;
+            let apiUrl = `${getBackendUrl()}${route}`;
             let fetchResponse;
             if (method == "POST") {
                 fetchResponse = await fetch(apiUrl, {
@@ -76,16 +76,16 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
  */
 const serverFetch = (route: string, options?: any) => {
     if (options)
-        return fetch(`${getApiUrl()}${route}`, options);
-    return fetch(`${getApiUrl()}${route}`);
+        return fetch(`${getBackendUrl()}${route}`, options);
+    return fetch(`${getBackendUrl()}${route}`);
 }
 
 /**
  * Apufunktio palvelimen osoitteen muodostamiseksi.
  */
-const getApiUrl = () => {
+const getBackendUrl = () => {
     const port = window.location.hostname === 'localhost' ? ':3001' : '';
-    return `${window.location.protocol}//${window.location.hostname}${port}/test/api`;
+    return `${window.location.protocol}//${window.location.hostname}${port}/test`;
 };
 
 /**
@@ -105,4 +105,4 @@ function thumbnailToImageName(thumbnailName: string) {
     }
 }
 
-export { getApiUrl, thumbnailToImageName, useInitialServerFetch, serverFetch };
+export { getBackendUrl, thumbnailToImageName, useInitialServerFetch, serverFetch };

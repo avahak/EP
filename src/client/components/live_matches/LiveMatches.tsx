@@ -1,6 +1,6 @@
 import { Box, Container, Grid, Typography } from "@mui/material"
 import { useEffect, useState } from "react";
-import { getApiUrl } from "../../utils/apiUtils";
+import { getBackendUrl } from "../../utils/apiUtils";
 import { base64JSONparse } from "../../../shared/generalUtils";
 import { LiveMatchEntry } from "../../../shared/commonTypes";
 import { Scoresheet } from "../scoresheet/Scoresheet";
@@ -14,7 +14,7 @@ const LiveMatches: React.FC = () => {
     // Hakee live ottelut:
     // const fetchLiveMatchList = async () => {
     //     try {
-    //         const response = await serverFetch("/live/get_match_list")
+    //         const response = await serverFetch("/api/live/get_match_list")
     //         if (!response.ok) 
     //             throw new Error(`HTTP error! Status: ${response.status}`);
     //         const jsonData = await response.json();
@@ -26,7 +26,7 @@ const LiveMatches: React.FC = () => {
     // };
 
     useEffect(() => {
-        const eventSource = new EventSource(`${getApiUrl()}/live/watch_match/${matchId}`);
+        const eventSource = new EventSource(`${getBackendUrl()}/api/live/watch_match/${matchId}`);
 
         eventSource.onmessage = (event) => {
             const eventData = event.data;

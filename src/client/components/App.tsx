@@ -13,12 +13,7 @@ const App = () => {
         <Container maxWidth="md">
             <Box sx={{p: 2}}>
                 <Typography variant="h3">Sivut</Typography>
-                Ilmoita tulos joukkueelle&nbsp;
-                <Link to="/report_fx1">FX1</Link>&nbsp;
-                <Link to="/report_aa1">AA1</Link>&nbsp;
-                <Link to="/report_mg1">MG1</Link>&nbsp;
-                <Link to="/report_kp1">KP1</Link>&nbsp;
-                <Link to="/report_tp1">TP1</Link> 
+                <Link to="/report">Ilmoita tulos (vaatii sisäänkirjautumisen)</Link>
                 <br />
                 <Link to="/results_teams">Tuloksia joukkueille</Link> 
                 <br />
@@ -27,6 +22,8 @@ const App = () => {
                 <Link to="/live_matches">Live otteluseuranta</Link> 
                 <br />
                 <Link to="/display_match">Näytä yksittäisen ottelun tulos</Link> 
+                <br />
+                <Link to="/simulate_login">Simuloi login</Link> 
                 <br />
                 <Link to="/">Etusivu</Link> 
                 <br />

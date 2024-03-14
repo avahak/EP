@@ -190,14 +190,14 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
 
 const DisplayResultsPlayers: React.FC = () => {
     const resultsOld = useInitialServerFetch({ 
-        route: "/db/specific_query", 
+        route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_players_old" },
         dataProcessor: playerDataProcessor
     });
 
     const resultsNew = useInitialServerFetch({ 
-        route: "/db/specific_query", 
+        route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_players" },
         dataProcessor: playerDataProcessor

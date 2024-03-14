@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import React, { ChangeEvent, FormEvent, useState } from 'react';
 import axios from 'axios';
-import { getApiUrl } from "../utils/apiUtils";
+import { getBackendUrl } from "../utils/apiUtils";
 
 /**
  * Komponentti tiedostojen lataamiseen palvelimelle käyttäen server.ts /api/uload
@@ -29,7 +29,7 @@ const FileUpload: React.FC = () => {
         formData.append('file', file);
         
         try {
-            const apiUrl = `${getApiUrl()}/upload`;
+            const apiUrl = `${getBackendUrl()}/api/upload`;
             const response = await axios.post(apiUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',

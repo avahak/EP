@@ -38,7 +38,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
     const fetchAddPlayer = async (teamId: number, name: string, sex: Sex) => {
         console.log("fetchSendResult()");
         try {
-            const response = await serverFetch("/db/specific_query", {
+            const response = await serverFetch("api/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

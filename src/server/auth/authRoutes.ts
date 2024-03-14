@@ -4,19 +4,20 @@
 
 import express, { Router, Request, Response } from "express";
 import { logger } from '../serverErrorHandler.js';
-import { testDecode, testEncode } from "./jwt.js";
+import { encode } from "./jwt.js";
 
 const router: Router = express.Router();
 
 /**
- * Reitti Hough-muunnoksen testaamiseksi.
- * testing: http://localhost:3001/test/auth/test
+ * JWT token testaukseen
  */
-router.get('/test',  async (_req: Request, res: Response) => {
+router.post('/create_token', async (req: Request, res: Response) => {
     try {
-        testEncode();
-        testDecode();
-        res.send("See console log" + Date.now());
+        const name = req.body.name;
+        const team = req.body.team;
+        console.log("name", name, "team", team);
+        const token = encode({ Nimi: name, Joukkue: team });
+        res.json({ token });
     } catch (error) {
         logger.error('Fail.', error);
         res.status(500).send('Fail.');

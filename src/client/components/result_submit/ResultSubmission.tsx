@@ -15,6 +15,7 @@ import { parseMatch } from "../../../shared/parseMatch";
 import { fetchMatchData } from "../../utils/matchTools";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresheet/scoresheetTypes";
+import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
@@ -22,7 +23,8 @@ type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
 /**
  * Tulosten ilmoitussivu.
  */
-const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
+const ResultSubmission: React.FC = () => {
+    const authenticationContext = useContext(AuthenticationContext);
     const [result, setResult] = useState<ScoresheetFields>({
         id: -1,
         status: 'T',
@@ -36,6 +38,8 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const [pageState, setPageState] = useState<PageState>("choose_match");
     const setSnackbarState = useContext(SnackbarContext);
 
+    const userTeam = authenticationContext.team ?? "";
+
     /**
      * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
      */
@@ -44,7 +48,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
         try {
             const parsedResult = parseMatch(newStatus, result);
             console.log("parsedResult", parsedResult);
-            const response = await serverFetch("/db/specific_query", {
+            const response = await serverFetch("/api/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +79,7 @@ const ResultSubmission: React.FC<{ userTeam: string }> = ({ userTeam }) => {
     const fetchSendSSE = async (data: ScoresheetFields) => {
         console.log("fetchSendSSE()");
         try {
-            const response = await serverFetch("/live/submit_match", {
+            const response = await serverFetch("/api/live/submit_match", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

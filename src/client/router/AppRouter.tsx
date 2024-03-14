@@ -4,15 +4,12 @@
  * ennen tässä määriteltyjä reittejä.
  */
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import FileUpload from "../components/FileUpload";
-// import { Scoresheet } from '../components/Scoresheet';
-import { App } from '../components/App';
 import HoughDemo from '../components/machine_vision/HoughDemo';
 import HomographyDemo from '../components/machine_vision/HomographyDemo';
 import VisionExample from '../components/machine_vision/VisionExample';
 import { DBTest } from '../components/DBTest';
-// import { MatchChooser } from '../components/MatchChooser';
 import { ResultSubmission } from '../components/result_submit/ResultSubmission';
 import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsTeams';
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
@@ -23,14 +20,21 @@ import { LiveMatches } from '../components/live_matches/LiveMatches';
 import { LayoutWrapper } from '../components/layout/LayoutWrapper';
 import { ReactNode, useContext, useEffect } from 'react';
 import { PageNameContext, PageNameProvider } from '../contexts/PageNameContext';
+import { SimulateLogin } from '../components/sandbox/SimulateLogin';
+import { AuthenticationContext, AuthenticationProvider } from '../contexts/AuthenticationContext';
+import { App } from '../components/App';
 
-const Wrap: React.FC<{ children: ReactNode, pageName?: string }> = ({ children, pageName }) => {
+const Wrap: React.FC<{ children: ReactNode, pageName?: string, restricted?: boolean }> = ({ children, pageName, restricted = false }) => {
+    const authenticationContext = useContext(AuthenticationContext);
     const pageNameContext = useContext(PageNameContext);
 
     useEffect(() => {
         pageNameContext.setPageName(pageName ?? "Tuntematon sivu");
     }, [pageName, pageNameContext]);
     
+    if (restricted && !authenticationContext.isAuthenticated)
+        return (<Navigate to="/simulate_login" />);
+
     return (
         <LayoutWrapper>
             {children}
@@ -40,16 +44,13 @@ const Wrap: React.FC<{ children: ReactNode, pageName?: string }> = ({ children, 
 
 const AppRouter = () => {
     return (<>
+        <AuthenticationProvider>
         <PageNameProvider>
         <SnackbarProvider>
         <BrowserRouter basename='/test/'>
             <Routes>
                 {/* Verkkosivuja tai komponentteja */}
-                <Route path="/report_fx1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="FX1" /></Wrap>} />
-                <Route path="/report_aa1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="AA1" /></Wrap>} />
-                <Route path="/report_mg1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="MG1" /></Wrap>} />
-                <Route path="/report_kp1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="KP1" /></Wrap>} />
-                <Route path="/report_tp1" element={<Wrap pageName="Tulosten ilmoitus"><ResultSubmission userTeam="TP1" /></Wrap>} />
+                <Route path="/report" element={<Wrap pageName="Tulosten ilmoitus" restricted><ResultSubmission /></Wrap>} />
                 <Route path="/results_teams" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams /></Wrap>} />
                 <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
                 <Route path="/live_matches" element={<Wrap pageName="Live ottelut"><LiveMatches /></Wrap>} />
@@ -64,6 +65,7 @@ const AppRouter = () => {
                 <Route path="/mui_test" element={<MUITest />} />
                 <Route path="/upload" element={<FileUpload />} />
                 <Route path="/db" element={<DBTest />} />
+                <Route path="/simulate_login" element={<Wrap pageName="Simuloitu login"><SimulateLogin /></Wrap>} />
 
                 {/* Juuri */}
                 <Route path="/" element={<Wrap pageName="Etusivu"><App /></Wrap>} />
@@ -71,6 +73,7 @@ const AppRouter = () => {
         </BrowserRouter>
         </SnackbarProvider>
         </PageNameProvider>
+        </AuthenticationProvider>
     </>);
 }
 

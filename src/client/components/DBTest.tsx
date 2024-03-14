@@ -12,7 +12,7 @@ const DBTest: React.FC = () => {
     // Hakee tietokannan kaavion (schema):
     const fetchSchema = async () => {
         try {
-            const response = await serverFetch("/db/schema");
+            const response = await serverFetch("/api/db/schema");
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -28,7 +28,7 @@ const DBTest: React.FC = () => {
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
     const fetchRecreate = async (stage: number) => {
         try {
-            const response = await serverFetch(`/db/recreate/${stage}`);
+            const response = await serverFetch(`/api/db/recreate/${stage}`);
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);

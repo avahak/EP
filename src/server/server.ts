@@ -55,7 +55,7 @@ app.use(express.json());
 // Välitä staattisia tiedostoja 'dist' hakemistosta
 app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist'), {
     // 3600000 on yksi tunti. Huom. Tämän voi poistaa production versiossa
-    maxAge: 12*3600000
+    maxAge: 2 * 3600000
 }));
 
 // Lisätään live tulospalvelun reitit:

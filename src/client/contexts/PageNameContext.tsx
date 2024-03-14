@@ -1,5 +1,5 @@
 /**
- * PageName on React conteksti, joka pitää kirjaa tämänhetkisen sivun nimestä.
+ * PageNameContext on React conteksti, joka pitää kirjaa tämänhetkisen sivun nimestä.
  */
 
 import React, { createContext, useState } from 'react';
@@ -9,12 +9,16 @@ type PageNameState = {
     setPageName: React.Dispatch<React.SetStateAction<string>>;
 };
 
-const defaultPageNameState: PageNameState = {
+/** 
+ * Tätä tilaa ei koskaan käytetä jos kontekstia käytetään oikein.
+ * Se on tässä vain käyttämättömänä alkuarvona.
+ */
+const dummyPageNameState: PageNameState = {
     pageName: '',
     setPageName: () => {},
 };
 
-const PageNameContext = createContext<PageNameState>(defaultPageNameState);
+const PageNameContext = createContext<PageNameState>(dummyPageNameState);
 
 const PageNameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [pageName, setPageName] = useState<string>("");

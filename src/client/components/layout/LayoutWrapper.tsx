@@ -15,6 +15,8 @@ import { ReactNode, useContext } from "react";
 // import InboxIcon from '@mui/icons-material/MoveToInbox';
 import React from "react";
 import { PageNameContext } from '../../contexts/PageNameContext';
+import { AuthenticationContext } from '../../contexts/AuthenticationContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 // const MenuList: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 //     return (
@@ -60,6 +62,37 @@ import { PageNameContext } from '../../contexts/PageNameContext';
 //         </List>
 //     );
 // };
+
+const AuthenticationBlock: React.FC = () => {
+    const authenticationContext = useContext(AuthenticationContext);
+    const navigate = useNavigate();
+
+    const logout = () => {
+        authenticationContext.setFromToken(null);
+        navigate("/");
+    };
+
+    return (
+        <>
+            {authenticationContext.isAuthenticated ?
+                <Button color="inherit" onClick={logout}>
+                    Logout
+                </Button>
+                :
+                <Link to="/simulate_login" style={{color: "inherit"}}>
+                    <Button color="inherit">Login</Button>
+                </Link>
+            }
+            {authenticationContext.isAuthenticated &&
+                <Typography textAlign="center" sx={{pl: 3}}>
+                    {authenticationContext.name}
+                    <br />
+                    {authenticationContext.team}
+                </Typography>
+            }
+        </>
+    );
+};
 
 const ButtonAppBar = () => {
     const pageNameContext = useContext(PageNameContext);
@@ -113,7 +146,7 @@ const ButtonAppBar = () => {
                     {/* <Typography textAlign="center" variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         East-Pool
                     </Typography> */}
-                    <Button color="inherit">Login</Button>
+                    <AuthenticationBlock />
                 </Toolbar>
             </AppBar>
             <Drawer open={open} onClose={() => toggleDrawer(false)}>

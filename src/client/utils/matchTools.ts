@@ -219,7 +219,7 @@ function parseScores(rawScores: any, teamHome: (ScoresheetPlayer | null)[], team
 const fetchPlayers = async (teamId: number) => {
     console.log("ID", teamId);
     try {
-        const response = await serverFetch("/db/specific_query", {
+        const response = await serverFetch("/api/db/specific_query", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ const fetchPlayers = async (teamId: number) => {
  */
 const fetchScores = async (matchId: number) => {
     try {
-        const response = await serverFetch("/db/specific_query", {
+        const response = await serverFetch("/api/db/specific_query", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -261,7 +261,7 @@ const fetchScores = async (matchId: number) => {
  */
 const fetchMatchInfo = async (matchId: number) => {
     try {
-        const response = await serverFetch("/db/specific_query", {
+        const response = await serverFetch("/api/db/specific_query", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
