@@ -5,7 +5,7 @@
 import express, { Router } from 'express';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, AddPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 
@@ -122,7 +122,7 @@ const queryFunctions: Record<string, any> = {
     "get_results_players": getResultsPlayers,
     "get_scores": getScores,
     "submit_match_result": submitMatchResult,
-    "add_player": AddPlayer,
+    "add_player": addPlayer,
     "get_users": getUsers,
 };
 

@@ -374,7 +374,7 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>) 
  * Lisää uuden pelaajan joukkueeseen.
  * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
  */
-async function AddPlayer(pool: mysql.Pool, params: Record<string, any>) {
+async function addPlayer(pool: mysql.Pool, params: Record<string, any>) {
     if (!params.teamId || !params.name)
         throw Error('Missing player info.');
     const name = params.name.slice(0, 15);
@@ -394,4 +394,4 @@ async function getUsers(pool: mysql.Pool) {
 
 export { getAllMatches, getMatchInfo, getMatchesToReport, getPlayersInTeam, getScores, 
     getResultsTeams, getResultsTeamsOld, getResultsPlayersOld, getResultsPlayers,
-    submitMatchResult, AddPlayer, getUsers }
+    submitMatchResult, addPlayer, getUsers };
