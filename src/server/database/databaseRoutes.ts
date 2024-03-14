@@ -11,7 +11,6 @@ import { logger } from '../serverErrorHandler.js';
 
 const router: Router = express.Router();
 
-
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä:
 const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
 
