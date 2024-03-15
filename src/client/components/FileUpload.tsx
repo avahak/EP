@@ -30,9 +30,11 @@ const FileUpload: React.FC = () => {
         
         try {
             const apiUrl = `${getBackendUrl()}/api/upload`;
+            const token = window.localStorage.getItem("jwtToken") ?? "";
             const response = await axios.post(apiUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`,
                 },
             });
             setMessage(response.data);

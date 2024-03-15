@@ -9,7 +9,7 @@ import util from 'util';
 import express, { Router, Request, Response } from 'express';
 import { createThumbnail } from './imageTools';
 import { logger } from '../server/serverErrorHandler.js';
-import { injectAuth, requireAuth } from './auth/auth.js';
+import { RequestWithAuth, injectAuth, requireAuth } from './auth/auth.js';
 
 const baseUploadDirectory = process.env.BASE_UPLOAD_DIRECTORY || "/home/userdata";
 const imageDirectory = `${baseUploadDirectory}/images`;
@@ -29,7 +29,7 @@ const writeFileAsync = util.promisify(fs.writeFile);
  * Lataa tiedoston serverille. Jos tiedosto on kuva, muodostetaan myös
  * esikatselukuva ja tallennetaan molemmat.
  */
-router.post('/upload', injectAuth, requireAuth("mod"), upload.single('file'), async (req, res) => {
+router.post('/upload', injectAuth, requireAuth("mod"), upload.single('file'), async (req: RequestWithAuth, res) => {
     const file = req.file;
     if (!file)
         return res.status(400).send('No file uploaded.');

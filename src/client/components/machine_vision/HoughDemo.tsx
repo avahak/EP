@@ -17,7 +17,7 @@ const Hough: React.FC = () => {
         try {
             console.log("imageName", imageName);
             
-            const apiUrl = `${getBackendUrl()}/vision/hough`;
+            const apiUrl = `${getBackendUrl()}/api/vision/hough`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {

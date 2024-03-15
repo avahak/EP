@@ -16,12 +16,12 @@ const VisionExample: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const fetchExampleJson = async () => {
-        const x = await axios.get(`${getBackendUrl()}/misc/${exampleName}`);
+        const x = await axios.get(`${getBackendUrl()}/api/misc/${exampleName}`);
         const annotations = x.data.textAnnotations;
         const canvas = canvasRef.current!;
         const ctx = canvas.getContext('2d')!;
         const image = new Image();
-        image.src = `${getBackendUrl()}/images/${imageName}`;
+        image.src = `${getBackendUrl()}/api/images/${imageName}`;
         image.crossOrigin = 'anonymous';
         image.onload = () => {
             canvas.width = image.width;
@@ -80,7 +80,7 @@ const VisionExample: React.FC = () => {
         <div>
         <canvas ref={canvasRef} />
         <h1>Original image:</h1>
-        <img crossOrigin="anonymous" src={`${getBackendUrl()}/images/IMG-20231128-WA0002.jpg`} />
+        <img crossOrigin="anonymous" src={`${getBackendUrl()}/api/images/IMG-20231128-WA0002.jpg`} />
         </div>
         </>
     );

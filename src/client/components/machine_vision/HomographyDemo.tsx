@@ -18,7 +18,7 @@ function Homography() {
     useEffect(() => {
         const fetchHomography = async () => {
             try {
-                const apiUrl = `${getBackendUrl()}/vision/homography`;
+                const apiUrl = `${getBackendUrl()}/api/vision/homography`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {

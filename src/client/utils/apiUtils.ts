@@ -78,7 +78,6 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
 const serverFetch = (route: string, options: any = {}) => {
     const token = window.localStorage.getItem("jwtToken") ?? "";
     const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${token}` };
-    console.log("x", { ...options, headers });
     return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
 };
 
