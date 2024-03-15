@@ -2,17 +2,19 @@
  * Tietokannan luontia ja testausta.
  */
 
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { serverFetch } from '../utils/apiUtils';
+import { AuthenticationContext } from '../contexts/AuthenticationContext';
 
 const DBTest: React.FC = () => {
+    const authenticationState = useContext(AuthenticationContext);
     const [data, setData] = useState<any>(null);
 
     // Hakee tietokannan kaavion (schema):
     const fetchSchema = async () => {
         try {
-            const response = await serverFetch("/api/db/schema");
+            const response = await serverFetch("/api/db/schema", {}, authenticationState);
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -28,7 +30,7 @@ const DBTest: React.FC = () => {
     // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
     const fetchRecreate = async (stage: number) => {
         try {
-            const response = await serverFetch(`/api/db/recreate/${stage}`);
+            const response = await serverFetch(`/api/db/recreate/${stage}`, {}, authenticationState);
 
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);

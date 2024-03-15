@@ -226,7 +226,7 @@ const fetchPlayers = async (teamId: number) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ queryName: "get_players_in_team", params: { teamId: teamId } }),
-        });
+        }, null);
         if (!response.ok) 
             throw new Error(`HTTP error! Status: ${response.status}`);
         const jsonData = await response.json();
@@ -247,7 +247,7 @@ const fetchScores = async (matchId: number) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ queryName: "get_scores", params: { matchId: matchId } }),
-        });
+        }, null);
         if (!response.ok) 
             throw new Error(`HTTP error! Status: ${response.status}`);
         const jsonData = await response.json();
@@ -268,7 +268,7 @@ const fetchMatchInfo = async (matchId: number) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ queryName: "get_match_info", params: { matchId: matchId } }),
-        });
+        }, null);
         if (!response.ok) 
             throw new Error(`HTTP error! Status: ${response.status}`);
         const jsonData = await response.json();

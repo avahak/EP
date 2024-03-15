@@ -25,7 +25,7 @@ type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
  * Tulosten ilmoitussivu.
  */
 const ResultSubmission: React.FC = () => {
-    const authenticationContext = useContext(AuthenticationContext);
+    const authenticationState = useContext(AuthenticationContext);
     const [result, setResult] = useState<ScoresheetFields>({
         id: -1,
         status: 'T',
@@ -53,7 +53,7 @@ const ResultSubmission: React.FC = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ queryName: "submit_match_result", params: { result: parsedResult } }),
-            });
+            }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
 
@@ -84,7 +84,7 @@ const ResultSubmission: React.FC = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ result: data }),
-            });
+            }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
 
@@ -103,7 +103,7 @@ const ResultSubmission: React.FC = () => {
         let newStatus = '';
         if (data.status === 'T')
             newStatus = 'K';
-        if (roleIsAtLeast(authenticationContext.role, "mod")) {
+        if (roleIsAtLeast(authenticationState.role, "mod")) {
             // Lähettäjä on moderaattori:
             if (data.status !== 'T')
                 newStatus = 'H';

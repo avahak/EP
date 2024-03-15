@@ -5,6 +5,7 @@
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 import { generateAndInsertToDatabase } from './dbFakeData.js';
+import { logger } from '../serverErrorHandler.js';
 
 /**
  * Tämä on yksinkertainen .sql tiedostojen lukija, joka erottelee tekstin 
@@ -65,14 +66,14 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
                 await connection.query(query, substitutions);
             return rows;
         } catch (error) {
-            console.error("myQuery error:", error);
+            logger.error("myQuery error:", error);
             return [];
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();
         }
     } catch (err) {
-        console.error("myQuery error:", err);
+        logger.error("myQuery error:", err);
         return [];
     }
 }

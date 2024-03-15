@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { AuthenticationState } from '../contexts/AuthenticationContext';
 
 type Method = "GET" | "POST";
 
@@ -11,6 +12,7 @@ type Props = {
     method?: Method;
     params?: any;
     dataProcessor?: (data: any) => any;
+    authenticationState: AuthenticationState | null;
 };
 
 type InitialServerFetchResponse = {
@@ -24,21 +26,26 @@ type InitialServerFetchResponse = {
 /**
  * Hakee dataa serveriltä vain sivun lataamisen yhteydessä. 
  */
-const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) => {
+const useInitialServerFetch = ({ route, method, params, dataProcessor, authenticationState }: Props) => {
     const [response, setResponse] = useState<InitialServerFetchResponse>({
-        status: { ok: false, message: "Haetaan dataa.." },
+        status: { ok: false, message: "Ladataan.." },
         data: null
     });
 
     const fetchData = useCallback(async () => {
-        const token = window.localStorage.getItem("jwtToken") ?? "";
         try {
+            let accessToken = "";
+            if (authenticationState && authenticationState.isAuthenticated) {
+                accessToken = (await authenticationState.getAccessToken()) ?? "";
+                if (!accessToken)
+                    throw new Error("No access token.");
+            } 
             let apiUrl = `${getBackendUrl()}${route}`;
             let fetchResponse;
             if (method == "POST") {
                 fetchResponse = await fetch(apiUrl, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
                     body: !!params ? JSON.stringify({ ...params }) : "",
                 });
             } else {
@@ -59,14 +66,14 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
             console.error("Error fetching data", error);
             setResponse({ status: { ok: false, message: "Error fetching data" }, data: null });
         }
-    }, []);
+    }, [authenticationState]);
     // [route, method, JSON.stringify(params)]);
     // HUOM! Tässä JSON.stringify(params) on tehoton mutta toimiva tapa selvittää 
     // onko muutoksia tapahtunut.
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, authenticationState]);
 
     return response;
 };
@@ -75,9 +82,14 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
 /**
  * Lisää reittiin serverin osoitteen ja kutsuu fetch.
  */
-const serverFetch = (route: string, options: any = {}) => {
-    const token = window.localStorage.getItem("jwtToken") ?? "";
-    const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${token}` };
+const serverFetch = async (route: string, options: any = {}, authenticationState: AuthenticationState | null) => {
+    let accessToken = "";
+    if (authenticationState && authenticationState.isAuthenticated) {
+        accessToken = (await authenticationState.getAccessToken()) ?? "";
+        if (!accessToken)
+            throw new Error("No access token.");
+    } 
+    const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${accessToken}` };
     return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
 };
 

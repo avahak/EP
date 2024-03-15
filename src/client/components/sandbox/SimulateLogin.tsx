@@ -7,6 +7,19 @@ import { serverFetch, useInitialServerFetch } from "../../utils/apiUtils";
 import { Box, Link, Paper, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { useNavigate } from "react-router-dom";
+import { crudeHash } from "../../../shared/generalUtils";
+
+/**
+ * Liittää kuhunkin käyttäjän satunnaisen roolin.
+ */
+function assignRandomRole(name: string, team: string) {
+    const randomNumber = parseInt(crudeHash(name + team));
+    if (randomNumber % 10 == 0)
+        return "admin";
+    if (randomNumber % 5 == 1)
+        return "mod";
+    return "-";
+}
 
 const TeamCard: React.FC<{ team: string, users: string[], onSelectUser: (team: string, user: string, role: string) => void }> = ({ team, users, onSelectUser }) => {
     return (
@@ -16,12 +29,22 @@ const TeamCard: React.FC<{ team: string, users: string[], onSelectUser: (team: s
                 {team}
             </Typography>
             {users.map((user: string, index: number) => (
-                <Box key={`user-${index}`}>
+                <Box key={`user-${index}`} display="flex">
                     <Typography variant="body1">
-                        <Link sx={{cursor: "pointer"}} onClick={() => onSelectUser(team, user, "-")}>
+                        <Link sx={{cursor: "pointer"}} onClick={() => onSelectUser(team, user, assignRandomRole(user, team))}>
                             {user}
                         </Link>
                     </Typography>
+                    { assignRandomRole(user, team) === "admin" && 
+                        <Typography variant="body1" color="red"> 
+                            &nbsp;(Admin)
+                        </Typography>
+                    }
+                    { assignRandomRole(user, team) === "mod" && 
+                        <Typography variant="body1" color="red"> 
+                            &nbsp;(Mod)
+                        </Typography>
+                    }
                 </Box>
             ))}
         </Paper>
@@ -46,32 +69,33 @@ const createTeamMap = (data: any) => {
 };
 
 const SimulateLogin: React.FC = () => {
-    const authenticationContext = useContext(AuthenticationContext);
+    const authenticationState = useContext(AuthenticationContext);
     const navigate = useNavigate();
 
     const usersResult = useInitialServerFetch({ 
         route: "/api/db/specific_query", 
         method: "POST",
         params: { queryName: "get_users" },
-        dataProcessor: createTeamMap
+        dataProcessor: createTeamMap,
+        authenticationState: authenticationState,
     });
 
     const handleSelectUser = (team: string, user: string, role: string) => {
         const fetchToken = async () => {
             try {
-                const response = await serverFetch("/auth/create_token", {
+                const response = await serverFetch("/auth/create_refresh_token", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ team: team, name: user, role: role }),
-                });
+                }, authenticationState);
                 if (!response.ok) 
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 const jsonData = await response.json();
                 const token = jsonData.token;
-                window.localStorage.setItem("jwtToken", token);
-                authenticationContext.setFromToken(token);
+                window.localStorage.setItem("refreshToken", token);
+                authenticationState.setFromRefreshToken(token);
                 console.log("fetchToken done, token:", token);
                 navigate("/");
             } catch(error) {
@@ -88,19 +112,6 @@ const SimulateLogin: React.FC = () => {
         <>
         <Typography variant="h3">
             Rekisteröityneet käyttäjät:
-        </Typography>
-
-        {/* Admin */}
-        <Typography variant="body1">
-            <Link sx={{cursor: "pointer"}} onClick={() => handleSelectUser("FX1", "Albert", "admin")}>
-                Albert (admin), FX1
-            </Link>
-        </Typography>
-
-        <Typography variant="body1">
-            <Link sx={{cursor: "pointer"}} onClick={() => handleSelectUser("AA1", "Maurice", "mod")}>
-                Maurice (moderator), AA1
-            </Link>
         </Typography>
 
         {usersResult.status.ok ?

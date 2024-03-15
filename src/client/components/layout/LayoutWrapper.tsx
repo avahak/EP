@@ -17,6 +17,9 @@ import React from "react";
 import { PageNameContext } from '../../contexts/PageNameContext';
 import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { formatTimeDifference } from '../../../shared/generalUtils';
+import { decodeToken } from 'react-jwt';
+import { AuthTokenPayload } from '../../../shared/commonAuth';
 
 // Side menu with List (not in use):
 // const MenuList: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -65,20 +68,45 @@ import { Link, useNavigate } from 'react-router-dom';
 // };
 
 /**
+ * Esittää aikakentät (iat, exp) refresh ja access tokeneille.
+ * HUOM! Vain testausta varten.
+ */
+const TokenInfoBlock: React.FC = () => {
+    const accessToken = window.localStorage.getItem("accessToken");
+    const refreshToken = window.localStorage.getItem("refreshToken");
+    const accessTokenPayload = accessToken ? decodeToken(accessToken) as AuthTokenPayload : null;
+    const refreshTokenPayload = refreshToken ? decodeToken(refreshToken) as AuthTokenPayload : null;
+    const access_iat = accessTokenPayload ? formatTimeDifference(accessTokenPayload.iat) : "-";
+    const access_exp = accessTokenPayload ? formatTimeDifference(accessTokenPayload.exp) : "-";
+    const refresh_iat = refreshTokenPayload ? formatTimeDifference(refreshTokenPayload.iat) : "-";
+    const refresh_exp = refreshTokenPayload ? formatTimeDifference(refreshTokenPayload.exp) : "-";
+    return (
+        <>
+        <Typography variant="body2">
+            {`access iat: ${access_iat}, exp: ${access_exp}`}
+            <br />
+            {`refresh iat: ${refresh_iat}, exp: ${refresh_exp}`}
+        </Typography>
+        </>
+    )
+}
+
+/**
  * Käyttäjään liittyvä osuus mobiili ylämenussa.
  */
 const AuthenticationBlock: React.FC = () => {
-    const authenticationContext = useContext(AuthenticationContext);
+    const authenticationState = useContext(AuthenticationContext);
     const navigate = useNavigate();
 
     const logout = () => {
-        authenticationContext.setFromToken(null);
+        authenticationState.setFromRefreshToken(null);
         navigate("/");
     };
 
     return (
         <>
-            {authenticationContext.isAuthenticated ?
+            <TokenInfoBlock />
+            {authenticationState.isAuthenticated ?
                 <Button color="inherit" onClick={logout}>
                     Logout
                 </Button>
@@ -87,17 +115,17 @@ const AuthenticationBlock: React.FC = () => {
                     <Button color="inherit">Login</Button>
                 </Link>
             }
-            {authenticationContext.isAuthenticated &&
+            {authenticationState.isAuthenticated &&
                 <Typography textAlign="center" sx={{pl: 3}}>
-                    {authenticationContext.name}
+                    {authenticationState.name}
                     <br />
-                    {authenticationContext.team}
+                    {authenticationState.team}
                     <span>
-                        {(authenticationContext.role === "admin" || authenticationContext.role === "mod") && ", "}
+                        {(authenticationState.role === "admin" || authenticationState.role === "mod") && ", "}
                     </span>
                     <span style={{color: "#f50"}}>
-                        {authenticationContext.role === "mod" && "Moderator"}
-                        {authenticationContext.role === "admin" && "Admin"}
+                        {authenticationState.role === "mod" && "Moderator"}
+                        {authenticationState.role === "admin" && "Admin"}
                     </span>
                 </Typography>
             }

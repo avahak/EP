@@ -142,8 +142,38 @@ function randomIntBetween(minValue: number, maxValue: number) {
     return minValue + Math.floor(Math.random()*(1+maxValue-minValue));
 }
 
+/**
+ * Vertaa annettua ajanhetkeä nykyhetkeen ja palauttaa niiden erotusta kuvaavan merkkijonon.
+ */
+function formatTimeDifference(timestamp: number): string {
+    const currentTime = Math.floor(Date.now() / 1000);
+    const differenceInSeconds = timestamp - currentTime;
+
+    const direction = differenceInSeconds < 0 ? '-' : '+';
+    const absoluteDifference = Math.abs(differenceInSeconds);
+
+    let timeUnit: string;
+    let formattedTime: number;
+
+    if (absoluteDifference < 60) {
+        timeUnit = 's';
+        formattedTime = absoluteDifference;
+    } else if (absoluteDifference < 3600) {
+        timeUnit = 'm';
+        formattedTime = absoluteDifference / 60;
+    } else if (absoluteDifference < 86400) {
+        timeUnit = 'h';
+        formattedTime = absoluteDifference / 3600;
+    } else {
+        timeUnit = 'd';
+        formattedTime = absoluteDifference / 86400;
+    }
+
+    return `${direction}${formattedTime.toFixed(1)}${timeUnit}`;
+}
+
 export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
     getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
-    randomIntBetween };
+    randomIntBetween, formatTimeDifference };
 export type { Order };

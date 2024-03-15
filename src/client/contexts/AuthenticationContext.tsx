@@ -5,40 +5,28 @@
 
 import React, { createContext, useEffect, useState } from 'react';
 import { decodeToken } from "react-jwt";
-
-/**
- * Palauttaa data osuuden JWT tokenista jos mahdollista, muutoin null.
- * Huom! Tässä ei validoida tokenia! Tämä tehdään vain 
- * serveripuolella ja tässä oletetaan, että validointi onnistuu.
- * Verkkosivun toiminta tulee olla yhteensopiva tämän kanssa.
- */
-// function decodeTokenWithoutVerifying(token: string) {
-//     let payload = null;
-//     try {
-//         payload = decodeToken(token);
-//     } catch (err) {
-//         return null;
-//     }
-//     return payload;
-// }
+import { getBackendUrl } from '../utils/apiUtils';
+import { AuthTokenPayload } from '../../shared/commonAuth';
 
 type AuthenticationState = {
     isAuthenticated: boolean;
-    token: string | null;
+    refreshToken: string | null;
     name: string | null;
     team: string | null;
     role: string | null;
-    setFromToken: (token: string | null) => void;
+    setFromRefreshToken: (token: string | null) => void;
+    getAccessToken: () => Promise<string | null>;
     isTokenChecked: boolean; // seuraa onko tokenin olemassaoloa vielä tarkistettu, aluksi false
 };
 
 const dummyAuthenticationState: AuthenticationState = {
     isAuthenticated: false,
-    token: null,
+    refreshToken: null,
     name: null,
     team: null,
     role: null,
-    setFromToken: () => {},
+    setFromRefreshToken: () => {},
+    getAccessToken: () => { return new Promise((resolve) => { resolve(null) }) },
     isTokenChecked: false,
 };
 
@@ -46,19 +34,19 @@ const AuthenticationContext = createContext<AuthenticationState>(dummyAuthentica
 
 const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(dummyAuthenticationState.isAuthenticated);
-    const [token, setToken] = useState<string | null>(dummyAuthenticationState.token);
+    const [refreshToken, setRefreshToken] = useState<string | null>(dummyAuthenticationState.refreshToken);
     const [name, setName] = useState<string | null>(dummyAuthenticationState.name);
     const [team, setTeam] = useState<string | null>(dummyAuthenticationState.team);
     const [role, setRole] = useState<string | null>(dummyAuthenticationState.role);
     const [isTokenChecked, setIsTokenChecked] = useState<boolean>(dummyAuthenticationState.isTokenChecked);
 
     /**
-     * Alustetaan autentikaatiotila local storage JWT tokenin mukaan:
+     * Alustetaan autentikaatiotila local storage JWT refresh tokenin mukaan:
      */
     useEffect(() => {
-        console.log("AuthenticationProvider getting token from local storage");
-        const localStorageToken = window.localStorage.getItem("jwtToken");
-        setFromToken(localStorageToken);
+        console.log("AuthenticationProvider getting refresh token from local storage");
+        const localStorageToken = window.localStorage.getItem("refreshToken");
+        setFromRefreshToken(localStorageToken);
         setIsTokenChecked(true);
     }, []);
 
@@ -66,34 +54,78 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
      * Tyhjää autentikaation jos newToken on null tai lukee uuden tilan 
      * annetusta JWT tokenista.
      */
-    const setFromToken = (newToken: string | null) => {
+    const setFromRefreshToken = (newToken: string | null) => {
         const payload = newToken ? decodeToken(newToken) : null;
-        console.log("payload", payload);
         if (payload && typeof payload === 'object' && "name" in payload && "team" in payload && "role" in payload) {
             setIsAuthenticated(true);
-            setToken(newToken);
+            setRefreshToken(newToken);
             setName(payload.name as string);
             setTeam(payload.team as string);
             setRole(payload.role as string);
             console.log("Autentikaatio asetettu.", newToken);
         } else {
             setIsAuthenticated(false);
-            setToken(null);
+            setRefreshToken(null);
             setName(null);
             setTeam(null);
             setRole(null);
-            window.localStorage.removeItem("jwtToken");
+            window.localStorage.removeItem("refreshToken");
+            window.localStorage.removeItem("accessToken");
             console.log("Autentikaatio poistettu.");
         }
     };
 
+    /**
+     * Palauttaa access JWT tokenin. Jos sitä ei vielä ole tai se on vanhentunut,
+     * niin pyytää
+     */
+    const getAccessToken = async () => {
+        if (!isAuthenticated)
+            return null;
+        const now = Math.floor(Date.now() / 1000);
+        const oldAccessToken = window.localStorage.getItem("accessToken");
+        const payload = oldAccessToken ? decodeToken(oldAccessToken) as AuthTokenPayload : null;
+
+        let tokenIsValid = true;
+        if (!payload || typeof payload !== "object" || !("exp" in payload)) 
+            tokenIsValid = false;
+        else if (payload.exp < now+10)
+            tokenIsValid = false;
+
+        if (tokenIsValid) {
+            console.log("getAccessToken: using old access token");
+            return oldAccessToken;
+        }
+
+        // access token ei ollut talletettuna local storagessa, joten haetaan uusi:
+
+        const fetchResponse = await fetch(`${getBackendUrl()}/auth/create_access_token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (fetchResponse.status === 403) {
+            // Käyttäjää ei löytynyt tietokannasta - poistetaan kirjautuminen
+            setFromRefreshToken(null);
+            return null;
+        }
+        if (!fetchResponse.ok)
+            return null;
+        const jsonResponse = await fetchResponse.json();
+        window.localStorage.setItem("accessToken", jsonResponse.access_token);
+        setFromRefreshToken(jsonResponse.refresh_token);
+        console.log("getAccessToken: create_access_token used to get new access token");
+        return jsonResponse.access_token;
+    }
+
     return (
         <AuthenticationContext.Provider
-            value={{ isAuthenticated, token, name, team, role, setFromToken, isTokenChecked }}
+            value={{ isAuthenticated, refreshToken, name, team, role, setFromRefreshToken, getAccessToken, isTokenChecked }}
         >
             {children}
         </AuthenticationContext.Provider>
     );
 };
 
+export type { AuthenticationState };
 export { AuthenticationContext, AuthenticationProvider };

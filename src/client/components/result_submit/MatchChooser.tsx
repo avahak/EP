@@ -79,7 +79,7 @@ const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator 
  * Komponentti ilmoitettavan tuloksen ottelun valintaan
  */
 const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ submitCallback }) => {
-    const authenticationContext = useContext(AuthenticationContext);
+    const authenticationState = useContext(AuthenticationContext);
     const [matches, setMatches] = useState<any[]>([]);
     // Lomakkeen kenttien tila:
     const { setValue, handleSubmit, watch } = useForm<FormFields>({
@@ -92,7 +92,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
     });
     const sendButton = useRef<HTMLButtonElement>(null);
 
-    const userTeam = authenticationContext.team ?? "";
+    const userTeam = authenticationState.team ?? "";
 
     const formValues = watch();
 
@@ -134,8 +134,8 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: roleIsAtLeast(authenticationContext.role, "mod") ? "get_matches_to_report_moderator" : "get_matches_to_report" }),
-            });
+                body: JSON.stringify({ queryName: roleIsAtLeast(authenticationState.role, "mod") ? "get_matches_to_report_moderator" : "get_matches_to_report" }),
+            }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
@@ -202,7 +202,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
                     <MatchCategoryCard title="Omat vierasottelut" categoryName="away" matches={awayMatches} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                 </Grid>
-                {roleIsAtLeast(authenticationContext.role, "mod") && 
+                {roleIsAtLeast(authenticationState.role, "mod") && 
                 <>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
                     <MatchCategoryCard moderator title={"Tulevat ottelut"} categoryName="moderator_status_T" matches={moderatorMatchesStatus_T} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>

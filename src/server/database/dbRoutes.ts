@@ -4,45 +4,17 @@
 
 import express, { Router } from 'express';
 import fs from 'fs';
-import mysql from 'mysql2/promise';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth, requireAuth } from '../auth/auth.js';
 import { AuthError } from '../../shared/commonAuth.js';
+import { pool, poolNoDatabase } from './dbConnections.js';
 
 const router: Router = express.Router();
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä:
 const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
-
-/** 
- * Kokoelma kierrätettäviä tietokantayhteyksiä, liittyen tietokantaan DB_NAME:
- */
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '3306'),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    dateStrings: ['DATE'],          // use a string to represent dates instead of javascript Date
-    // idleTimeout: 20000,
-    // connectTimeout: 5000,
-});
-
-/** 
- * Kokoelma kierrätettäviä tietokantayhteyksiä, joita ei ole liitetty tiettyyn tietokantaan.
- * Tällaisia yhteyksiä käytetään esimerkiksi poistamaan tai lisäämään tietokantoja.
- */
-const poolNoDatabase = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '3306'),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    dateStrings: ['DATE'],          // use a string to represent dates instead of javascript Date
-    // idleTimeout: 20000,
-    // connectTimeout: 5000
-});
 
 /**
  * SQL-tietokannan testausta, palauttaa tietokannan kaavion ja sen perustamiskomennot.
@@ -144,7 +116,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => 
     if (!queryName || !queryFunction)
         return res.status(400).send("Invalid or missing queryName.");
     try {
-        const rows = await queryFunction(pool, params, req.auth);
+        const rows = await queryFunction(params, req.auth);
         res.json({ rows });
         console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {

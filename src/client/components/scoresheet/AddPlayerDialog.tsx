@@ -15,6 +15,7 @@ import { serverFetch } from '../../utils/apiUtils';
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { SnackbarContext } from '../../contexts/SnackbarContext';
 import { ScoresheetPlayer, ScoresheetTeam } from './scoresheetTypes';
+import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 
 type AddPlayerDialogProps = {
     isOpen: boolean;
@@ -26,6 +27,7 @@ type AddPlayerDialogProps = {
 type Sex = "-" | "M" | "N";
 
 const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
+    const authenticationState = useContext(AuthenticationContext);
     const [newPlayerName, setNewPlayerName] = useState<string>('');
     const [newPlayerSex, setNewPlayerSex] = useState<Sex>('-');
     // const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
@@ -44,7 +46,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ queryName: "add_player", params: { teamId: teamId, name: name, sex: sex } }),
-            });
+            }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();

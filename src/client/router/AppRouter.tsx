@@ -25,17 +25,17 @@ import { AuthenticationContext, AuthenticationProvider } from '../contexts/Authe
 import { App } from '../components/App';
 
 const Wrap: React.FC<{ children: ReactNode, pageName?: string, restricted?: boolean }> = ({ children, pageName, restricted = false }) => {
-    const authenticationContext = useContext(AuthenticationContext);
+    const authenticationState = useContext(AuthenticationContext);
     const pageNameContext = useContext(PageNameContext);
 
     useEffect(() => {
         pageNameContext.setPageName(pageName ?? "Tuntematon sivu");
     }, [pageName, pageNameContext]);
 
-    if (!authenticationContext.isTokenChecked)
+    if (!authenticationState.isTokenChecked)
         return <p>Lataus kesken..</p>;
     
-    if (restricted && !authenticationContext.isAuthenticated)
+    if (restricted && !authenticationState.isAuthenticated)
         return (<Navigate to="/simulate_login" />);
 
     return (

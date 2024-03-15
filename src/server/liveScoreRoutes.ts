@@ -18,15 +18,15 @@ import { currentScore } from '../client/utils/matchTools.js';
 const router: Router = express.Router();
 
 // Aikoja millisekunteina, helpottaa koodin lukemista:
-const SECOND = 1000;
-const MINUTE = 60*SECOND;
+const SECOND_ms = 1000;
+const MINUTE_ms = 60*SECOND_ms;
 //@ts-ignore
-const HOUR = 60*MINUTE;
+const HOUR_ms = 60*MINUTE_ms;
 
-const MAINTENANCE_INTERVAL = 5*MINUTE;
-const MAX_LIVE_CONNECTION_DURATION = 6*HOUR;
-const MAX_LIVE_MATCH_DURATION = 6*HOUR;
-const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR;
+const MAINTENANCE_INTERVAL = 5*MINUTE_ms;
+const MAX_LIVE_CONNECTION_DURATION = 6*HOUR_ms;
+const MAX_LIVE_MATCH_DURATION = 6*HOUR_ms;
+const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR_ms;
 
 type LiveConnection = {
     startTime: number;

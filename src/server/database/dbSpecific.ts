@@ -3,18 +3,18 @@
  * Näitä kutsuu src/server/database/databaseRoutes.ts funktio specificQuery.
  */
 
-import mysql from 'mysql2/promise';
 import { myQuery } from './dbGeneral.js';
 import { dateToISOString, deepCopy } from '../../shared/generalUtils.js';
 import { isValidateParsedMatch } from '../../shared/parseMatch.js';
 import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonAuth.js';
+import { pool } from './dbConnections.js';
 // import { parseMatch } from '../../shared/parseMatch.js';
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
-async function getScores(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getScores(params: Record<string, any>, _auth: AuthTokenPayload) {
     // Valitaan pelaajat ja erätulokset annetulle ottelulle:
     const query = `
         SELECT p.kp, p.vp, e.era1, e.era2, e.era3, e.era4, e.era5
@@ -30,7 +30,7 @@ async function getScores(pool: mysql.Pool, params: Record<string, any>, _auth: A
  * Palauttaa joukkueen kaikki pelaajat.
  * @param params - Sisältää ep_joukkue.id tiedon kentässä teamId.
  */
-async function getPlayersInTeam(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPayload) {
     // Valitaan kaikki pelaajat, joiden joukkueen id on teamId:
     const query = `
         SELECT p.id AS id, p.nimi AS name
@@ -45,7 +45,7 @@ async function getPlayersInTeam(pool: mysql.Pool, params: Record<string, any>, _
  * Hakee taulun ep_ottelu perustiedot sen id:n perusteella.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
-async function getMatchInfo(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload) {
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -59,7 +59,7 @@ async function getMatchInfo(pool: mysql.Pool, params: Record<string, any>, _auth
 /**
  * Palauttaa menneet ilmoittamattomat (T) tai vierasjoukkueen hyväksymättömät (K) ottelut.
  */
-async function getMatchesToReport(pool: mysql.Pool, params: Record<string, any>, auth: AuthTokenPayload) {
+async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload) {
     if (!auth)
         throw new AuthError();
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K':
@@ -80,7 +80,7 @@ async function getMatchesToReport(pool: mysql.Pool, params: Record<string, any>,
  * Palauttaa kaikki hyväksymättömät (status != 'H') menneet ottelut moderaattorin
  * käsiteltäväksi.
  */
-async function getMatchesToReportModerator(pool: mysql.Pool, params: Record<string, any>, auth: AuthTokenPayload) {
+async function getMatchesToReportModerator(params: Record<string, any>, auth: AuthTokenPayload) {
     console.log("auth", auth);
     if (!auth || !roleIsAtLeast(auth.role, "mod"))
         throw new AuthError();
@@ -100,7 +100,7 @@ async function getMatchesToReportModerator(pool: mysql.Pool, params: Record<stri
 /**
  * Palauttaa taulukon kaikista otteluista, yleistä testausta varten.
  */
-async function getAllMatches(pool: mysql.Pool, _params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getAllMatches(_params: Record<string, any>, _auth: AuthTokenPayload) {
     const query = `
         SELECT o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -115,7 +115,7 @@ async function getAllMatches(pool: mysql.Pool, _params: Record<string, any>, _au
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_sarjat taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeamsOld(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenPayload) {
     const query = `
         SELECT ep_sarjat.nimi, ep_sarjat.lyhenne, 
             ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
@@ -131,7 +131,7 @@ async function getResultsTeamsOld(pool: mysql.Pool, params: Record<string, any>,
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_joukkue_tulokset taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload) {
     const query = `
         SELECT ep_joukkue.nimi, ep_joukkue.lyhenne, 
             ep_joukkue_tulokset.voitto, ep_joukkue_tulokset.tappio, 
@@ -149,7 +149,7 @@ async function getResultsTeams(pool: mysql.Pool, params: Record<string, any>, _a
  * eli ei käytä x_tulokset tauluja.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayersOld(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthTokenPayload) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -222,7 +222,7 @@ async function getResultsPlayersOld(pool: mysql.Pool, params: Record<string, any
  * Tuloskysely pelaajien tilanteesta, käyttäen _tulokset tauluja.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -298,7 +298,7 @@ async function getResultsPlayers(pool: mysql.Pool, params: Record<string, any>, 
  * Ottelun tulosten kirjaaminen.
  * @param params - Sisältää kentän result.
  */
-async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>, auth: AuthTokenPayload) {
+async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPayload) {
     if (!auth)
         throw new AuthError();
 
@@ -413,7 +413,7 @@ async function submitMatchResult(pool: mysql.Pool, params: Record<string, any>, 
  * Lisää uuden pelaajan joukkueeseen.
  * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
  */
-async function addPlayer(pool: mysql.Pool, params: Record<string, any>, auth: AuthTokenPayload) {
+async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload) {
     // Miten autentikaatio tulisi tarkistaa tässä? Käyttäjän tulee pystyä lisäämään
     // tarvittaessa pelaaja vierasjoukkueeseenkin pöytäkirjan ilmoituksen yhteydessä.
     if (!auth)
@@ -430,11 +430,20 @@ async function addPlayer(pool: mysql.Pool, params: Record<string, any>, auth: Au
  * Hakee listan käyttäjistä userpw taulusta.
  * HUOM! Tämä on vain testikäyttöön, poista production vaiheessa.
  */
-async function getUsers(pool: mysql.Pool, _auth: AuthTokenPayload) {
+async function getUsers(_auth: AuthTokenPayload) {
     const query = `SELECT Nimi, Joukkue FROM userpw`;
     return myQuery(pool, query);
 }
 
+/**
+ * Tarkistaa onko käyttäjä tietokannan taulussa userpw.
+ */
+async function findUserInDatabase(name: string, team: string) {
+    const query = "SELECT * FROM userpw WHERE Nimi=? AND Joukkue=?";
+    return myQuery(pool, query, [name, team]);
+}
+
 export { getAllMatches, getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
     getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
-    getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, getUsers };
+    getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
+    getUsers, findUserInDatabase };

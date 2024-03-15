@@ -13,12 +13,14 @@ const DisplayResultsTeams: React.FC = () => {
         route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_teams_old" },
+        authenticationState: null,
     });
 
     const resultsNew = useInitialServerFetch({ 
         route: "/api/db/specific_query", 
         method: "POST", 
         params: { queryName: "get_results_teams" },
+        authenticationState: null,
     });
 
     console.log("resultsOld", resultsOld);

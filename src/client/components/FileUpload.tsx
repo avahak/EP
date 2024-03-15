@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
-import React, { ChangeEvent, FormEvent, useState } from 'react';
+import React, { ChangeEvent, FormEvent, useContext, useState } from 'react';
 import axios from 'axios';
 import { getBackendUrl } from "../utils/apiUtils";
+import { AuthenticationContext } from '../contexts/AuthenticationContext';
 
 /**
  * Komponentti tiedostojen lataamiseen palvelimelle käyttäen server.ts /api/uload
  * reittiä.
  */
 const FileUpload: React.FC = () => {
+    const authenticationState = useContext(AuthenticationContext);
     const [file, setFile] = useState<File | null>(null);
     const [message, setMessage] = useState('');
     
@@ -30,7 +32,7 @@ const FileUpload: React.FC = () => {
         
         try {
             const apiUrl = `${getBackendUrl()}/api/upload`;
-            const token = window.localStorage.getItem("jwtToken") ?? "";
+            const token = (await authenticationState.getAccessToken()) ?? "";
             const response = await axios.post(apiUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',

@@ -1,10 +1,12 @@
 /**
- * Tyyppi JWT autentikaatiotokenin payloadille.
+ * Tyyppi JWT tokenin payloadille. Tätä käytetään sekä refresh, että access tokeneissa.
  */
 type AuthTokenPayload = {
     name: string,
     team: string,
-    role: string
+    role: string,
+    iat: number,
+    exp: number,
 } | null;
 
 /**
