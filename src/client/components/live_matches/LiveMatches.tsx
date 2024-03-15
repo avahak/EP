@@ -49,6 +49,12 @@ const LiveMatches: React.FC = () => {
             setLiveMatchList([]);
         };
 
+        // Firefox bugin 
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=712329
+        // https://stackoverflow.com/questions/14140414/websocket-was-interrupted-while-page-is-loading-on-firefox-for-socket-io
+        // takia joudutaan tekemään vielä varmuuden vuoksi ylimääräinen loppusiivous:
+        window.addEventListener('beforeunload', () => eventSource.close());
+
         // Suljetaan eventSource lopuksi:
         return () => {
             eventSource.close();

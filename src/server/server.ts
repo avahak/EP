@@ -22,17 +22,19 @@
  * 503 Service Unavailable: Server is not ready to handle the request.
  */
 
+// Ladataan ympäristömuuttuja ennen muuta koodia, jotta ne ovat käytössä import komennoille:
 import dotenv from 'dotenv';
-// Ladataan ympäristömuuttuja heti, jotta ne ovat käytössä import komennoille:
 dotenv.config();
-if (!process.env.PORT)
-    throw new Error('Missing PORT environment variable, check server configuration.');
+// Tarkistetaan myös, että muutama tärkein ympäristömuuttuja on määritelty:
+if (!process.env.PORT || !process.env.SECRET_KEY || !process.env.KULUVA_KAUSI 
+    || !process.env.DB_NAME)
+    throw new Error('Missing an environment variable, check server configuration.');
 
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
-import authRouter from './auth/authRoutes.js';
+import { authRouter } from './auth/auth.js';
 import liveScoreRouter from './liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/databaseRoutes.js';

@@ -16,6 +16,7 @@ import { fetchMatchData } from "../../utils/matchTools";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresheet/scoresheetTypes";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
+import { AuthError, roleIsAtLeast } from "../../../shared/commonAuth";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
@@ -37,8 +38,6 @@ const ResultSubmission: React.FC = () => {
     const [useLivescore, setUseLivescore] = useState<boolean>(true);
     const [pageState, setPageState] = useState<PageState>("choose_match");
     const setSnackbarState = useContext(SnackbarContext);
-
-    const userTeam = authenticationContext.team ?? "";
 
     /**
      * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
@@ -102,12 +101,21 @@ const ResultSubmission: React.FC = () => {
     const handleSubmit = (data: ScoresheetFields) => {
         console.log("handleSubmit()");
         let newStatus = '';
-        if (pageState == "scoresheet_fresh")
+        if (data.status === 'T')
             newStatus = 'K';
-        else if (pageState == "scoresheet_modify")
-            newStatus = 'V';
-        else if (pageState == "scoresheet_verify")
-            newStatus = 'M';
+        if (roleIsAtLeast(authenticationContext.role, "mod")) {
+            // Lähettäjä on moderaattori:
+            if (data.status !== 'T')
+                newStatus = 'H';
+        } else {
+            // Lähettäjä on tavallinen käyttäjä:
+            if (data.status !== 'T' && data.status !== 'K')
+                throw new AuthError();
+            if ((data.status === 'K') && (pageState === "scoresheet_modify"))
+                newStatus = 'V';
+            else if ((data.status === 'K') && (pageState === "scoresheet_verify"))
+                newStatus = 'M';
+        }
         setResult(data);
         const oldPageState = pageState;
         setPageState("scoresheet_submit");
@@ -158,7 +166,7 @@ const ResultSubmission: React.FC = () => {
         <Container maxWidth="md">
         {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 
-            <MatchChooser userTeam={userTeam} submitCallback={matchChooserCallback} />}
+            <MatchChooser submitCallback={matchChooserCallback} />}
 
         {/* Kotijoukkue kirjaa tulokset: */}
         {(pageState == "scoresheet_fresh") && 

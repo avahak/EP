@@ -27,7 +27,9 @@ type AuthenticationState = {
     token: string | null;
     name: string | null;
     team: string | null;
+    role: string | null;
     setFromToken: (token: string | null) => void;
+    isTokenChecked: boolean; // seuraa onko tokenin olemassaoloa vielä tarkistettu, aluksi false
 };
 
 const dummyAuthenticationState: AuthenticationState = {
@@ -35,7 +37,9 @@ const dummyAuthenticationState: AuthenticationState = {
     token: null,
     name: null,
     team: null,
+    role: null,
     setFromToken: () => {},
+    isTokenChecked: false,
 };
 
 const AuthenticationContext = createContext<AuthenticationState>(dummyAuthenticationState);
@@ -45,13 +49,17 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [token, setToken] = useState<string | null>(dummyAuthenticationState.token);
     const [name, setName] = useState<string | null>(dummyAuthenticationState.name);
     const [team, setTeam] = useState<string | null>(dummyAuthenticationState.team);
+    const [role, setRole] = useState<string | null>(dummyAuthenticationState.role);
+    const [isTokenChecked, setIsTokenChecked] = useState<boolean>(dummyAuthenticationState.isTokenChecked);
 
     /**
      * Alustetaan autentikaatiotila local storage JWT tokenin mukaan:
      */
     useEffect(() => {
+        console.log("AuthenticationProvider getting token from local storage");
         const localStorageToken = window.localStorage.getItem("jwtToken");
         setFromToken(localStorageToken);
+        setIsTokenChecked(true);
     }, []);
 
     /**
@@ -61,17 +69,19 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const setFromToken = (newToken: string | null) => {
         const payload = newToken ? decodeToken(newToken) : null;
         console.log("payload", payload);
-        if (payload && typeof payload === 'object' && "Nimi" in payload && "Joukkue" in payload) {
+        if (payload && typeof payload === 'object' && "name" in payload && "team" in payload && "role" in payload) {
             setIsAuthenticated(true);
             setToken(newToken);
-            setName(payload.Nimi as string);
-            setTeam(payload.Joukkue as string);
+            setName(payload.name as string);
+            setTeam(payload.team as string);
+            setRole(payload.role as string);
             console.log("Autentikaatio asetettu.", newToken);
         } else {
             setIsAuthenticated(false);
             setToken(null);
             setName(null);
             setTeam(null);
+            setRole(null);
             window.localStorage.removeItem("jwtToken");
             console.log("Autentikaatio poistettu.");
         }
@@ -79,7 +89,7 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return (
         <AuthenticationContext.Provider
-            value={{ isAuthenticated, token, name, team, setFromToken }}
+            value={{ isAuthenticated, token, name, team, role, setFromToken, isTokenChecked }}
         >
             {children}
         </AuthenticationContext.Provider>

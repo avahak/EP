@@ -62,9 +62,11 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
     return { 
         ok: true, 
         status: match.status,
-        newStatus: newStatus,
+        newStatus,
         id: match.id, 
         date: match.date,
+        homeTeamName: match.teamHome.teamName,
+        awayTeamName: match.teamAway.teamName,
         playersHome: match.teamHome.selectedPlayers.map((player: any) => player.id), 
         playersAway: match.teamAway.selectedPlayers.map((player: any) => player.id), 
         games, 
@@ -76,7 +78,7 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
 /**
  * Tarkistetaan, että lähetetyt tiedot vastaavat oikein täytettyä lomaketta.
  */
-function validateParsedMatch(match: any) {
+function isValidateParsedMatch(match: any) {
     try {
         if (match.playersHome[0] == -1 || match.playersHome[1] == -1 
             || match.playersAway[0] == -1 || match.playersAway[1] == -1
@@ -118,4 +120,4 @@ function validateParsedMatch(match: any) {
     return true;
 }
 
-export { parseMatch, validateParsedMatch };
+export { parseMatch, isValidateParsedMatch };

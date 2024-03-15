@@ -4,7 +4,8 @@ const SideNavigation: React.FC = () => {
     return (
         <Box sx={{minHeight: "700px", minWidth: "217px", overflow: "hidden", background: "#e1faed"}}>
             <Box maxHeight="700px">
-            <map name="#linkkikartta" id="Linkkikartta">
+            <img alt="Linkkilista" src="Linkit.gif" useMap="#linkkikartta" />
+            <map name="linkkikartta">
                 <area alt="Etusivu" shape="rect" coords="0,30,190,50" href="./"/>
                 <area alt="Uutiset" shape="rect" coords="0,70,190,88" href="Uutiset.php"/>
                 <area alt="Kilpailut" shape="rect" coords="0,90,190,109" href="Kilpailut.php"/>
@@ -29,7 +30,6 @@ const SideNavigation: React.FC = () => {
                 <area alt="Mediakortti" shape="rect" coords="0,590,190,609" href="EP_mediakortti_2009_screen.pdf"/>
                 <area alt="Pulinat" shape="rect" coords="0,630,190,650" href="Pulinat.php"/>
             </map>
-            <img alt="Linkkilista" src="Linkit.gif" useMap="#linkkikartta" />
             </Box>
         </Box>
     );

@@ -31,13 +31,14 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
     });
 
     const fetchData = useCallback(async () => {
+        const token = window.localStorage.getItem("jwtToken") ?? "";
         try {
             let apiUrl = `${getBackendUrl()}${route}`;
             let fetchResponse;
             if (method == "POST") {
                 fetchResponse = await fetch(apiUrl, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: !!params ? JSON.stringify({ ...params }) : "",
                 });
             } else {
@@ -74,11 +75,12 @@ const useInitialServerFetch = ({ route, method, params, dataProcessor }: Props) 
 /**
  * Lisää reittiin serverin osoitteen ja kutsuu fetch.
  */
-const serverFetch = (route: string, options?: any) => {
-    if (options)
-        return fetch(`${getBackendUrl()}${route}`, options);
-    return fetch(`${getBackendUrl()}${route}`);
-}
+const serverFetch = (route: string, options: any = {}) => {
+    const token = window.localStorage.getItem("jwtToken") ?? "";
+    const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${token}` };
+    console.log("x", { ...options, headers });
+    return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
+};
 
 /**
  * Apufunktio palvelimen osoitteen muodostamiseksi.

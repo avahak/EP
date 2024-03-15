@@ -31,6 +31,9 @@ const Wrap: React.FC<{ children: ReactNode, pageName?: string, restricted?: bool
     useEffect(() => {
         pageNameContext.setPageName(pageName ?? "Tuntematon sivu");
     }, [pageName, pageNameContext]);
+
+    if (!authenticationContext.isTokenChecked)
+        return <p>Lataus kesken..</p>;
     
     if (restricted && !authenticationContext.isAuthenticated)
         return (<Navigate to="/simulate_login" />);

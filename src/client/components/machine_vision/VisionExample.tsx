@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { getBackendUrl } from "../../utils/apiUtils";
 import { Link } from 'react-router-dom';
 
-const apiUrl = getBackendUrl();
 // Google Vision API palauttama json-tiedosto, tämä korvataan varsinaisessa käytössä
 // api-kutsun vastauksella
 const exampleName = `google_vision_api_IMG-20231128-WA0002.json`;
@@ -17,12 +16,12 @@ const VisionExample: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const fetchExampleJson = async () => {
-        const x = await axios.get(`${apiUrl}/misc/${exampleName}`);
+        const x = await axios.get(`${getBackendUrl()}/misc/${exampleName}`);
         const annotations = x.data.textAnnotations;
         const canvas = canvasRef.current!;
         const ctx = canvas.getContext('2d')!;
         const image = new Image();
-        image.src = `${apiUrl}/images/${imageName}`;
+        image.src = `${getBackendUrl()}/images/${imageName}`;
         image.crossOrigin = 'anonymous';
         image.onload = () => {
             canvas.width = image.width;
@@ -81,7 +80,7 @@ const VisionExample: React.FC = () => {
         <div>
         <canvas ref={canvasRef} />
         <h1>Original image:</h1>
-        <img crossOrigin="anonymous" src={`${apiUrl}/images/IMG-20231128-WA0002.jpg`} />
+        <img crossOrigin="anonymous" src={`${getBackendUrl()}/images/IMG-20231128-WA0002.jpg`} />
         </div>
         </>
     );

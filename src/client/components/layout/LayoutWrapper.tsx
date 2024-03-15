@@ -18,6 +18,7 @@ import { PageNameContext } from '../../contexts/PageNameContext';
 import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 import { Link, useNavigate } from 'react-router-dom';
 
+// Side menu with List (not in use):
 // const MenuList: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 //     return (
 //         <List
@@ -63,6 +64,9 @@ import { Link, useNavigate } from 'react-router-dom';
 //     );
 // };
 
+/**
+ * Käyttäjään liittyvä osuus mobiili ylämenussa.
+ */
 const AuthenticationBlock: React.FC = () => {
     const authenticationContext = useContext(AuthenticationContext);
     const navigate = useNavigate();
@@ -88,6 +92,13 @@ const AuthenticationBlock: React.FC = () => {
                     {authenticationContext.name}
                     <br />
                     {authenticationContext.team}
+                    <span>
+                        {(authenticationContext.role === "admin" || authenticationContext.role === "mod") && ", "}
+                    </span>
+                    <span style={{color: "#f50"}}>
+                        {authenticationContext.role === "mod" && "Moderator"}
+                        {authenticationContext.role === "admin" && "Admin"}
+                    </span>
                 </Typography>
             }
         </>

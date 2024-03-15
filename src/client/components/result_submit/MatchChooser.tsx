@@ -3,14 +3,17 @@
  */
 
 // import { SubmitHandler, useForm } from "react-hook-form";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
 // import './MatchChooser.css';
 import { Box, Button, Checkbox, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
+import { AuthenticationContext } from "../../contexts/AuthenticationContext";
+import { roleIsAtLeast } from "../../../shared/commonAuth";
 
-type SelectionCategory = "" | "home" | "away" | "other";
+type SelectionCategory = "" | "home" | "away" 
+    | "moderator_status_T" | "moderator_status_K" | "moderator_status_V" | "moderator_status_M";
 
 type FormFields = {
     selectionCategory: SelectionCategory;
@@ -25,10 +28,58 @@ type MatchChooserSubmitFields = {
     useLivescore: boolean;
 };
 
+type MatchCategoryCardProps = {
+    title: string;
+    moderator?: boolean;
+    categoryName: SelectionCategory;
+    matches: any[];
+    selectedRadioButton: string;
+    handleRadioChange: (_event: React.ChangeEvent<HTMLInputElement>, value: string) => void;
+};
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${getDayOfWeekStrings(date).short} ${toDDMMYYYY(date)}`;
+};
+
+/**
+ * Laatikko, missä kaikki saman kategorian ottelut on listattu valintapainikkeina.
+ */
+const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator = false, categoryName, matches, selectedRadioButton, handleRadioChange }) => {
+    return (
+        <Paper sx={{ p: 1, background: moderator ? "#ffd580" : "inherit" }} elevation={5}>
+            <Typography variant="body1" textAlign="center" fontWeight="bold">
+                {title}
+            </Typography>
+            {moderator &&
+            <Typography variant="body2" textAlign="center" fontWeight="bold" color="error">
+                Moderaattorin ilmoitus
+            </Typography>
+            }
+            <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {matches.length > 0 ? (
+                <RadioGroup value={selectedRadioButton} onChange={handleRadioChange}>
+                    {matches.map((match: any, matchIndex: number) => (
+                    <FormControlLabel 
+                        key={`${matchIndex}`} 
+                        value={`${categoryName}-${matchIndex}`} 
+                        control={<Radio />} 
+                        label={<Typography variant="body2" textAlign="center">{`${match.home} - ${match.away}, ${formatDate(match.date)}`}</Typography>}
+                    />
+                    ))}
+                </RadioGroup>) 
+                : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
+                }
+            </Box>
+        </Paper>
+    );
+};
+
 /**
  * Komponentti ilmoitettavan tuloksen ottelun valintaan
  */
-const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ userTeam, submitCallback }) => {
+const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ submitCallback }) => {
+    const authenticationContext = useContext(AuthenticationContext);
     const [matches, setMatches] = useState<any[]>([]);
     // Lomakkeen kenttien tila:
     const { setValue, handleSubmit, watch } = useForm<FormFields>({
@@ -41,6 +92,8 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
     });
     const sendButton = useRef<HTMLButtonElement>(null);
 
+    const userTeam = authenticationContext.team ?? "";
+
     const formValues = watch();
 
     /**
@@ -52,18 +105,28 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
             selectedMatch = homeMatches[index];
         else if (category == 'away')
             selectedMatch = awayMatches[index];
-        else if (category == 'other')
-            selectedMatch = otherMatches[index];
+        else if (category == 'moderator_status_T')
+            selectedMatch = moderatorMatchesStatus_T[index];
+        else if (category == 'moderator_status_K')
+            selectedMatch = moderatorMatchesStatus_K[index];
+        else if (category == 'moderator_status_V')
+            selectedMatch = moderatorMatchesStatus_V[index];
+        else if (category == 'moderator_status_M')
+            selectedMatch = moderatorMatchesStatus_M[index];
         return selectedMatch;
     }
 
-    // Funktio, joka kutsutaan kun lomake lähetetään:
+    /** 
+     * Funktio, joka kutsutaan kun lomake lähetetään.
+     */
     const onSubmit: SubmitHandler<any> = (data: FormFields) => {
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
         submitCallback({ match, date: data.date, useLivescore: data.useLivescore });
     }
 
-    // Hakee ottelut tietokannasta
+    /** 
+     * Hakee ottelut tietokannasta.
+     */
     const fetchMatches = async () => {
         try {
             const response = await serverFetch("/api/db/specific_query", {
@@ -71,7 +134,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_matches_to_report" }),
+                body: JSON.stringify({ queryName: roleIsAtLeast(authenticationContext.role, "mod") ? "get_matches_to_report_moderator" : "get_matches_to_report" }),
             });
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -87,18 +150,6 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
         console.log("useEffect fetchMatches()");
         fetchMatches();
     }, []);
-
-    /**
-     * Kutsutaan kun käyttäjä valitsee joukkueen.
-     */
-    // const handleSelectMatch = (event: React.ChangeEvent<HTMLSelectElement>, category: SelectionCategory) => {
-    //     const index = parseInt(event.target.value);
-    //     const match = getSelectedMatch(category, index);
-    //     console.log("selected", event.target.value, "category", category, match);
-    //     setValue(`selectionCategory`, category);
-    //     setValue(`selectionIndex`, index);
-    //     setValue(`date`, match.date);
-    // };
 
     /**
      * Kutsutaan kun käyttäjä valitsee joukkueen.
@@ -124,25 +175,17 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
 
     const homeMatches = matches.filter((match) => (match.home == userTeam) && (match.status == 'T'));
     const awayMatches = matches.filter((match) => (match.away == userTeam) && (match.status == 'K'));
-    const otherMatches = matches.filter((match) => (match.home != userTeam) && (match.away != userTeam) 
-            && (match.status == 'T' || match.status == 'K'));
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return `${getDayOfWeekStrings(date).short} ${toDDMMYYYY(date)}`;
-    };
+    const moderatorMatchesStatus_T = matches.filter((match) => (match.status == 'T'));
+    const moderatorMatchesStatus_K = matches.filter((match) => (match.status == 'K'));
+    const moderatorMatchesStatus_V = matches.filter((match) => (match.status == 'V'));
+    const moderatorMatchesStatus_M = matches.filter((match) => (match.status == 'M'));
 
     let selectedMatch = getSelectedMatch(formValues.selectionCategory, formValues.selectionIndex);
     useEffect(() => {
-        console.log("useEffect focus: sendButton.current is ", sendButton.current);
         sendButton.current?.focus();
     }, [selectedMatch]);
 
-    let selectedRadioButton = "";
-    if (formValues.selectionCategory == "home")
-        selectedRadioButton = `home-${formValues.selectionIndex}`;
-    else if (formValues.selectionCategory == "away")
-        selectedRadioButton = `away-${formValues.selectionIndex}`;
+    let selectedRadioButton = `${formValues.selectionCategory}-${formValues.selectionIndex}`;
     console.log("selectedRadioButton:", selectedRadioButton);
 
     return (
@@ -154,46 +197,27 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
             <Grid container>
             {/* <Box display="flex" justifyContent="center" gap="50px"> */}
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
-                    <Paper style={{ padding: "10px" }} elevation={5}>
-                    <Typography variant="body1" textAlign="center" fontWeight="bold">Omat kotiottelut</Typography>
-                    <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {homeMatches.length > 0 ? (
-                    <RadioGroup value={selectedRadioButton} onChange={handleRadioChange}>
-                        {homeMatches.map((match, matchIndex) => (
-                        <FormControlLabel 
-                            key={`home-${matchIndex}`} 
-                            value={`home-${matchIndex}`} 
-                            control={<Radio />} 
-                            label={<Typography variant="body2" textAlign="center">{`${match.home} - ${match.away}, ${formatDate(match.date)}`}</Typography>}
-                        />
-                        ))}
-                    </RadioGroup>) 
-                    : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
-                    }
-                    </Box>
-                    </Paper>
+                    <MatchCategoryCard title="Omat kotiottelut" categoryName="home" matches={homeMatches} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                 </Grid>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
-                    <Paper style={{ padding: "10px" }} elevation={5}>
-                    <Typography variant="body1" textAlign="center" fontWeight="bold">Omat vierasottelut</Typography>
-                    <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {awayMatches.length > 0 ? (
-                    <RadioGroup value={selectedRadioButton} onChange={handleRadioChange}>
-                        {awayMatches.map((match, matchIndex) => (
-                        <FormControlLabel 
-                            key={`away-${matchIndex}`} 
-                            value={`away-${matchIndex}`} 
-                            control={<Radio />} 
-                            label={<Typography variant="body2" textAlign="center">{`${match.home} - ${match.away}, ${formatDate(match.date)}`}</Typography>}
-                        />
-                        ))}
-                    </RadioGroup>) 
-                    : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
-                    }
-                    </Box>
-                    </Paper>
-
+                    <MatchCategoryCard title="Omat vierasottelut" categoryName="away" matches={awayMatches} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                 </Grid>
+                {roleIsAtLeast(authenticationContext.role, "mod") && 
+                <>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
+                    <MatchCategoryCard moderator title={"Tulevat ottelut"} categoryName="moderator_status_T" matches={moderatorMatchesStatus_T} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                </Grid>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
+                    <MatchCategoryCard moderator title={"Kotijoukkueen ilmoittamat"} categoryName="moderator_status_K" matches={moderatorMatchesStatus_K} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                </Grid>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
+                    <MatchCategoryCard moderator title={"Vierasjoukkueen korjaamat"} categoryName="moderator_status_V" matches={moderatorMatchesStatus_V} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                </Grid>
+                <Grid item xs={12} sm={6} sx={{p: 2}}>
+                    <MatchCategoryCard moderator title={"Molempien hyväksymät"} categoryName="moderator_status_M" matches={moderatorMatchesStatus_M} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                </Grid>
+                </>
+                }
             {/* </Box> */}
             </Grid>
             {selectedMatch && <>
@@ -210,7 +234,7 @@ const MatchChooser: React.FC<{ userTeam: string, submitCallback: (data: MatchCho
                             />
                         </Box>
                     </Box>
-                    {formValues.selectionCategory == "home" &&
+                    {selectedMatch.status === "T" &&
                     <Box sx={{ mt: 3 }} display="flex" justifyContent="center">
                         <FormControlLabel
                             control={<Checkbox checked={formValues.useLivescore} onChange={(event) => { setValue('useLivescore', event.target.checked) }} />}

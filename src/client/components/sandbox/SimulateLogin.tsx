@@ -8,18 +8,18 @@ import { Box, Link, Paper, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { useNavigate } from "react-router-dom";
 
-const TeamCard: React.FC<{ team: string, players: string[], onSelectPlayer: (team: string, player: string) => void }> = ({ team, players, onSelectPlayer }) => {
+const TeamCard: React.FC<{ team: string, users: string[], onSelectUser: (team: string, user: string, role: string) => void }> = ({ team, users, onSelectUser }) => {
     return (
         <>
         <Paper sx={{minWidth: "150px", p: 1, m: 2}} elevation={5}>
             <Typography textAlign="center" variant="h5" sx={{p: 1}}>
                 {team}
             </Typography>
-            {players.map((player: string, index: number) => (
-                <Box key={`player-${index}`}>
+            {users.map((user: string, index: number) => (
+                <Box key={`user-${index}`}>
                     <Typography variant="body1">
-                        <Link sx={{cursor: "pointer"}} onClick={() => onSelectPlayer(team, player)}>
-                            {player}
+                        <Link sx={{cursor: "pointer"}} onClick={() => onSelectUser(team, user, "-")}>
+                            {user}
                         </Link>
                     </Typography>
                 </Box>
@@ -56,7 +56,7 @@ const SimulateLogin: React.FC = () => {
         dataProcessor: createTeamMap
     });
 
-    const handleSelectPlayer = (team: string, player: string) => {
+    const handleSelectUser = (team: string, user: string, role: string) => {
         const fetchToken = async () => {
             try {
                 const response = await serverFetch("/auth/create_token", {
@@ -64,7 +64,7 @@ const SimulateLogin: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ team: team, name: player }),
+                    body: JSON.stringify({ team: team, name: user, role: role }),
                 });
                 if (!response.ok) 
                     throw new Error(`HTTP error! Status: ${response.status}`);
@@ -89,14 +89,28 @@ const SimulateLogin: React.FC = () => {
         <Typography variant="h3">
             Rekisteröityneet käyttäjät:
         </Typography>
+
+        {/* Admin */}
+        <Typography variant="body1">
+            <Link sx={{cursor: "pointer"}} onClick={() => handleSelectUser("FX1", "Albert", "admin")}>
+                Albert (admin), FX1
+            </Link>
+        </Typography>
+
+        <Typography variant="body1">
+            <Link sx={{cursor: "pointer"}} onClick={() => handleSelectUser("AA1", "Maurice", "mod")}>
+                Maurice (moderator), AA1
+            </Link>
+        </Typography>
+
         {usersResult.status.ok ?
         <Box display="flex" flexWrap="wrap">
             {teams?.map((team: string, index: number) => (
                 <Fragment key={`team-${index}`}>
                     <TeamCard 
                         team={team} 
-                        players={usersResult.data.get(team)} 
-                        onSelectPlayer={handleSelectPlayer}
+                        users={usersResult.data.get(team)} 
+                        onSelectUser={handleSelectUser}
                     />
                 </Fragment>
             ))}

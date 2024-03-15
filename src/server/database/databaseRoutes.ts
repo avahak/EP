@@ -5,15 +5,20 @@
 import express, { Router } from 'express';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
+import { RequestWithAuth, injectAuth, requireAuth } from '../auth/auth.js';
+import { AuthError } from '../../shared/commonAuth.js';
 
 const router: Router = express.Router();
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä:
 const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
 
+/** 
+ * Kokoelma kierrätettäviä tietokantayhteyksiä, liittyen tietokantaan DB_NAME:
+ */
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '3306'),
@@ -25,6 +30,10 @@ const pool = mysql.createPool({
     // connectTimeout: 5000,
 });
 
+/** 
+ * Kokoelma kierrätettäviä tietokantayhteyksiä, joita ei ole liitetty tiettyyn tietokantaan.
+ * Tällaisia yhteyksiä käytetään esimerkiksi poistamaan tai lisäämään tietokantoja.
+ */
 const poolNoDatabase = mysql.createPool({
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '3306'),
@@ -35,14 +44,9 @@ const poolNoDatabase = mysql.createPool({
     // connectTimeout: 5000
 });
 
-// interface User extends RowDataPacket {
-//     id: number;
-//     email: string;
-// }
-
 /**
- * SQL-tietokannan testausta
-*/
+ * SQL-tietokannan testausta, palauttaa tietokannan kaavion ja sen perustamiskomennot.
+ */
 router.get('/schema', async (_req, res) => {
     console.log(new Date(), "databaseRoutes: /schema requested");
     try {
@@ -88,7 +92,7 @@ router.get('/schema', async (_req, res) => {
  * sen uudelleen kaavion perusteella. Sitten generoi ja lisää testidataa sen tauluihin.
  * HUOM! Poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
-router.get('/recreate/:stage', async (req, res) => {
+router.get('/recreate/:stage', injectAuth, requireAuth("admin"), async (req, res) => {
     if (process.env.ENVIRONMENT != 'LOCALHOST')
         return res.status(403).send("Database creation forbidden in this environment.");
     if (!process.env.DB_NAME)
@@ -116,6 +120,7 @@ const queryFunctions: Record<string, any> = {
     "get_players_in_team": getPlayersInTeam,
     "get_match_info": getMatchInfo,
     "get_matches_to_report": getMatchesToReport,
+    "get_matches_to_report_moderator": getMatchesToReportModerator,
     "get_results_teams_old": getResultsTeamsOld,
     "get_results_teams": getResultsTeams,
     "get_results_players_old": getResultsPlayersOld,
@@ -130,7 +135,7 @@ const queryFunctions: Record<string, any> = {
  * Tätä reittiä käytetään tarjoamaan tietokannan spesifien kyselyiden 
  * (src/server/db/dbSpecific.ts) tuloksia.
  */
-router.post('/specific_query', async (req, res) => {
+router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => {
     const queryName = req.body.queryName;
     const params = req.body.params || {};
     params._current_kausi = KULUVA_KAUSI;
@@ -139,11 +144,13 @@ router.post('/specific_query', async (req, res) => {
     if (!queryName || !queryFunction)
         return res.status(400).send("Invalid or missing queryName.");
     try {
-        const rows = await queryFunction(pool, params);
+        const rows = await queryFunction(pool, params, req.auth);
         res.json({ rows });
         console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {
         logger.error('databaseRoutes: Error in /specific_query:', error);
+        if (error instanceof AuthError)
+            return res.status(401).send(`Error: ${error}`);
         res.status(500).send(`Error: ${error}`);
     }
 });

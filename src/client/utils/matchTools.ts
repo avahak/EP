@@ -41,7 +41,8 @@ const getSelectedPlayerName = (results: ScoresheetFields, gameIndex: number, pla
  * Palauttaa true joss pelaaja on tyhjä.
  */
 const isEmptyPlayer = (formFields: ScoresheetFields, gameIndex: number, playerIndex: number) => {
-    return getSelectedPlayerName(formFields, gameIndex, playerIndex) == "-";
+    const name = getSelectedPlayerName(formFields, gameIndex, playerIndex);
+    return (!name || name === "-");
 };
 
 /** 
