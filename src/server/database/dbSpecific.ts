@@ -1,14 +1,14 @@
 /**
  * Kokoelma tietokantaan kohdistuvia kyselyitä, joita React app tarvitsee.
- * Näitä kutsuu src/server/database/databaseRoutes.ts funktio specificQuery.
+ * Näitä kutsuu src/server/database/dbRoutes.ts funktio specificQuery.
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToISOString, deepCopy } from '../../shared/generalUtils.js';
-import { isValidateParsedMatch } from '../../shared/parseMatch.js';
-import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonAuth.js';
+import { dateToYYYYMMDD, deepCopy } from '../../shared/generalUtils.js';
+import { isValidParsedMatch } from '../../shared/parseMatch.js';
+import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
-// import { parseMatch } from '../../shared/parseMatch.js';
+import { logger } from '../serverErrorHandler.js';
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -18,10 +18,9 @@ async function getScores(params: Record<string, any>, _auth: AuthTokenPayload) {
     // Valitaan pelaajat ja erätulokset annetulle ottelulle:
     const query = `
         SELECT p.kp, p.vp, e.era1, e.era2, e.era3, e.era4, e.era5
-        FROM ep_ottelu o
-        JOIN ep_peli p ON p.ottelu=o.id
+        FROM ep_peli p
         JOIN ep_erat e ON e.peli=p.id
-        WHERE o.id=?
+        WHERE p.ottelu=?
     `;
     return myQuery(pool, query, [params.matchId]);
 }
@@ -34,9 +33,8 @@ async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPay
     // Valitaan kaikki pelaajat, joiden joukkueen id on teamId:
     const query = `
         SELECT p.id AS id, p.nimi AS name
-        FROM ep_joukkue j
-        JOIN ep_pelaaja p ON p.joukkue = j.id
-        WHERE j.id = ?
+        FROM ep_pelaaja p
+        WHERE p.joukkue = ?
     `;
     return myQuery(pool, query, [params.teamId]);
 }
@@ -57,13 +55,15 @@ async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload
 }
 
 /**
- * Palauttaa menneet ilmoittamattomat (T) tai vierasjoukkueen hyväksymättömät (K) ottelut.
+ * Palauttaa menneet käyttäjän ilmoittamattomat (T) tai 
+ * kotijoukkueen ilmoittamat (K) ottelut.
  */
 async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload) {
     if (!auth)
         throw new AuthError();
-    // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K':
-    const dateNow = dateToISOString(new Date());
+    // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K'
+    // ja toinen joukkueista on käyttäjän joukkue:
+    const dateNow = dateToYYYYMMDD(new Date());
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -85,7 +85,7 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
     if (!auth || !roleIsAtLeast(auth.role, "mod"))
         throw new AuthError();
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status ei ole 'H':
-    const dateNow = dateToISOString(new Date());
+    const dateNow = dateToYYYYMMDD(new Date());
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -99,17 +99,18 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
 
 /**
  * Palauttaa taulukon kaikista otteluista, yleistä testausta varten.
+ * Ei käytössä.
  */
-async function getAllMatches(_params: Record<string, any>, _auth: AuthTokenPayload) {
-    const query = `
-        SELECT o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
-        FROM ep_ottelu o
-        JOIN ep_joukkue j1 ON o.koti = j1.id
-        JOIN ep_joukkue j2 ON o.vieras = j2.id
-        ORDER BY o.paiva
-    `;
-    return myQuery(pool, query);
-}
+// async function getAllMatches(_params: Record<string, any>, _auth: AuthTokenPayload) {
+//     const query = `
+//         SELECT o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
+//         FROM ep_ottelu o
+//         JOIN ep_joukkue j1 ON o.koti = j1.id
+//         JOIN ep_joukkue j2 ON o.vieras = j2.id
+//         ORDER BY o.paiva
+//     `;
+//     return myQuery(pool, query);
+// }
 
 /**
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_sarjat taulua.
@@ -303,7 +304,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         throw new AuthError();
 
     const match = params.result;
-    if (!match.ok || !isValidateParsedMatch(match))
+    if (!match.ok || !isValidParsedMatch(match))
         throw Error("Invalid match.");
 
     // Tavalliset käyttäjät voivat ilmoittaa ainoastaan otteluita, 
@@ -320,9 +321,6 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     const rounds = deepCopy(match.rounds);
     
     console.log("match", JSON.stringify(match));
-    // await new Promise(r => setTimeout(r, 20000));    // poista tämä (tässä vain testausta varten)
-    // if (1 == 1)
-    //     throw Error("Invalid match.");
 
     try {
         const connection = await pool.getConnection();
@@ -337,25 +335,6 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             `;
             await connection.query(query1, [match.id]);
 
-            // Herättimen "trigger_modify_peli_on_erat_delete" takia 
-            // ei voida poistaa rivejä taulusta ep_erat kyselyllä, jossa esiintyy ep_peli.
-            // Tämän takia käytetään väliaikaista taulua apuna:
-            // const query1_1 = `CREATE TEMPORARY TABLE temp_ids (id INT)`;
-            // const query1_2 = `
-            //     INSERT INTO temp_ids (id)
-            //     SELECT e.id
-            //     FROM ep_erat e
-            //     JOIN ep_peli p ON e.peli = p.id
-            //     JOIN ep_ottelu o ON p.ottelu = o.id
-            //     WHERE o.id = ?
-            // `;
-            // const query1_3 = `DELETE FROM ep_erat WHERE id IN (SELECT * FROM temp_ids)`;
-            // const query1_4 = `DROP TEMPORARY TABLE temp_ids`;
-            // await connection.query(query1_1);
-            // await connection.query(query1_2, [match.id]);
-            // await connection.query(query1_3);
-            // await connection.query(query1_4);
-
             // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_peli:
             const query2 = `
                 DELETE FROM ep_peli 
@@ -363,7 +342,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             `;
             await connection.query(query2, [match.id]);
 
-            // Lisätään uudet rivit tauluun ep_peli:
+            // Lisätään uudet rivit tauluun ep_peli, ep_peli:
             for (let k = 0; k < 9; k++) {
                 // Ei talleteta kahden tyhjän pelaajan peliä:
                 if (match.games[k][1] == -1 && match.games[k][2] == -1)
@@ -397,14 +376,13 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             // await connection.rollback();
         } catch (error) {
             await connection.rollback();
-            console.error("Error during submitMatchResult:", error);
             throw error;
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();
         }
     } catch (error) {
-        console.error("Error during submitMatchResult:", error);
+        logger.error("Error during submitMatchResult:", error);
         throw error;
     }
 }
@@ -435,15 +413,7 @@ async function getUsers(_auth: AuthTokenPayload) {
     return myQuery(pool, query);
 }
 
-/**
- * Tarkistaa onko käyttäjä tietokannan taulussa userpw.
- */
-async function findUserInDatabase(name: string, team: string) {
-    const query = "SELECT * FROM userpw WHERE Nimi=? AND Joukkue=?";
-    return myQuery(pool, query, [name, team]);
-}
-
-export { getAllMatches, getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
+export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
     getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
     getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
-    getUsers, findUserInDatabase };
+    getUsers };

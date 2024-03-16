@@ -1,5 +1,6 @@
 /**
  * Sekalaisia reittejä (tässä lähinnä tiedostojen latausta).
+ * HUOM! Nämä voi poistaa tuotantoversiossa.
  */
 
 import path from 'path';
@@ -22,7 +23,7 @@ const router: Router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Muodostetaan lupaus fs.writeFile:sta:
+// Muodostetaan lupaus fs.writeFile:stä:
 const writeFileAsync = util.promisify(fs.writeFile);
 
 /**
@@ -65,7 +66,9 @@ router.post('/upload', injectAuth, requireAuth("mod"), upload.single('file'), as
     }
 });
 
-// Palauttaa listan esikatselukuvista:
+/** 
+ * Palauttaa listan esikatselukuvista.
+ */ 
 router.get('/thumbnails', (_req, res) => {
     try {
         if (!fs.existsSync(thumbnailDirectory))
@@ -80,7 +83,7 @@ router.get('/thumbnails', (_req, res) => {
 });
 
 /**
- * Palvelee tiedoston pyynnön perusteella baseDirectory hakemistosta.
+ * Palvelee tiedoston baseDirectory hakemistosta.
  */
 const serveFile = (req: Request, res: Response, baseDirectory: string) => {
     const filename = req.params.filename;

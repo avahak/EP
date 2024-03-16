@@ -8,7 +8,7 @@ import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayer
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth, requireAuth } from '../auth/auth.js';
-import { AuthError } from '../../shared/commonAuth.js';
+import { AuthError } from '../../shared/commonTypes.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
 
 const router: Router = express.Router();
@@ -22,9 +22,6 @@ const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
 router.get('/schema', async (_req, res) => {
     console.log(new Date(), "databaseRoutes: /schema requested");
     try {
-        const databaseName = process.env.DB_NAME;
-        if (!databaseName)
-            throw Error("Missing database info.");
         const sqlFile1 = fs.readFileSync(`src/server/database/sql_tables.sql`, 'utf-8');
         const sqlFile2 = fs.readFileSync(`src/server/database/sql_tulokset_1.sql`, 'utf-8');
         const sqlFile3 = fs.readFileSync(`src/server/database/sql_tulokset_2.sql`, 'utf-8');
@@ -42,12 +39,10 @@ router.get('/schema', async (_req, res) => {
         
         res.json({ 
             DB_NAME: process.env.DB_NAME,
-            // dbList: dbList,
             commands1: commands1,
             commands2: commands2,
             commands3: commands3,
             commands4: commands4,
-            // matches: matches,
             schema1: sanitizedSchema1,
             schema2: sanitizedSchema2,
             schema3: sanitizedSchema3,
@@ -61,14 +56,15 @@ router.get('/schema', async (_req, res) => {
 
 /**
  * Poistaa DB_NAME ympäristömuuttujassa määritellyn tietokannan ja luo 
- * sen uudelleen kaavion perusteella. Sitten generoi ja lisää testidataa sen tauluihin.
- * HUOM! Poistaa kaiken olemassaolevan tiedon tietokannasta.
+ * sen uudelleen kaavion perusteella (stage=1). Lisää triggerit ja proseduurit (stage=2).
+ * Sitten generoi ja lisää testidataa sen tauluihin (stage=3).
+ * HUOM! Vain testausta varten, poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
 router.get('/recreate/:stage', injectAuth, requireAuth("admin"), async (req, res) => {
     if (process.env.ENVIRONMENT != 'LOCALHOST')
         return res.status(403).send("Database creation forbidden in this environment.");
     if (!process.env.DB_NAME)
-        return res.status(500).send("Missing environment variable DB_NAME.");
+        return res.status(400).send("Missing environment variable DB_NAME.");
     const stage = parseInt(req.params.stage);
     if (isNaN(stage) || stage < 1 || stage > 3)
         return res.status(400).send("Invalid stage.");
@@ -85,8 +81,8 @@ router.get('/recreate/:stage', injectAuth, requireAuth("admin"), async (req, res
 });
 
 /**
- * Yhdistää API-kutsussa annetun parametrin dbSpecific.ts tiedostossa olevaan
- * funktioon, joka muodostaa SQL-kyselyn ja suorittaa sen. 
+ * Yhdistää /specific_query API-kutsussa annetun parametrin dbSpecific.ts 
+ * tiedostossa olevaan funktioon, joka muodostaa SQL-kyselyn ja suorittaa sen. 
  */
 const queryFunctions: Record<string, any> = {
     "get_players_in_team": getPlayersInTeam,
@@ -105,7 +101,12 @@ const queryFunctions: Record<string, any> = {
 
 /**
  * Tätä reittiä käytetään tarjoamaan tietokannan spesifien kyselyiden 
- * (src/server/db/dbSpecific.ts) tuloksia.
+ * (src/server/database/dbSpecific.ts) funktioita. Oikeuksia
+ * funktioihin tarkistetaan funktiossa itsessään jos tarpeen, tässä vain 
+ * liitetään pyyntöön mukaan käyttäjän tiedot (injectAuth).
+ * 
+ * Note. Tämä voisi olla parempi jakaa erillisiksi reiteiksi. Kaikkien
+ * tietokantafunktioiden laittaminen tämän reitin alle ei taida tuottaa etua.
  */
 router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => {
     const queryName = req.body.queryName;

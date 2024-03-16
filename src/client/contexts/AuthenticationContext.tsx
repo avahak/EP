@@ -6,7 +6,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { decodeToken } from "react-jwt";
 import { getBackendUrl } from '../utils/apiUtils';
-import { AuthTokenPayload } from '../../shared/commonAuth';
+import { AuthTokenPayload } from '../../shared/commonTypes';
 
 type AuthenticationState = {
     isAuthenticated: boolean;
@@ -77,7 +77,7 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     /**
      * Palauttaa access JWT tokenin. Jos sitä ei vielä ole tai se on vanhentunut,
-     * niin pyytää
+     * niin pyytää serveriä luomaan uuden.
      */
     const getAccessToken = async () => {
         if (!isAuthenticated)

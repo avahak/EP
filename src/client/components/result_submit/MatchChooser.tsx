@@ -4,13 +4,13 @@
 
 // import { SubmitHandler, useForm } from "react-hook-form";
 import { useContext, useEffect, useRef, useState } from "react";
-import { getDayOfWeekStrings, toDDMMYYYY } from "../../../shared/generalUtils";
+import { getDayOfWeekStrings, dateToDDMMYYYY } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
 // import './MatchChooser.css';
 import { Box, Button, Checkbox, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
-import { roleIsAtLeast } from "../../../shared/commonAuth";
+import { roleIsAtLeast } from "../../../shared/commonTypes";
 
 type SelectionCategory = "" | "home" | "away" 
     | "moderator_status_T" | "moderator_status_K" | "moderator_status_V" | "moderator_status_M";
@@ -39,7 +39,7 @@ type MatchCategoryCardProps = {
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return `${getDayOfWeekStrings(date).short} ${toDDMMYYYY(date)}`;
+    return `${getDayOfWeekStrings(date).short} ${dateToDDMMYYYY(date)}`;
 };
 
 /**

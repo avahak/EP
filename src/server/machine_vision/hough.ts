@@ -194,13 +194,6 @@ class HoughTransform {
         const peaks = map.findPeaks();
         console.log("peaks", peaks);
         return [await (await gsi2.asSharp()).png().toBuffer(), await (await map.visualize(peaks)).png().toBuffer()];
-
-        // let count = gsi2.countAboveThreshold(128);
-        // console.log(`white pixels: ${count}, ${100*count/(gsi2.width*gsi2.height)}%`);
-
-        // console.log(gsi2);
-
-        // return gsi2;
     }
 
 }

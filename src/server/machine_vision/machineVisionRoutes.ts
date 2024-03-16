@@ -1,5 +1,6 @@
 /**
  * Reittejä konenäköön liittyen.
+ * HUOM! Ei käytössä - nämä voi poistaa tuotantoversiossa.
  */
 
 import express, { Router, Request, Response } from "express";

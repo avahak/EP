@@ -10,7 +10,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useContext, useEffect, useState } from "react";
 import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
-import { dateToISOString, getDayOfWeekStrings, toDDMMYYYY } from '../../../shared/generalUtils';
+import { dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
@@ -224,13 +224,13 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                             {mode == "modify" ?
                             <input
                                 type="date"
-                                value={dateToISOString(new Date(formFields.date))}
+                                value={dateToYYYYMMDD(new Date(formFields.date))}
                                 onChange={(event) => handleSetDate(event.target.value)}
                                 style={{zIndex: 1}}
                             />
                             :
                             <Typography variant='body1'>
-                                {toDDMMYYYY(new Date(formFields.date))}
+                                {dateToDDMMYYYY(new Date(formFields.date))}
                             </Typography>
                         }
                     </Box>

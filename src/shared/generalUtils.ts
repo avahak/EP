@@ -1,12 +1,24 @@
 /**
+ * Sekalaisia yleiseen käyttöön tarkoitettuja apufunktioita, esimerkiksi
+ * päivämäärämuunnoksia.
+ */
+
+/**
  * Palauttaa annetun Date olion merkkijonona muodossa YYYY-MM-DD.
  */
-const dateToISOString = (date: Date) => {
+const dateToYYYYMMDD = (date: Date) => {
     // return date.toISOString().split('T')[0];     // ei oikein (aikavyöhykkeet)!
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${year}-${month}-${day}`;
+};
+
+/**
+ * Muuttaa muodossa YYYY-MM-DD annetun merkkijonon Date olioksi.
+ */
+const dateFromYYYYMMDD = (dateString: string) => {
+    return new Date(dateString);
 };
 
 /**
@@ -18,24 +30,17 @@ function deepCopy(object: any) {
 }
 
 /**
- * Muuttaa muodossa YYYY-MM-DD annetun merkkijonon Date olioksi.
- */
-const ISOStringToDate = (dateString: string) => {
-    return new Date(dateString);
-}
-
-/**
  * Palauttaa viikonpäivän nimen annetulle ajalle.
  */
 const getDayOfWeekStrings = (date: Date) => {
     const names = [['Sunnuntai', 'Su'], ['Maanantai', 'Ma'], ['Tiistai', 'Ti'], ['Keskiviikko', 'Ke'], ['Torstai', 'To'], ['Perjantai', 'Pe'], ['Lauantai', 'La']];
     return { long: names[date.getDay()][0], short: names[date.getDay()][1] };
-}
+};
 
 /**
  * Palauttaa päivämäärän muodossa DD.MM.YYYY.
  */
-const toDDMMYYYY = (date: Date) => {
+const dateToDDMMYYYY = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -47,12 +52,12 @@ const toDDMMYYYY = (date: Date) => {
  */
 function pickRandomDistinctElements(arr: any[], count: number) {
     const shuffledArray = [...arr];
-    // sekoitetaaan shuffledArray täysin satunnaiseen järjestykseen:
+    // Sekoitetaaan shuffledArray täysin satunnaiseen järjestykseen:
     for (let i = shuffledArray.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
     }
-    // palautetaan count ensimmäistä:
+    // Palautetaan count ensimmäistä:
     return shuffledArray.slice(0, count);
 }
 
@@ -79,6 +84,9 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     return 0;
 }
 
+/**
+ * Nouseva tai laskeva järjestys.
+ */
 type Order = 'asc' | 'desc';
 
 /**
@@ -96,7 +104,7 @@ function getComparator<Key extends keyof any>(order: Order, orderBy: Key): (
 
 /**
  * Primitiivinen hash-funktio serializable objekteille.
- * HUOM! Vain testauskäyttöön!
+ * HUOM! Vain testauskäyttöön, parempia toteutuksia löytyy kirjastoista.
  */
 function crudeHash(obj: any) {
     const s = JSON.stringify(obj);
@@ -110,7 +118,7 @@ function crudeHash(obj: any) {
 }
 
 /**
- * Muutetaan serializable objekti JSON muotoon ja käytetään base64 encoding.
+ * Muutetaan serializable objekti JSON muotoon ja käytetään koodataan base64.
  */
 function base64JSONStringify(obj: any) {
     const s = JSON.stringify(obj);
@@ -118,7 +126,7 @@ function base64JSONStringify(obj: any) {
 }
 
 /**
- * Palauttaa base64JSONStringify muunnetun objekti takaisin alkuperäiseksi.
+ * Palauttaa base64JSONStringify muunnetun objektin takaisin alkuperäiseksi.
  */
 function base64JSONparse(s64: string) {
     const s = atob(s64);
@@ -127,7 +135,7 @@ function base64JSONparse(s64: string) {
 
 /**
  * Palauttaa uniikin merkkijonon.
- * Käytä tämän sijasta esim. crypto.randomUUID() jos käyttötarkoitus on tärkeä.
+ * HUOM! Käytä tämän sijasta esim. crypto.randomUUID() jos käyttötarkoitus on tärkeä.
  */
 function createRandomUniqueIdentifier() {
     return Date.now().toString() + Math.random().toString().slice(2);
@@ -137,7 +145,7 @@ function createRandomUniqueIdentifier() {
  * Palauttaa satunnaisen kokonaisluvun annetulta kokonaislukuväliltä.
  */
 function randomIntBetween(minValue: number, maxValue: number) {
-    if (!Number.isInteger(minValue) || !Number.isInteger(maxValue))
+    if (!Number.isInteger(minValue) || !Number.isInteger(maxValue) || minValue > maxValue)
         throw Error("Invalid range.");
     return minValue + Math.floor(Math.random()*(1+maxValue-minValue));
 }
@@ -172,8 +180,8 @@ function formatTimeDifference(timestamp: number): string {
     return `${direction}${formattedTime.toFixed(1)}${timeUnit}`;
 }
 
-export { dateToISOString, ISOStringToDate, pickRandomDistinctElements, 
-    getDayOfWeekStrings, toDDMMYYYY, extractKeys, getComparator, deepCopy,
+export type { Order };
+export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
+    getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
     randomIntBetween, formatTimeDifference };
-export type { Order };

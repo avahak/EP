@@ -1,10 +1,14 @@
+/**
+ * Virheenkäsittelyä ja lokitiedoston kirjoitusta serverille.
+ */
+
 import fs from 'fs';
 import { Express, NextFunction, Request, Response } from 'express';
 import winston from 'winston';
 
 const MB = 1024*1024;
 
-const BASE_URL = process.env.BASE_URL || "";
+// const BASE_URL = process.env.BASE_URL || "";
 const LOG_FILE_DIRECTORY = process.env.LOG_FILE_DIRECTORY || '.';
 
 // Luodaan hakemisto lokitiedostoille, jos ei vielä olemassa.
@@ -52,24 +56,23 @@ const logger = winston.createLogger({
  */
 function initializeErrorHandling(app: Express) {
     // Vain testausta varten: 
-    // TODO poista nämä reitit
-    app.get(BASE_URL + '/throw_sync_error', (_req, _res) => {
-        throw Error('Sync error');
-    });
-    app.get(BASE_URL + '/throw_async_error', async (_req, _res) => {
-        throw Error('Async error');
-    });
+    // app.get(BASE_URL + '/throw_sync_error', (_req, _res) => {
+    //     throw Error('Sync error');
+    // });
+    // app.get(BASE_URL + '/throw_async_error', async (_req, _res) => {
+    //     throw Error('Async error');
+    // });
 
     // Globaali virheenkäsittely:
     app.use((err: Error, _req: Request, res: Response, _next: NextFunction): any => {
-        logger.error("global error handler:", err);
+        logger.error("Global error handler:", err);
         res.status(500).send('Something went wrong.');
     });
 
     // Tapahtumankuuntelija, joka sieppaa käsittelemättömät lupaus-hylkäämiset:
     // HUOM! Pysäyttää serverin.
     process.on('unhandledRejection', (reason, _promise) => {
-        logger.error("unhandledRejection causes server crash:", reason);
+        logger.error("UnhandledRejection causes server crash:", reason);
         // Pysäytetään serveri:
         process.exit(1);
     });

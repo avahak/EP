@@ -10,11 +10,12 @@ import { logger } from '../serverErrorHandler.js';
 /**
  * Tämä on yksinkertainen .sql tiedostojen lukija, joka erottelee tekstin 
  * yksittäisiin kyselyihin.
- * HUOM! VAROITUS! Toimii karkeasti ja saattaa tehdä virheitä. Yleisempää käyttöä
- * varten tulee käyttää omistettua kirjastoa, joka tukee monimutkaisempia 
- * SQL-tiedostoja ja toimii varmemmin.
+ * HUOM! VAROITUS! Älä luota tämän toimintaan tarkistamatta. Toimii karkeasti 
+ * ja saattaa tehdä virheitä. Yleisempää käyttöä varten tulee käyttää tarkoitukseen
+ * omistettua kirjastoa, joka tukee monimutkaisempia SQL-tiedostoja ja toimii varmemmin.
  */
 function parseSqlFileContent(sqlFileContent: string): string[] {
+    // poistetaan kommentit:
     let str = sqlFileContent.replace(/(\/\*[\s\S]*?\*\/|--[^\r\n]*)/gm, '');
 
     let currentDelimiter = ';';   // oletusarvoinen DELIMITER
@@ -85,12 +86,13 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
  *      stage=2 (proseduurien ja herättimien luonti)
  *      stage=3 (testidatan luonti ja lisäys tietokantaan).
  * Koko tietokanta luodaan kutsumalla ensin parametrilla stage=1, sitten 2 ja 3.
- * HUOM! Käytä varovaisesti, tuhoaa tietoa!
+ * HUOM! Käytä varovaisesti, tuhoaa tietoa! Vain testikäyttöön, poista tuotantoversiosta.
  */
 async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, databaseName: string, stage: number) {
     console.log(`starting recreateDatabase ${databaseName} stage ${stage}..`);
     try {
         if (stage == 1) {
+            // stage 1: vanhan tietokannan poisto ja uuden luominen tauluineen:
             let sqlFile = fs.readFileSync(`src/server/database/sql_tables.sql`, 'utf-8');
             const queries = parseSqlFileContent(sqlFile);
 
@@ -110,6 +112,7 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
             }
             // console.log(queries);
         } else if (stage == 2) {
+            // stage 2: proseduurien ja triggerien lisäys:
             let sqlFile1 = fs.readFileSync(`src/server/database/sql_tulokset_1.sql`, 'utf-8');
             let sqlFile2 = fs.readFileSync(`src/server/database/sql_tulokset_2.sql`, 'utf-8');
             let sqlFile3 = fs.readFileSync(`src/server/database/sql_procedures.sql`, 'utf-8');
@@ -139,12 +142,8 @@ async function recreateDatabase(pool: mysql.Pool, poolNoDatabase: mysql.Pool, da
                 // connection.release();
             }
         } else if (stage == 3) {
+            // stage 3: testidatan lisäys:
             await generateAndInsertToDatabase(pool);
-
-            // const data = generateFakeData();
-            // const filePath = path.join(miscDirectory, `db_data.json`);
-            // fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
-            // Jos tiedosto vielä halutaan, luo callback ja callback kirjoittaa tiedoston.
         }
         console.log(`done with: recreateDatabase ${databaseName} stage ${stage}`);
     } catch (error) {

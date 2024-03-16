@@ -1,5 +1,9 @@
+/**
+ * GrayscaleImage luokka mustavalkoisten kuvien käsittelemiseen ja funktio 
+ * createThumbnail esikatselukuvan luomiseksi.
+ */
+
 import sharp from 'sharp';
-// import jsfeat from 'jsfeat';
 
 /**
  * GrayscaleImage on luokka mustavalkoisten kuvien tallentamiseen ja käsittelemiseen.
@@ -158,16 +162,12 @@ class GrayscaleImage {
     }
 
     /**
-     * Laskee kuvassa olevien pixelien määrän, jotka ovat annetun kynnyksen yläpuolella.
+     * Laskee kuvassa olevien pikselien määrän, jotka ovat annetun kynnyksen yläpuolella.
      */
     countAboveThreshold(threshold: number) {
         return this.buffer.reduce((count, pixelValue) => 
             (pixelValue > threshold ? count + 1 : count), 0);
     }
-
-    // toString() {
-    //     return `GrayscaleImage(width=${this.width}, height=${this.height})`;
-    // }
 }
 
 /**

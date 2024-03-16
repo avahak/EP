@@ -19,7 +19,7 @@ import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimeDifference } from '../../../shared/generalUtils';
 import { decodeToken } from 'react-jwt';
-import { AuthTokenPayload } from '../../../shared/commonAuth';
+import { AuthTokenPayload } from '../../../shared/commonTypes';
 
 // Side menu with List (not in use):
 // const MenuList: React.FC<{ onClose: () => void }> = ({ onClose }) => {

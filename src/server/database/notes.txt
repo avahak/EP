@@ -1,5 +1,0 @@
-- Katso Azure ohjeet tietokantayhteydelle:
-  https://learn.microsoft.com/en-us/azure/mysql/single-server/connect-nodejs?tabs=windows
-
-- SQL triggers tutorials:
-    https://www.youtube.com/watch?v=jVbj72YO-8s

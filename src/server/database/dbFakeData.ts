@@ -1,12 +1,13 @@
 /**
- * Testauksessa käytettävän tietokannan luonti ja testidatan generointi.
- * Apuna käytetään faker-kirjastoa (https://fakerjs.dev/).
- * HUOM: Älä käytä faker-kirjastoa React puolella, se vie paljon tilaa.
+ * Testauksessa käytettävän testidatan generointi ja syöttö tietokantaan.
+ * Apuna käytetään faker-kirjastoa (https://fakerjs.dev/) keksimään esim. nimiä.
+ * HUOM! Tätä käytetään ainoastaan testausvaiheessa, tuotantoversiossa ei tarpeen.
+ * HUOM! Älä käytä faker-kirjastoa React puolella, se vie paljon tilaa.
  */
 
 import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
-import { dateToISOString, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
+import { dateToYYYYMMDD, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
 
 const RAVINTOLAT = 7;       // max 7
 const MIN_KAUSI = 37;
@@ -19,8 +20,6 @@ const MAX_PLAYERS_IN_TEAM = 6;
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
  */
 function generate_raflat() {
-    // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
-    // const names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX']];
     let names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     names = names.slice(0, Math.min(RAVINTOLAT, names.length));
 
@@ -172,7 +171,7 @@ function generate_pelaajat_jasenet_users(joukkueet: any[]) {
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_ottelu tauluun.
- * HUOM:
+ * Merkinnät:
  *      T = Tuleva 
  *      K = Kotijoukkueen ilmoittama,
  *      V = Vierasjoukkueen korjaama,
@@ -451,7 +450,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             batch = data.ottelut.map((ottelu) => {
                 return [
                     ottelu.lohko+1,
-                    dateToISOString(ottelu.paiva),
+                    dateToYYYYMMDD(ottelu.paiva),
                     ottelu.koti+1,
                     ottelu.vieras+1,
                     ottelu.status
@@ -487,7 +486,8 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             await connection.query(sql, [batch]);
             console.log(`ep_erat batch n=${batch.length}, first: ${batch[0]}`);
 
-            // Kutsu procedure_update_all_from_erat kaikille lisätyille riveille:
+            // Kutsu procedure_update_all_old_from_all_erat_slow, joka päivittää
+            // johdettuja tuloskenttiä:
             sql = `CALL procedure_update_all_old_from_all_erat_slow`;
             await connection.query(sql);
             console.log(`\"CALL procedure_update_all_old_from_all_erat_slow\" finished`);

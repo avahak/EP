@@ -1,7 +1,20 @@
+/**
+ * Funktiot ottelupöytäkirjan datan muuntamiseen serverillä käytettävään muotoon
+ * ja sen validoimiseen serverillä.
+ * HUOM! Tulisi refaktoroida ja yhdistää frontend ottelupöytäkirjan käsittelyn kanssa
+ * koska nämä eivät muodosta yhtenäistä kokonaisuutta ja on päällekkäisyyttä.
+ */
+
 import { ScoresheetFields } from "../client/components/scoresheet/scoresheetTypes";
 import { checkGameResults } from "../client/utils/matchTools";
 
+/**
+ * Ottelupöytäkirjan symbolien muttaminen kirjoitetusta muodosta tietokannassa käytettävään.
+ */
 const symbols = {"1": 1, "A": 2, "9": 3, "K": 4, "C": 5, "V": 6};
+/**
+ * Ottelupöytäkirjan symbolien tietokannassa käytettävästä muodosta kirjoitettuun muotoon.
+ */
 const symbolsInverted = {1: "1", 2: "A", 3: "9", 4: "K", 5: "C", 6: "V"};
 
 /**
@@ -78,14 +91,18 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
 /**
  * Tarkistetaan, että lähetetyt tiedot vastaavat oikein täytettyä lomaketta.
  */
-function isValidateParsedMatch(match: any) {
+function isValidParsedMatch(match: any) {
     try {
+        // Pelaajat tulevat olla erillisiä ja ainoastaan viimeinen pelaaja voi olla tyhjä:
         if (match.playersHome[0] == -1 || match.playersHome[1] == -1 
             || match.playersAway[0] == -1 || match.playersAway[1] == -1
             || match.playersHome[0] == match.playersHome[1] || match.playersHome[0] == match.playersHome[2]
             || match.playersHome[1] == match.playersHome[2] || match.playersAway[0] == match.playersAway[1]
             || match.playersAway[1] == match.playersAway[2] || match.playersAway[0] == match.playersAway[2])
             return false;
+
+        // Tarkistetaan erätuloksien oikeellisuutta muuntamalla ensin takaisin
+        // Scoresheet muotoon ja sitten kutsumalla checkGameResults:
         for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
             const playerId1 = match.playersHome[Math.floor(gameIndex / 3)];
             const playerId2 = match.playersAway[gameIndex % 3];
@@ -120,4 +137,4 @@ function isValidateParsedMatch(match: any) {
     return true;
 }
 
-export { parseMatch, isValidateParsedMatch };
+export { parseMatch, isValidParsedMatch };

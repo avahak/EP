@@ -8,7 +8,7 @@
 --     ep_ottelu: ktulos, vtulos
 --     ep_pelaaja: v_era, h_era, v_peli, h_peli, pelit
 --     ep_sarjat: v_era, h_era, v_peli, h_peli, ottelu, voitto, tappio.
--- HUOM! _tulokset tauluja ei tässä muuteta tai käytetä.
+-- HUOM! _tulokset tauluja ei tässä tiedostossa muuteta tai käytetä.
 -- 
 -- Proseduuria ei kutsuta automaattisesti vaan sitä käytetään kutsumalla
 -- manuaalisesti tulosten hyväksymisen yhteydessä.

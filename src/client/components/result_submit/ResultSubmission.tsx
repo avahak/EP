@@ -16,7 +16,7 @@ import { fetchMatchData } from "../../utils/matchTools";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresheet/scoresheetTypes";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
-import { AuthError, roleIsAtLeast } from "../../../shared/commonAuth";
+import { AuthError, roleIsAtLeast } from "../../../shared/commonTypes";
 
 type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
     "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";

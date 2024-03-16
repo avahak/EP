@@ -1,9 +1,16 @@
 /**
  * Live tulospalveluun liittyvät reitit ja muu tarvittava.
+ * Perusidea on käyttää https://en.wikipedia.org/wiki/Server-sent_events .
+ * Livenä ilmoitettavia otteluita seurataan kuvauksessa
+ * liveMatches ja otteluita seuraavia yhteyksiä pidetään kirjaa kuvauksessa
+ * liveConnections. Jokainen arvo liveConnections vastaa yhtä EvenSource 
+ * yhteyttä, joka pidetään koko ajan auki. Kun otteluihin tulee muutoksia,
+ * niitä vastaaviin yhteyksiin kirjoitetaan uusia tuloksia. Pitkään
+ * kestäneitä otteluita ja yhteyksiä siivotaan periodisesti pois.
  * 
- * TODO! Tarkista että koodi on thread-safe!!!
+ * TODO! Tarkista että koodi on thread-safe!
  * 
- * HUOM! Tietorakenteet ja muu menettely voi toteuttaa usealla eri tavalla.
+ * HUOM! Tietorakenteet ja menettely voidaan toteuttaa usealla eri tavalla.
  * Nyt käytössä oleva koodi on tehty mahdollisimman yksinkertaiseksi. Jos koodin
  * tehokkuus tai tietoliikenteen määrä tulee ongelmaksi, niitä voi parantaa usealla 
  * tavalla.
@@ -11,9 +18,9 @@
 
 import express, { Router } from 'express';
 import { base64JSONStringify, createRandomUniqueIdentifier } from '../shared/generalUtils.js';
-import { LiveMatchEntry } from '../shared/commonTypes.js';
 import { currentScore } from '../client/utils/matchTools.js';
-// import { logger } from '../server/serverErrorHandler.js';
+import { LiveMatchEntry } from '../shared/commonTypes.js';
+import { injectAuth, requireAuth } from './auth/auth.js';
 
 const router: Router = express.Router();
 
@@ -23,11 +30,27 @@ const MINUTE_ms = 60*SECOND_ms;
 //@ts-ignore
 const HOUR_ms = 60*MINUTE_ms;
 
-const MAINTENANCE_INTERVAL = 5*MINUTE_ms;
-const MAX_LIVE_CONNECTION_DURATION = 6*HOUR_ms;
-const MAX_LIVE_MATCH_DURATION = 6*HOUR_ms;
+/**
+ * Aikaväli, jolla ajetaan siivoustoimenpiteitä.
+ */
+const MAINTENANCE_INTERVAL = 10*MINUTE_ms;
+/**
+ * Maksimiaika live ottelun seuraamiseen ennen yhteyden siivoamista pois.
+ */
+const MAX_LIVE_CONNECTION_DURATION = 8*HOUR_ms;
+/**
+ * Maksimiaika live ottelun ilmoittamiseen. 
+ */
+const MAX_LIVE_MATCH_DURATION = 8*HOUR_ms;
+/**
+ * Maksimiaika live tulosten ilmoittamisessa oleville päivittämisväleille.
+ * Jos mitään muutoksia ei tule tässä ajassa, ottelu siivotaan pois.
+ */
 const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR_ms;
 
+/**
+ * Tyyppi ottelun seuraamiseen käytettävälle yhteydelle.
+ */
 type LiveConnection = {
     startTime: number;
     matchId: number | undefined;
@@ -36,9 +59,13 @@ type LiveConnection = {
 
 /**
  * Kuvaus, jonka avulla aktiiviset live yhteydet pidetään muistissa.
+ * Avain on merkityksetön satunnainen merkkijono.
  */
 const liveConnections: Map<string, LiveConnection> = new Map();
 
+/**
+ * Nämä tiedot talletetaan kustakin seurattavasta live ottelusta.
+ */
 type LiveMatch = {
     startTime: number;
     lastActivity: number;
@@ -47,7 +74,7 @@ type LiveMatch = {
 };
 
 /**
- * Kuvaus (ep_ottelu.id) -> LiveMatch.
+ * Live ottelut, kuvaus (ep_ottelu.id) -> LiveMatch.
  */
 const liveMatches: Map<number, LiveMatch> = new Map();
 
@@ -79,14 +106,14 @@ function sendMatchList(connectionId: string, matchList: any[]) {
  * 
  * HUOM! Tässä tehdään ylimääräistä työtä koska jokainen liveConnections
  * käydään läpi mutta tämä on hyvin yksinkertainen ratkaisu. Jos tietoliikennettä 
- * olisi paljon enemmän, tulisi käyttää lisätietorakennetta toimen tehostamiseen.
+ * tulee paljon enemmän, tulee käyttää lisätietorakennetta toimen tehostamiseen.
  */
 function broadcastLiveMatch(matchId: number) {
-    // Käy läpi liveConnections ja kirjoita siihen jos matchId vastaavat.
     const liveMatch = liveMatches.get(matchId);
     if (!liveMatch)
-        return;
-    
+    return;
+
+    // Käy läpi liveConnections ja kirjoita siihen jos matchId vastaavat:
     for (let [connectionId, connection] of liveConnections) {
         if (connection.matchId != matchId)
             continue;
@@ -101,7 +128,7 @@ function createMatchList() {
     const matchList: LiveMatchEntry[] = [];
     for (const [matchId, liveMatch] of liveMatches) {
         const startTimeAsDate = new Date(liveMatch.startTime);
-        matchList.push({ matchId: matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
+        matchList.push({ matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
     }
     return matchList;
 }
@@ -119,10 +146,12 @@ function broadcastMatchList() {
 /**
  * Vastaanottaa keskeneräisen pöytäkirjan live-seurantaa varten.
  */
-router.post('/submit_match', async (req, res) => {
+router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
     if (!req.body.result)
-        res.status(400).send(`Missing result`);
+        return res.status(400).send(`Missing result.`);
     const result = req.body.result;
+    if (result.status !== "T")
+        return res.status(400).send(`Invalid result.`);
     const score = currentScore(result);
 
     const matchId = result.id;
@@ -160,12 +189,13 @@ router.post('/submit_match', async (req, res) => {
 });
 
 /**
- * Palauttaa listan liveMatches otteluista
+ * Palauttaa listan liveMatches otteluista.
+ * Ei käytössä, tämän korvaa /watch_match reitti.
  */
-router.get('/get_match_list', async (_req, res) => {
-    const matchList = createMatchList();
-    res.json({ data: matchList });
-});
+// router.get('/get_match_list', async (_req, res) => {
+//     const matchList = createMatchList();
+//     res.json({ data: matchList });
+// });
 
 /**
  * Alustetaan uusi SSE-yhteys live-seurantaa varten.
@@ -181,7 +211,7 @@ router.get('/watch_match/:matchId?', async (req, res) => {
             liveMatch = liveMatches.get(matchId);
     }
 
-    // Headers SSE varten:
+    // Headerit SSE varten:
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -194,7 +224,7 @@ router.get('/watch_match/:matchId?', async (req, res) => {
     if (liveMatch)
         sendLiveMatch(connectionId, liveMatch);
 
-    // Handle client disconnect
+    // Käsitellään client disconnect:
     req.on('close', () => {
         liveConnections.delete(connectionId);
     });
@@ -202,12 +232,11 @@ router.get('/watch_match/:matchId?', async (req, res) => {
     console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
 });
 
-// Asetetaan periodisesti toistuva tehtävä SSE varten: poistetaan vanhentuneet
-// yhteydet ja live-ottelut.
+// Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet ja live-ottelut.
 setInterval(() => {
     const now = Date.now();
 
-    // Poistetaan liian vanhat liveMatches:
+    // Poistetaan liian vanhat ja epäaktiiviset liveMatches:
     const liveMatchesToDelete = [];
     for (const [matchId, liveMatch] of liveMatches) {
         if ((now - liveMatch.lastActivity > MAX_LIVE_MATCH_INACTIVITY) 
@@ -229,8 +258,7 @@ setInterval(() => {
     for (let key of liveConnectionsToDelete)
         liveConnections.delete(key);
 
-    console.log("#liveMatches: ", liveMatches.size, "#liveConnections: ", liveConnections.size);
-
+    // console.log("#liveMatches: ", liveMatches.size, "#liveConnections: ", liveConnections.size);
 }, MAINTENANCE_INTERVAL);
 
 export default router;

@@ -1,8 +1,11 @@
 /**
- * Express.js serverin luonti.
+ * Express.js serverin luonti. Serveri välittää staattiset tiedostot, mukaanlukien
+ * React frontendin. Se vastaa myös API-pyyntöihin tietokantadatan välittämiseksi
+ * frontendille.
+ * 
  * HUOM! Tulee olla tarkkana eri app.use ja reittien lisäyksen järjestyksen kanssa!
  * 
- * HTTP status lista, ks. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+ * HTTP status muistilista, ks. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
  * --- Ranges ---
  * 100-199: Informational responses
  * 200-299: Successfull responses
@@ -25,7 +28,7 @@
 // Ladataan ympäristömuuttuja ennen muuta koodia, jotta ne ovat käytössä import komennoille:
 import dotenv from 'dotenv';
 dotenv.config();
-// Tarkistetaan myös, että muutama tärkein ympäristömuuttuja on määritelty:
+// Tarkistetaan myös, että ainakin muutama tärkein ympäristömuuttuja on määritelty:
 if (!process.env.PORT || !process.env.SECRET_KEY || !process.env.KULUVA_KAUSI 
     || !process.env.DB_NAME)
     throw new Error('Missing an environment variable, check server configuration.');
@@ -47,32 +50,33 @@ const app = express();
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL || "";
 
-// Käytetään Helmet kirjastoa parantamaan turvallisuutta, asettaa HTTP headereita:
+// Käytetään Helmet kirjastoa parantamaan tietoturvaa, asettaa esim. HTTP headereita:
 app.use(helmet());
-// Kaikki reitit käyttävät CORS-politiikkaa:
+// Sallitaan CORS-pyynnöt kaikille lähteille:
 app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
 
-// Välitä staattisia tiedostoja 'dist' hakemistosta
+// Välitä staattisia tiedostoja 'dist' hakemistosta:
 app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist'), {
-    // 3600000 on yksi tunti. Huom. Tämän voi poistaa production versiossa
+    // maxAge on maksimiaika selaimen välimuistin käytölle (3600000 on yksi tunti). 
+    // Huom! Tämän voi poistaa tuotantoversiossa.
     maxAge: 2 * 3600000
 }));
 
 // Lisätään live tulospalvelun reitit:
 app.use(BASE_URL + '/api/live', liveScoreRouter);
-// Lisätään konenäön reitit:
+// Lisätään konenäön reitit (voi poistaa tuotantoversiossa):
 app.use(BASE_URL + '/api/vision', machineVisionRouter);
 // Lisätään reitit tietokannan käsittelyyn:
 app.use(BASE_URL + '/api/db', databaseRouter);
 // Lisätään autentikaatioon liittyvät reitit:
 app.use(BASE_URL + '/auth', authRouter);
-// Lisätään sekalaiset reitit:
+// Lisätään sekalaiset reitit (voi poistaa tuotantoversiossa):
 app.use(BASE_URL + '/api', generalRouter);
 
 /**
- * Muissa reiteissä käytetään Reactin omaa reititystä.
+ * Muissa reiteissä käytetään Reactin omaa reititystä:
  */
 const wildcard = BASE_URL ? `${BASE_URL}/*` : '*';
 app.get(wildcard, (_req, res) => {
@@ -84,5 +88,5 @@ initializeErrorHandling(app);
 
 // Käynnistetään express.js serveri:
 app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}`);
+    logger.info(`Server is running on port ${PORT}.`);
 });
