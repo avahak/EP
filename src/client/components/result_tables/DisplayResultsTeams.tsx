@@ -1,5 +1,5 @@
 /**
- * Testisivu joukkueiden tulosten esittämiselle.
+ * Sivu joukkueiden tulosten esittämiselle.
  */
 
 import { useInitialServerFetch } from "../../utils/apiUtils";
@@ -31,7 +31,6 @@ const DisplayResultsTeams: React.FC = () => {
 
     return (
         <>
-        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
         {resultsOld.status.ok ?

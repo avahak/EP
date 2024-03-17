@@ -7,12 +7,17 @@ type LiveMatchCardProps = {
     selected: boolean;
 };
 
+// Ajan muotoilu tekstiksi:
 const timeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false, // Use 24-hour format
+    hour12: false, 
 });
 
+/**
+ * Kortti esittämään yhtä live ottelua. Siinä on joukkueet, tulos, ja 
+ * kirjauksen aloitusaika.
+ */
 const LiveMatchCard: React.FC<LiveMatchCardProps> = (({ entry, onSelect, selected }) => {
     const startTime = timeFormatter.format(new Date(entry.submitStartTime));
     return (
@@ -28,7 +33,12 @@ const LiveMatchCard: React.FC<LiveMatchCardProps> = (({ entry, onSelect, selecte
                 <Typography textAlign="center" fontWeight="bold" variant="h6">{`${entry.home} - ${entry.away}`}</Typography>
                 <Typography textAlign="center" fontWeight="bold" variant="h6">{`${entry.score[0]} - ${entry.score[1]}`}</Typography>
                 <Divider sx={{m: 1}} />
-                <Typography sx={{ whiteSpace: "wrap" }} variant="body2">{`Kirjaus aloitettu kello ${startTime}`}</Typography>
+                <Typography 
+                    sx={{ whiteSpace: "wrap" }} 
+                    variant="body2"
+                >
+                    {`Kirjaus aloitettu kello ${startTime}`}
+                </Typography>
             </CardContent>
         </Card>
       );

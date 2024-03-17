@@ -1,3 +1,8 @@
+/**
+ * Esimerkki Google Vision API vastauksesta. 
+ * HUOM! Ei käytössä tuotantoversiossa.
+ */
+
 import axios from 'axios';
 import { useEffect, useRef } from "react";
 import { getBackendUrl } from "../../utils/apiUtils";

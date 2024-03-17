@@ -1,4 +1,10 @@
 /**
+ * Funktio addMultiSortRankColumn ja siihen liittyvä apufunktiot. Se lisää 
+ * taulumuotoiseen dataan järjestyssarakkeita, joiden avulla data voidaan
+ * järjestää prioriteettijärjestelmällä usean sarakkeen mukaan.
+ */
+
+/**
  * Luo triviaalin järjestyksen, joka ei muuta mitään.
  */
 function createTrivialOrder<T>(data: T[]) {
@@ -66,7 +72,7 @@ function numberColumnComparator<T, K extends keyof T>(sortingKey: K, order: "asc
  * Lisää tietoihin uuden sarakkeen, joka kuvaa rivin sijoitusta monen lajittelusarakkeen 
  * perusteella. Tasatilanteessa oleville riveille annetaan sama sijoitus.
  * Lisää myös newColumnName + "_dense" sarakkeen, missä on vastaava "dense rank".
- * @param sortKeys Järjestämiseen käytettävät sarakkeet, nousevassa tärkeysjärjestyksessä.
+ * @param comparators Järjestämiseen käytettävät vertailufunktiot nousevassa tärkeysjärjestyksessä.
  */
 function addMultiSortRankColumn<T>(data: T[], newColumnName: string, comparators: ((rowA: T, rowB: T) => number)[], addDenseColumn: boolean = false) {
     let order = createTrivialOrder(data);

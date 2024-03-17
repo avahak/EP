@@ -1,5 +1,7 @@
 /**
- * Tyylejä taulujen kustomoinniksi.
+ * Tyylejä taulujen kustomoinniksi minimaalisella tyylillä. 
+ * Näitä käytetään ottelun kirjaamisessa erätuloksien esittämisessä 
+ * (GameDialog.tsx ja RoundResultsTable.tsx komponenteissa).
  */
 
 import { Table, TableCell, TableCellProps, Typography, styled } from "@mui/material";

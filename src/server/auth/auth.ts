@@ -27,7 +27,7 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { logger } from '../serverErrorHandler.js';
 import { encodeJWT, verifyJWT } from "./jwt.js";
-import { AuthTokenPayload, roleIsAtLeast } from "../../shared/commonTypes.js";
+import { AuthTokenPayload, isAuthTokenPayload, roleIsAtLeast } from "../../shared/commonTypes.js";
 import { myQuery } from "../database/dbGeneral.js";
 import { pool } from "../database/dbConnections.js";
 
@@ -50,7 +50,7 @@ const router: Router = express.Router();
  * tarvittaessa tallettaa.
  */
 interface RequestWithAuth extends Request {
-    auth?: AuthTokenPayload; 
+    auth?: AuthTokenPayload | null; 
 };
 
 /**
@@ -65,9 +65,9 @@ const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) =>
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.slice(7);
         const payload = verifyJWT(token);
-        if (payload && typeof payload === 'object') {
+        if (isAuthTokenPayload(payload)) {
             // Lisää payload req objektiin:
-            req.auth = payload as AuthTokenPayload;
+            req.auth = payload;
         }
     }
 
@@ -135,8 +135,8 @@ router.post('/create_access_token', async (req: Request, res: Response) => {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string')
             return res.status(400).send("Missing token.");
         const oldRefreshToken = req.body.refresh_token;
-        const oldRefreshTokenPayload = verifyJWT(oldRefreshToken) as AuthTokenPayload;
-        if (!oldRefreshTokenPayload)
+        const oldRefreshTokenPayload = verifyJWT(oldRefreshToken);
+        if (!isAuthTokenPayload(oldRefreshTokenPayload))
             return res.status(401).send("Unable to verify token.");
 
         // Tarkistetaan käyttäjä tietokannasta. Jos ei löydy, poistetaan

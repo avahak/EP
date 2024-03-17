@@ -1,5 +1,6 @@
 /**
- * Tämä komponentti vastaa yhden pelin kirjaamisesta ottelun ilmoittamiseen.
+ * Tämä komponentti vastaa yhden pelin kirjaamisesta ottelun ilmoittamisen yhteydessä.
+ * Komponentti on dialog ikkuna, jossa erätulokset voi kirjata nappeja painamalla.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -10,11 +11,10 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchTools';
-import './GameDialog.css';
-import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/TableStyles';
+import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/BasicTableStyles';
 import { deepCopy } from '../../../shared/generalUtils';
 import { ScoresheetFields } from './scoresheetTypes';
-// import { SnackbarContext } from '../../utils/SnackbarContext';
+import './GameDialog.css';
 
 type GameDialogState = {
     isOpen: boolean;
@@ -29,6 +29,10 @@ type GameDialogProps = {
     onSubmit: (gameIndex: number, gameResults: string[][]) => void;
 };
 
+/**
+ * Tämä komponentti vastaa yhden pelin kirjaamisesta ottelun ilmoittamisen yhteydessä.
+ * Komponentti on dialog ikkuna, jossa erätulokset voi kirjata nappeja painamalla.
+ */
 const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onSubmit }) => {
     const [results, setResults] = useState<string[][]>([[" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "]])
     const [errorMessage, setErrorMessage] = useState<string>("");
@@ -54,6 +58,9 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
         setCurrentRound(0);
     }
 
+    /**
+     * Asettaa yhden erän tuloksen.
+     */
     const setRoundResult = (round: number, playerIndex: number, result: string) => {
         if (round < 0 || round >= 5)
             return;
@@ -61,7 +68,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
         newResults[playerIndex][round] = result;
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
-        if (result != " ")
+        if (result !== " ")
             setCurrentRound(round+1);
         setErrorMessage("");
     }
@@ -279,6 +286,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 }
 
 
+            {/* "Peruuta" ja "Kirjaa peli" nappulat: */}
             </DialogContent>
             <DialogActions>
                 <Button variant="contained" color="error" onClick={onClose}>

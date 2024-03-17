@@ -1,5 +1,7 @@
 /** 
- * Vain testausta varten, ei käytössä production versiossa.
+ * Simuloi käyttäjän kirjautumista esittämällä käyttäjät linkkeinä ja kun
+ * linkkiä painetaan, kirjautuu sisään käyttäjänä.
+ * HUOM! Vain testausta varten, ei käytössä production versiossa.
  */
 
 import { Fragment, useContext } from "react";
@@ -21,6 +23,9 @@ function assignRandomRole(name: string, team: string) {
     return "-";
 }
 
+/**
+ * Esittää joukkueeseen liittyvät käyttäjät yhtenä korttina.
+ */
 const TeamCard: React.FC<{ team: string, users: string[], onSelectUser: (team: string, user: string, role: string) => void }> = ({ team, users, onSelectUser }) => {
     return (
         <>
@@ -68,10 +73,18 @@ const createTeamMap = (data: any) => {
     return new Map([...teamMap.entries()].sort());
 };
 
+
+/**
+ * Simuloi käyttäjän kirjautumista esittämällä käyttäjät linkkeinä ja kun
+ * linkkiä painetaan, kirjautuu sisään käyttäjänä.
+ */
 const SimulateLogin: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
     const navigate = useNavigate();
 
+    /**
+     * Lista käyttäjistä, haetaan sivun lataamisen yhteydessä.
+     */
     const usersResult = useInitialServerFetch({ 
         route: "/api/db/specific_query", 
         method: "POST",
@@ -80,6 +93,11 @@ const SimulateLogin: React.FC = () => {
         authenticationState: authenticationState,
     });
 
+    /**
+     * Kutsutaan kun käyttäjä valitaan. Simuloi sisäänkirjautumista tai rekisteröitymistä.
+     * Pyytää palvelinta muodostamaan refresh tokenin, jota sitten käytetään 
+     * käyttäjän autentikointiin.
+     */
     const handleSelectUser = (team: string, user: string, role: string) => {
         const fetchToken = async () => {
             try {
@@ -89,12 +107,11 @@ const SimulateLogin: React.FC = () => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ team: team, name: user, role: role }),
-                }, authenticationState);
+                }, null);
                 if (!response.ok) 
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 const jsonData = await response.json();
                 const token = jsonData.token;
-                window.localStorage.setItem("refreshToken", token);
                 authenticationState.setFromRefreshToken(token);
                 console.log("fetchToken done, token:", token);
                 navigate("/");
@@ -126,13 +143,6 @@ const SimulateLogin: React.FC = () => {
                 </Fragment>
             ))}
         </Box>
-        // usersResult.data.rows.map((user: any, index: number) => (
-        //     <Fragment key={`row-${index}`}>
-        //         <Typography variant="body1">
-        //             {user.Nimi}, {user.Joukkue}
-        //         </Typography>
-        //     </Fragment>
-        // ))
         :
         "Ladataan..."}
         </>

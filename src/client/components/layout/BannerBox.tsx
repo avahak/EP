@@ -1,6 +1,9 @@
 import { Box, Paper, Typography } from "@mui/material";
 import React from "react";
 
+/**
+ * Simuloi mainoselementtiä. Nämä korvataan varsinaisilla mainoksilla tuotantoversiossa.
+ */
 const BannerBox: React.FC<{ text: string}> = ({ text }) => {
     return (
         <Paper sx={{width: "175px", height: "125px", m: 1, background: "lightblue"}} elevation={1}>

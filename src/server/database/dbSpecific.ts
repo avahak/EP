@@ -14,7 +14,7 @@ import { logger } from '../serverErrorHandler.js';
  * Palauttaa ottelun pelaajat ja erien tulokset.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
-async function getScores(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getScores(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     // Valitaan pelaajat ja erätulokset annetulle ottelulle:
     const query = `
         SELECT p.kp, p.vp, e.era1, e.era2, e.era3, e.era4, e.era5
@@ -29,7 +29,7 @@ async function getScores(params: Record<string, any>, _auth: AuthTokenPayload) {
  * Palauttaa joukkueen kaikki pelaajat.
  * @param params - Sisältää ep_joukkue.id tiedon kentässä teamId.
  */
-async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     // Valitaan kaikki pelaajat, joiden joukkueen id on teamId:
     const query = `
         SELECT p.id AS id, p.nimi AS name
@@ -43,7 +43,7 @@ async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPay
  * Hakee taulun ep_ottelu perustiedot sen id:n perusteella.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
-async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
@@ -58,7 +58,7 @@ async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload
  * Palauttaa menneet käyttäjän ilmoittamattomat (T) tai 
  * kotijoukkueen ilmoittamat (K) ottelut.
  */
-async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload) {
+async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth)
         throw new AuthError();
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K'
@@ -80,7 +80,7 @@ async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPa
  * Palauttaa kaikki hyväksymättömät (status != 'H') menneet ottelut moderaattorin
  * käsiteltäväksi.
  */
-async function getMatchesToReportModerator(params: Record<string, any>, auth: AuthTokenPayload) {
+async function getMatchesToReportModerator(params: Record<string, any>, auth: AuthTokenPayload | null) {
     console.log("auth", auth);
     if (!auth || !roleIsAtLeast(auth.role, "mod"))
         throw new AuthError();
@@ -101,7 +101,7 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
  * Palauttaa taulukon kaikista otteluista, yleistä testausta varten.
  * Ei käytössä.
  */
-// async function getAllMatches(_params: Record<string, any>, _auth: AuthTokenPayload) {
+// async function getAllMatches(_params: Record<string, any>, _auth: AuthTokenPayload | null) {
 //     const query = `
 //         SELECT o.paiva AS date, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
 //         FROM ep_ottelu o
@@ -116,7 +116,7 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_sarjat taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
         SELECT ep_sarjat.nimi, ep_sarjat.lyhenne, 
             ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
@@ -132,7 +132,7 @@ async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenP
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_joukkue_tulokset taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
         SELECT ep_joukkue.nimi, ep_joukkue.lyhenne, 
             ep_joukkue_tulokset.voitto, ep_joukkue_tulokset.tappio, 
@@ -150,7 +150,7 @@ async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayl
  * eli ei käytä x_tulokset tauluja.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -223,7 +223,7 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
  * Tuloskysely pelaajien tilanteesta, käyttäen _tulokset tauluja.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload) {
+async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -299,7 +299,7 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
  * Ottelun tulosten kirjaaminen.
  * @param params - Sisältää kentän result.
  */
-async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPayload) {
+async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth)
         throw new AuthError();
 
@@ -391,7 +391,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
  * Lisää uuden pelaajan joukkueeseen.
  * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
  */
-async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload) {
+async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | null) {
     // Miten autentikaatio tulisi tarkistaa tässä? Käyttäjän tulee pystyä lisäämään
     // tarvittaessa pelaaja vierasjoukkueeseenkin pöytäkirjan ilmoituksen yhteydessä.
     if (!auth)
@@ -408,7 +408,7 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload) {
  * Hakee listan käyttäjistä userpw taulusta.
  * HUOM! Tämä on vain testikäyttöön, poista production vaiheessa.
  */
-async function getUsers(_auth: AuthTokenPayload) {
+async function getUsers(_auth: AuthTokenPayload | null) {
     const query = `SELECT Nimi, Joukkue FROM userpw`;
     return myQuery(pool, query);
 }

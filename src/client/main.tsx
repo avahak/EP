@@ -1,5 +1,5 @@
 /**
- * Tämä liittää Reactin sivulle.
+ * Tämä liittää React sisällön html sivulle.
  */
 
 // @ts-ignore

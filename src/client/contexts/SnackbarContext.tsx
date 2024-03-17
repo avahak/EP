@@ -1,6 +1,7 @@
 /**
- * SnackbarContext on React conteksti, jonka avulla voidaan luoda
- * ilmoitusviestejä.
+ * SnackbarContext on React konteksti, jonka avulla voidaan luoda
+ * tilapäinen ilmoitusviesti. Snackbar ilmestyy yleensä näytön alareunaan viestilaatikkona
+ * ja antaa käyttäjälle nopeasti tietoa esim. tapahtuman onnistumisesta.
  */
 
 import { Alert, Slide, Snackbar } from '@mui/material';
@@ -9,11 +10,19 @@ import React, { createContext, useState } from 'react';
 type SnackbarState = {
     isOpen: boolean;
     message?: string;
-    severity?: "success" | "error";
+    severity?: "success" | "error";     // Vaikuttaa viestin taustaväriin
     autoHideDuration?: number;
 };
 
-const SnackbarContext = createContext<React.Dispatch<React.SetStateAction<SnackbarState>> | undefined>(undefined);
+// Tämä ei tee mitään, käytössä vain oletusarvona.
+const dummySnackbarStateSetter: React.Dispatch<React.SetStateAction<SnackbarState>> = () => {};
+
+/**
+ * SnackbarContext on React konteksti, jonka avulla voidaan luoda
+ * tilapäinen ilmoitusviesti. Snackbar ilmestyy yleensä näytön alareunaan viestilaatikkona
+ * ja antaa käyttäjälle nopeasti tietoa esim. tapahtuman onnistumisesta.
+ */
+const SnackbarContext = createContext<React.Dispatch<React.SetStateAction<SnackbarState>>>(dummySnackbarStateSetter);
 
 /**
  * Määrittää ilmoitusviestien tilan ja tarjoaa sen sovelluksen laajuiseen käyttöön

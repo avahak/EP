@@ -1,7 +1,13 @@
+/**
+ * GameResultsTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
+ * pelaajien nimet ja pelien lopputulokset ja ottelun tulos mikäli ottelu on
+ * syötetty kokonaan oikein.
+ */
+
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
-import "./GameResultsTable.css";
 import { GameRunningStatRow, playerIndexesToGameIndex } from "../../utils/matchTools";
 import { ScoresheetTeam } from "./scoresheetTypes";
+import "./GameResultsTable.css";
 
 const StyledTable = styled(Table)(({ }) => ({
     border: '2px solid black',
@@ -32,13 +38,14 @@ const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ height }) => 
  * Yksi laatikko pelin lopputuloksen esittämiseksi. Tässä on kummankin
  * pelaajan voittamien pelien määrät (left, right).
  */
-const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) => {
+const DiagonalSplitBox: React.FC<{ left: any; right: any, narrow?: boolean }> = ({left, right, narrow = false}) => {
+    // narrow ei käytössä
     return (
         <Box>
-            <Box className="diagonal-split-box-left">
+            <Box className={narrow ? "diagonal-split-box-left-narrow" : "diagonal-split-box-left"}>
                 {left}
             </Box>
-            <Box className="diagonal-split-box-right">
+            <Box className={narrow ? "diagonal-split-box-right-narrow" : "diagonal-split-box-right"}>
                 {right}
             </Box>
         </Box>
@@ -47,8 +54,8 @@ const DiagonalSplitBox: React.FC<{ left: any; right: any }> = ({left, right}) =>
 
 /**
  * GameResultsTable on ottelun pelien lopputulokset sisältävä laatikko, jossa on
- * pelaajien nimet ja pelien lopputulokset samalla tavalla esitettynä kuin
- * pöytäkirjassa.
+ * pelaajien nimet ja pelien lopputulokset ja ottelun tulos mikäli ottelu on
+ * syötetty kokonaan oikein.
  */
 const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; displayErrors: boolean; teamHome: ScoresheetTeam; teamAway: ScoresheetTeam }> = ({gameRunningStats, displayErrors, teamHome, teamAway}) => {
 
@@ -103,15 +110,26 @@ const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; displ
                                 key={`box-${row}-${col}`}
                                 sx={{backgroundColor: (theme) => cellBackgroundColor(theme, row, col)}}
                             >
-                                {/* <DiagonalSplitBox 
-                                    left={<StyledTableText className="dsb2-left-text">{roundWins[(9-row*2+col*3) % 9][0]}</StyledTableText>}
-                                    right={<StyledTableText className="dsb2-right-text">{roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText>}
-                                /> */}
-                                {/* <StyledTableText>{roundWins[(9-row*2+col*3) % 9][0]} - {roundWins[(9-row*2+col*3) % 9][1]}</StyledTableText> */}
                                 <StyledTableText>
                                     {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[0]} - {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[1]}
                                 </StyledTableText>
                             </StyledTableCell>
+                            // <StyledTableCell 
+                            //     key={`box-${row}-${col}`}
+                            //     sx={{backgroundColor: (theme) => cellBackgroundColor(theme, row, col)}}
+                            //     className="diagonal-split-box-thin"
+                            // >
+                            //     <DiagonalSplitBox narrow
+                            //         left={
+                            //             <StyledTableText variant="body1" fontWeight="bold">
+                            //                 {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[0]}
+                            //             </StyledTableText>}
+                            //         right={
+                            //             <StyledTableText variant="body1" fontWeight="bold">
+                            //                 {gameRunningStats[playerIndexesToGameIndex(row, col)].roundWins[1]}
+                            //             </StyledTableText>}
+                            //     />
+                            // </StyledTableCell>
                         ))}
                     </TableRow>
                 ))}

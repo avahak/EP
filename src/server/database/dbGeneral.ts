@@ -1,5 +1,5 @@
 /**
- * Tässä tiedostossa on tietokannan yleiseen käsittelyyn ja luontiin liittyviä funktioita.
+ * Tietokannan yleiseen käsittelyyn ja luontiin liittyviä funktioita.
  */
 
 import fs from 'fs';

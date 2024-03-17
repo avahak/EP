@@ -2,6 +2,8 @@
  * Yhteisiä tietorakenteita ja apufunktioita. 
  */
 
+import { decodeToken } from "react-jwt";
+
 /**
  * Tyyppi, jota käytetään live otteluiden listassa kun se lähetetään serveriltä.
  */
@@ -23,7 +25,39 @@ type AuthTokenPayload = {
     role: string,       // käyttäjän rooli, voi olla "admin", "mod", tai muu
     iat: number,        // aikaleima, jolloin token annettu
     exp: number,        // aikaleima, jolloin token vanhentuu
-} | null;
+};
+
+/** 
+ * Tarkistetaan, että payload on AuthTokenPayload.
+ */
+function isAuthTokenPayload(payload: any): payload is AuthTokenPayload {
+    return (
+        typeof payload === "object" &&
+        typeof payload.name === "string" &&
+        typeof payload.team === "string" &&
+        typeof payload.role === "string" &&
+        typeof payload.iat === "number" &&
+        typeof payload.exp === "number"
+    );
+}
+
+/**
+ * Palauttaa tokenin payload jos token on validi ja sisältää oikeat kentät.
+ * HUOM! Ei varmenna tokenia, lukee vain sen payloadin.
+ * HUOM! Muista pitää tämä ajan tasalla jos token muuttuu.
+ */
+function getAuthTokenPayload(token: any): AuthTokenPayload | null {
+    if (!token || typeof token !== "string")
+        return null;
+    try {
+        const payload = decodeToken(token);
+        if (isAuthTokenPayload(payload))
+            return payload;
+    } catch (error) {
+        return null;
+    }
+    return null;
+}
 
 /**
  * Virheilmoitus, jota voidaan käyttää kun käyttäjän antama
@@ -53,4 +87,4 @@ function roleIsAtLeast(role: string | null, minRole: string | null) {
 }
 
 export type { AuthTokenPayload, LiveMatchEntry };
-export { roleIsAtLeast, AuthError };
+export { roleIsAtLeast, AuthError, isAuthTokenPayload, getAuthTokenPayload };

@@ -4,6 +4,7 @@ import { ResultTable } from "../tables/ResultTable";
 
 /**
  * Joukkueiden sarjatilanne taulukko.
+ * TODO Poista "Pelit V-H" ja "Erät V-H" sarakkeet kapealla näytöllä?
  */
 const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableName }) => {
     const table = [];
@@ -24,10 +25,10 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
         table.push(newRow);
     }
 
+    // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "pisteet">("pisteet", "desc"), 
     ];
-
     addMultiSortRankColumn(table, "sija", comparators, true);
 
     const headCells = [

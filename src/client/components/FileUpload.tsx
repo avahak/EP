@@ -5,8 +5,8 @@ import { getBackendUrl } from "../utils/apiUtils";
 import { AuthenticationContext } from '../contexts/AuthenticationContext';
 
 /**
- * Komponentti tiedostojen lataamiseen palvelimelle käyttäen server.ts /api/uload
- * reittiä.
+ * Komponentti tiedostojen lataamiseen palvelimelle.
+ * HUOM! Ei käytössä tuotantoversiossa, vain primitiivinen kehitystyökalu.
  */
 const FileUpload: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
@@ -50,12 +50,12 @@ const FileUpload: React.FC = () => {
         <>
         <Link to="/">Back</Link>
         <div style={{padding: "10px"}}>
-        <h1>Upload image/file</h1>
-        <form onSubmit={onFormSubmit}>
-        <input type="file" onChange={handleFileChange} />
-        <button type="submit">Upload</button>
-        {message && <p>{message}</p>}
-        </form>
+            <h1>Upload image/file</h1>
+            <form onSubmit={onFormSubmit}>
+                <input type="file" onChange={handleFileChange} />
+                <button type="submit">Upload</button>
+                {message && <p>{message}</p>}
+            </form>
         </div>
         </>);
 };

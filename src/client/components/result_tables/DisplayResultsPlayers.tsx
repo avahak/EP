@@ -1,6 +1,7 @@
 /**
- * Testisivu pelaajien tulosten esittämiselle.
- * Tabs lähde: https://mui.com/material-ui/react-tabs/
+ * Sivu pelaajien tulosten esittämiselle.
+ * TODO Masters pörssi puuttuu, onko kaikki tarvittava info tietokannassa?
+ * Material UI Tabs pohjana käytetty: https://mui.com/material-ui/react-tabs/
  */
 
 import { crudeHash, deepCopy, extractKeys } from "../../../shared/generalUtils";
@@ -17,7 +18,8 @@ type TabPanelProps = {
 
 /**
  * Yhdistää ep_pelaaja (rows1), kotivoitot ep_erat taulussa (rows2), 
- * ja vierasvoitot ep_erat taulussa (rows3).
+ * ja vierasvoitot ep_erat taulussa (rows3). Yhdistetyssä taulussa on kaikki
+ * tarvittava pelaajadata, joten muuta lataamista ei tarvitse tehdä.
  */
 const playerDataProcessor = (data: any) => {
     const [rows1, rows2, rows3] = data.rows;
@@ -40,8 +42,6 @@ const playerDataProcessor = (data: any) => {
             if (!row[key])
                 row[key] = 0;
     });
-
-    // addRankColumns(newResults)
 
     return newResults;
 };
@@ -95,7 +95,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Tabs 
                 value={activeTab} 
                 onChange={handleTabChange} 
-                aria-label="basic tabs example"
+                aria-label="Pelaajien pörssit"
                 sx={{
                     '& .MuiTabs-flexContainer': {
                         flexWrap: 'wrap',
@@ -126,7 +126,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Typography sx={{pb: 2}}>
                 Pörssi aloitusyseistä. Onko kyseessä onni vai taito?
                 <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit, 3. Koti ysit.
+                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit.
             </Typography>
             <GoldenBreakWinsTable rows={results.data} />
         </CustomTabPanel>
@@ -135,7 +135,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Typography sx={{pb: 2}}>
                 Aloituspartit, onko pöydällä väliä??
                 <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP, 3. Koti AP.
+                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP.
             </Typography>
             <RunoutWinsTable rows={results.data} />
         </CustomTabPanel>
@@ -144,7 +144,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Typography sx={{pb: 2}}>
                 Kyyti, tsäkää vai taitoa??
                 <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit, 3. Koti kyydit.
+                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit.
             </Typography>
             <CombinationWinsTable rows={results.data} />
         </CustomTabPanel>
@@ -153,7 +153,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Typography sx={{pb: 2}}>
                 Kiven hallintaa vai tuuria??
                 <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat, 3. Koti karat.
+                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat.
             </Typography>
             <CaromWinsTable rows={results.data} />
         </CustomTabPanel>
@@ -162,7 +162,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
             <Typography sx={{pb: 2}}>
                 Aina ei ole pakko hyökätä, vai??
                 <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot, 3. Kotivoitot.
+                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot.
             </Typography>
             <ThreeFoulWinsTable rows={results.data} />
         </CustomTabPanel>
@@ -188,6 +188,9 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
     );
 }
 
+/**
+ * Testisivu pelaajien tulosten esittämiselle.
+ */
 const DisplayResultsPlayers: React.FC = () => {
     const resultsOld = useInitialServerFetch({ 
         route: "/api/db/specific_query", 

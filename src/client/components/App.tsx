@@ -1,9 +1,11 @@
+/**
+ * Määrittää etusivukomponentin. 
+ * HUOM! Poistetaan tuotantoversiossa (etusivu on PHP puolella).
+ */
+
 import { Link } from 'react-router-dom';
 import { Box, Typography } from "@mui/material";
 import Container from "@mui/material/Container";
-// import FileUpload from "./FileUpload";
-// import ThumbnailSelector from "./ThumbnailSelector";
-// import { Scoresheet } from './Scoresheet';
 
 /**
  * Näkymä reitille '/'. Tämä on käytännössä verkkosivun etusivu.
@@ -38,8 +40,6 @@ const App = () => {
             </Box>
             <Box sx={{p: 2}}>
                 <Typography variant="h6">Työkalut</Typography>
-                <Link to="/mui_test">MUI testi</Link> 
-                <br />
                 <Link to="/upload">Upload</Link>
                 <br />
                 <Link to="/db">DB Testaus</Link>

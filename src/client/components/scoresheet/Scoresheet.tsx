@@ -1,8 +1,10 @@
 /**
- * Lomake ottelun tulosten kirjaamiseksi. Käyttäjä valitsee ensin ottelun. Tämän
- * jälkeen käyttäjä voi molempien joukkueiden pelaajat listalta.
- * Pelien tulokset valitaan myös select-elementin avulla ja kirjatut tulokset
- * näkyvät tulostaulussa (ScoreTable.tsx) välittömästi.
+ * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen. Käyttäjä valitsee ensin 
+ * molempien joukkueiden pelaajat TeamSelection komponenttia käyttäen ja siinä
+ * voi lisätä uusia pelaajia käyttäen AddPlayerDialog komponenttia.
+ *     Erien tulokset näytetään taulukkomuodossa RoundResultsTable komponentilla 
+ * ja niitä voi muokata GameDialog komponentilla. Näiden alla on pelien tulokset
+ * GameResultsTable komponentissa. 
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
@@ -19,7 +21,7 @@ import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, cre
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 
 /**
- * React komponentti tuloslomakkeelle.
+ * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
  * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
  */
 const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: ScoresheetFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
@@ -33,14 +35,12 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     const { setValue, handleSubmit, watch, reset } = useForm<ScoresheetFields>({
         defaultValues: initialValues
     });
-    // Käytetään onChageCallback varten tarkistamaan onko muutkoksia tapahtunut:
+    // Käytetään onChageCallback varten tarkistamaan onko muutoksia tapahtunut:
     const [dataString, setDataString] = useState("");
     // Kun lomake yritetään lähettää epäonnistuneesti, aletaan näyttää virheilmoituksia:
     const [displayErrors, setDisplayErrors] = useState<boolean>(false);
 
     const formFields = watch();
-    // console.log("initialValues", initialValues);
-    // console.log("formFields", formFields);
 
     const setSnackbarState = useContext(SnackbarContext);
 
@@ -51,20 +51,28 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         console.log("Scoresheet useEffect called");
     }, [initialValues]);
 
+    // Lasketaan väliaikatulokset ja virheilmoitukset:
     const gameRunningStats = computeGameRunningStats(formFields);
     console.log("gameRunningStats", gameRunningStats);
 
-    // avaa AddPlayerDialog
+    /** 
+     * Avaa AddPlayerDialog ikkunan.
+     */ 
     const handleOpenAddPlayerDialog = () => {
         setIsAddPlayerDialogOpen(true);
     };
 
-    // sulkee AddPlayerDialog
+    /** 
+     * Sulkee AddPlayerDialog ikkunan.
+     */ 
     const handleCloseAddPlayerDialog = () => {
         setIsAddPlayerDialogOpen(false);
     };
 
-    // Takaisinkutsufunktio AddPlayerDialog varten:
+    /** 
+     * Takaisinkutsufunktio AddPlayerDialog varten, lisää uuden pelaajan listoihin ja 
+     * asettaa sen valituksi.
+     */
     const handleAddPlayer = (player: ScoresheetPlayer, team: ScoresheetTeam, slot: number) => {
         console.log("handleAddPlayer", player.name, team);
         console.log("currentPlayerSlot", currentPlayerSlot);
@@ -83,8 +91,9 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     const onSubmit: SubmitHandler<ScoresheetFields> = (data) => {
         if (!gameRunningStats[8].isAllGamesValid) {
             // Käyttäjä yritti lähettää virheellisen lomakkeen - näytä virheet:
+            // TODO Tässä voisi siirtää fokus virheelliseen kohtaan.
             setDisplayErrors(true);
-            setSnackbarState?.({ 
+            setSnackbarState({ 
                 isOpen: true, 
                 message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", 
                 severity: "error" 
@@ -98,7 +107,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     };
 
     /**
-     * Resetoi erätulokset annetuille peleille.
+     * Resetoi annettuun pelaajaan liittyvät erätulokset. Näin joudutaan tekemään
+     * kun pelaaja vaihdetaan tyhjäksi tai pois tyhjästä.
      */
     const resetGameScores = (isHome: boolean, playerSlot: number) => {
         for (let gameIndex = 0; gameIndex < 9; gameIndex++) {
@@ -122,20 +132,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     };
 
     /**
-     * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
-     */
-    // const handleSelectOutcome = (event: React.ChangeEvent<HTMLSelectElement>, gameIndex: number, playerIndex: number, roundIndex: number) => {
-    //     const selectValue = event.target.value;
-    //     const updatedScores = [...formFields.scores];
-    //     updatedScores[gameIndex][playerIndex][roundIndex] = selectValue;
-    //     // Jos valitaan voitto, niin vastustajan mahdollinen voitto tulee poistaa:
-    //     if (selectValue !== " ")
-    //         updatedScores[gameIndex][1-playerIndex][roundIndex] = " ";
-    //     setValue('scores', updatedScores);
-    // };
-
-    /**
-     * Kutsutaan kun käyttäjä valitsee erän tuloksen. Päivittää scores taulukkoa.
+     * Kutsutaan kun GameDialog palauttaa syötetyt erätiedot. 
      */
     const handleGameDialogSubmit = (gameIndex: number, results: string[][]) => {
         const updatedScores = [...formFields.scores];
@@ -153,10 +150,10 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         console.log("handleSelectPlayer", value);
         const isHome = (team.teamRole == "home");
         const oldPlayer = isHome ? getPlayerName(formFields.teamHome.selectedPlayers, slot, "Koti") : getPlayerName(formFields.teamAway.selectedPlayers, slot, "Vieras");
-        if (value == "noPlayer") {
+        if (value === "noPlayer") {
             // Valittu 3. pelaaja tyhjäksi
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, {id: -1, name: "-"});
-        } else if (value == "newPlayer") {
+        } else if (value === "newPlayer") {
             // Tyhjennetään pelaajan valinta:
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, null);
             setCurrentPlayerSlot({team, slot});
@@ -166,7 +163,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 
                 team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(value))]);
         }
-        if (value == "noPlayer" || oldPlayer == "-")
+        if (value === "noPlayer" || oldPlayer === "-")
             resetGameScores(isHome, slot);
     };
 
@@ -179,7 +176,8 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setValue("date", value);
     }
 
-    // Tarkistetaan onko kaikki pelaajat valittu.
+    // Erätuloksia voi muuttaa ainoastaan jos kaikki pelaajat on valittu.
+    // Tarkistetaan tässä onko kaikki pelaajat valittu:
     let playersAllSelected = true;
     if (formFields.teamHome.selectedPlayers.length != 3 || formFields.teamAway.selectedPlayers.length != 3)
         playersAllSelected = false;
@@ -189,9 +187,9 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 playersAllSelected = false;
     };
 
-    // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on
+    // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on:
     if (playersAllSelected && onChangeCallback) {
-        const newDataString = JSON.stringify(formFields);
+        const newDataString = JSON.stringify(formFields);  // Tehoton tapa tarkistaa mutta helppo tehdä näin
         if (onChangeCallback && (newDataString !== dataString)) {
             onChangeCallback(formFields);
             setDataString(newDataString);
@@ -202,7 +200,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         <Box>
         <form onSubmit={handleSubmit(onSubmit)}>
         <Box>
-            {/* Lisätään dialog pelaajan lisäämiseksi  */}
+            {/* Lisätään AddPlayerDialog pelaajan lisäämiseksi:  */}
             <AddPlayerDialog
                 isOpen={isAddPlayerDialogOpen}
                 team={currentPlayerSlot.team}
@@ -210,7 +208,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 onAddPlayer={(player) => handleAddPlayer(player, currentPlayerSlot.team, currentPlayerSlot.slot)}
             />
             
-            {/* Ottelu ja päivämäärä */}
+            {/* Ottelu ja päivämäärä: */}
             <Box display="flex" justifyContent="center" sx={{mb: 2}}>
                 <Box textAlign="center">
                     <Typography variant='h4'>
@@ -237,19 +235,21 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Box>
             </Box>
 
+            {/* Pelaajien valinta: */}
             <Box sx={{mb: 2, mt: 1}}>
                 <Grid container>
-                    {/* Kotijoukkueen nimi ja pelaajat */}
+                    {/* Kotijoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
                         {<TeamSelection mode={mode} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
-                    {/* Vierasjoukkueen nimi ja pelaajat */}
+                    {/* Vierasjoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
                         {<TeamSelection mode={mode} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                 </Grid>
             </Box>
 
+            {/* Taulukko erätuloksille: */}
             {playersAllSelected &&
             <Box display="flex" justifyContent="center">
                 <Box width="100%" maxWidth="750px" minWidth="300px">
@@ -259,10 +259,11 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             }
         </Box>
 
+        {/* Taulukko pelien tuloksille: */}
         {playersAllSelected &&
         <Box display="flex" justifyContent="center">
-            <Box width="100%" maxWidth="500px">
-                <GameResultsTable gameRunningStats={gameRunningStats} displayErrors={displayErrors} teamHome={formFields.teamHome} teamAway={formFields.teamAway}></GameResultsTable>
+            <Box width="100%" maxWidth="400px">
+                <GameResultsTable gameRunningStats={gameRunningStats} displayErrors={displayErrors} teamHome={formFields.teamHome} teamAway={formFields.teamAway} />
             </Box>
         </Box>
         }
@@ -288,8 +289,6 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Box>
             </Box>
          </Box>
-        {/* {JSON.stringify(formFields)} */}
-        {/* {`data: ${JSON.stringify(parseMatch("?", formFields))}`} */}
         </form>
         </Box>
     );

@@ -1,5 +1,6 @@
 /**
- * Esittää yhden ottelun pöytäkirjan.
+ * Esittää yhden ottelun pöytäkirjan (ep_ottelu id=1).
+ * HUOM! Tämä on vain testaukseen, ei käytössä tuotantoversiossa.
  */
 
 import { useEffect, useState } from "react";

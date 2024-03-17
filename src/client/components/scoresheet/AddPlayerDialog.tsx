@@ -26,11 +26,14 @@ type AddPlayerDialogProps = {
 
 type Sex = "-" | "M" | "N";
 
+/** 
+ * AddPlayerDialog on dialog ikkuna, joka avataan Scoresheet päälle
+ * pelaajan lisäämiseksi joukkueeseen.
+ */
 const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose, onAddPlayer }) => {
     const authenticationState = useContext(AuthenticationContext);
     const [newPlayerName, setNewPlayerName] = useState<string>('');
     const [newPlayerSex, setNewPlayerSex] = useState<Sex>('-');
-    // const [snackbarState, setSnackbarState] = useState<{ isOpen: boolean, message?: string, severity?: "success" | "error" }>({ isOpen: false });
     const setSnackbarState = useContext(SnackbarContext);
 
     /**
@@ -40,7 +43,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
     const fetchAddPlayer = async (teamId: number, name: string, sex: Sex) => {
         console.log("fetchSendResult()");
         try {
-            const response = await serverFetch("api/db/specific_query", {
+            const response = await serverFetch("/api/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,23 +58,23 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
 
             console.log("jsonData.rows", jsonData.rows);
 
-            setSnackbarState?.({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.teamName}.`, severity: "success" });
+            setSnackbarState({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.teamName}.`, severity: "success" });
             return jsonData.rows.insertId;
         } catch(error) {
             console.error('Error:', error);
-            setSnackbarState?.({ isOpen: true, message: "Pelaajan lisäys epäonnistui.", severity: "error" });
+            setSnackbarState({ isOpen: true, message: "Pelaajan lisäys epäonnistui.", severity: "error" });
             return -1;
         }
     };
 
     /**
-     * Kutsutaan kun pelaajan lisäys nappia painetaan.
+     * Kutsutaan kun "lisää pelaaja" nappia painetaan.
      */
     const handleAddPlayer = async () => {
         if (newPlayerName.trim() === '')
             return;
         const playerId = await fetchAddPlayer(team.id, newPlayerName, newPlayerSex);
-        if (playerId != -1) {
+        if (playerId !== -1) {
             onAddPlayer({ id: playerId, name: newPlayerName });
             setNewPlayerName("");
             setNewPlayerSex("-");

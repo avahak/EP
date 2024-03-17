@@ -10,16 +10,22 @@ type PageNameState = {
 };
 
 /** 
- * Tätä tilaa ei koskaan käytetä jos kontekstia käytetään oikein.
- * Se on tässä vain käyttämättömänä alkuarvona.
+ * Tätä tilaa ei käytetä jos kontekstia käytetään oikein, se on vain 
+ * alkuarvo, kunnes konteksti on otettu käyttöön.
  */
 const dummyPageNameState: PageNameState = {
     pageName: '',
     setPageName: () => {},
 };
 
+/**
+ * PageNameContext on React conteksti, joka pitää kirjaa tämänhetkisen sivun nimestä.
+ */
 const PageNameContext = createContext<PageNameState>(dummyPageNameState);
 
+/**
+ * Tarjoaa PageNameContext tilan sen sisällä olevien komponenttien käyttöön.
+ */
 const PageNameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [pageName, setPageName] = useState<string>("");
 

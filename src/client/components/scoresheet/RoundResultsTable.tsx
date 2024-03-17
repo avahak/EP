@@ -1,15 +1,16 @@
 /**
- * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset.
+ * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset
+ * taulukkona.
  */
 
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import GameDialog from "./GameDialog";
 import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
-import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/TableStyles";
+import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/BasicTableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
-import './Scoresheet.css';
+import './RoundResultsTable.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
@@ -21,6 +22,10 @@ type RoundResultsTableProps = {
     gameRunningStats: GameRunningStatRow[];
 }
 
+/**
+ * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset
+ * taulukkona.
+ */
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErrors, formFields, onGameDialogSubmit, gameRunningStats }) => {
     const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
 
@@ -48,9 +53,8 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
     }
 
     return (
-    // <div id="table-box">
     <>
-    <TableContainer component={Paper} sx={{px: 1, py: 2, width: "100%"}} elevation={4}>
+    <TableContainer component={Paper} sx={{px: 0, py: 2, width: "100%"}} elevation={5}>
     <Typography variant="h5" sx={{py: 1}} textAlign="center">Erätulokset</Typography>
     <BasicTable sx={{tableLayout: "fixed"}}>
     <TableHead sx={{borderBottom: "2px solid black"}}>
@@ -153,6 +157,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
             </BasicTableCellLow>
             }
 
+            {/* Muokkaa ikoni: */}
             {(mode == "modify" && playerIndex == 0) &&
             (!gameHasEmptyPlayer(formFields, gameIndex) ? 
             <TableCell 

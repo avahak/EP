@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
  * Sivu Hough-muunnoksen esittämiseksi. Käyttäjä valitsee 
  * ThumbnailSelector avulla kuvan ja palvelin laskee Hough-muunnoksen ja
  * piirtää sen DrawHough.tsx avulla.
+ * HUOM! Ei käytössä tuotantoversiossa.
  */
 const Hough: React.FC = () => {
     const [imageName, setImageName] = useState<string>("card.png");

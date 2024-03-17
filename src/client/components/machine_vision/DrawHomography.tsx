@@ -1,3 +1,8 @@
+/**
+ * Komponentti, joka piirtää homografia-esimerkin.
+ * HUOM! Ei käytössä tuotantoversiossa.
+ */
+
 import { useRef, useEffect } from 'react';
 
 /**

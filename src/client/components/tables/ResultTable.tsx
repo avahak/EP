@@ -1,7 +1,8 @@
 /**
  * Wrapperi Material UI taululle. Esittää tietokantataulun tyyppistä
- * dataa <table> elementtiin pohjautuvalla komponentilla.
- * Muokattu Material UI esimerkkikoodin https://mui.com/material-ui/react-table/ pohjalta.
+ * dataa <table> elementtiin pohjautuvalla Material UI komponentilla.
+ * Muokattu Material UI esimerkkikoodin pohjalta:
+ * https://mui.com/material-ui/react-table/
  */
 
 import * as React from 'react';
@@ -14,16 +15,15 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
-// import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
 import { Typography } from '@mui/material';
 import { extractKeys, getComparator } from '../../../shared/generalUtils';
-// import styled from '@emotion/styled';
-// import { useTheme } from '@mui/material/styles';
 import { Order } from '../../../shared/generalUtils';
 
-// Tyyli taulun otsikkoriville
+/** 
+ * Tyyli taulun otsikkoriville
+ */
 const customColumnStyleHeader = {
     backgroundColor: "#99aaff",
     padding: "2px 4px",
@@ -35,7 +35,9 @@ const customColumnStyleHeader = {
     fontWeight: "bold"
 };
 
-// Tyyli taulun parittomille riveille
+/** 
+ * Tyyli taulun parittomille riveille
+ */
 const customColumnStyleOdd = {
     backgroundColor: "#ffffff",
     padding: "2px 4px",
@@ -46,12 +48,17 @@ const customColumnStyleOdd = {
     textOverflow: "ellipsis",
 };
 
-// Tyyli taulun parillisille riveille
+/**
+ * Tyyli taulun parillisille riveille
+ */
 const customColumnStyleEven = {
     ...customColumnStyleOdd,
     backgroundColor: "#ddeeff"
 };
 
+/**
+ * HeadCell määrittelee esitettävän sarakkeen muodon.
+ */
 type HeadCell = {
     id: string;
     label: string;
@@ -79,9 +86,8 @@ type ResultTableProps = {
     rows: any[];
 };
 
-
 /**
- * Muotoilee solun sisällön row[headCell.id].
+ * Muotoilee solun row[headCell.id] sisällön.
  */
 function getEntryValue(headCell: HeadCell, row: any) {
     if (headCell.entryFormatter)
@@ -99,7 +105,7 @@ function getEntryValue(headCell: HeadCell, row: any) {
 }
 
 /**
- * Määrittelee oletusarvoisen järjestyksen suunnan kentälle.
+ * Määrittelee oletusarvoisen järjestyksen suunnan (nouseva/laskeva) sarakkeelle.
  */
 function getDefaultOrder(headCell: HeadCell): Order {
     if (headCell.defaultOrder)
@@ -164,7 +170,6 @@ function SortableTableHead(props: TableHeadProps) {
  * ostikkorivin tiedot.
  */
 const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (props) => {
-    // Erotetaan tableName, headCells, rows muuttujasta props:
     let tableName: string = props.tableName ?? "Table";
     let minWidth: string = props.minWidth ?? "200px";
     let maxWidth: string = props.maxWidth ?? "750px";
@@ -173,15 +178,17 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     if (props.headCells) {
         headCells = props.headCells;
     } else {
+        // Ei ole annettu headCells, joten muodostetaan 
+        // sarakeasetukset seuraavilla oletusarvoilla:
         const keys = extractKeys(rows);
         keys.forEach(([key, type]) => {
-            const hc: HeadCell = { 
+            const headCell: HeadCell = { 
                 disablePadding: true,
                 id: key,
                 label: key,
                 numeric: type == "number" ? true : false
             };
-            headCells.push(hc);
+            headCells.push(headCell);
         });
     }
 
@@ -192,6 +199,9 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
 
     // const theme = useTheme();
 
+    /**
+     * Kutsutaan kun käyttäjä pyytää järjestämään rivin uudelleen (valitsemalla otsakerivin).
+     */
     const handleRequestSort = (_event: React.MouseEvent<unknown>, property: string, defaultOrder: Order | undefined) => {
         let newOrder: Order = "desc";
         if (orderBy === property)
@@ -215,10 +225,11 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     const emptyRows =
         page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
+    // Tällä hetkellä näkyvät rivit:
     const visibleRows = React.useMemo(() =>
         rows.slice().sort(getComparator(order, orderBy)).slice(
-            page * rowsPerPage,
-            page * rowsPerPage + rowsPerPage,
+            page*rowsPerPage,
+            page*rowsPerPage + rowsPerPage,
         ),
         [order, orderBy, page, rowsPerPage],
     );
@@ -231,8 +242,6 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
             <Table
                 sx={{ tableLayout: "fixed" }}
                 aria-labelledby={tableName}
-                // size={dense ? 'small' : 'medium'}
-
             >
                 <SortableTableHead
                     headCells={headCells}

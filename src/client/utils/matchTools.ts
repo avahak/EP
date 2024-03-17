@@ -1,5 +1,11 @@
 /**
- * Kokoelma ottelupöytäkirjaa käsitteleviä apufunktioita.
+ * Kokoelma ottelupöytäkirjoja käsitteleviä apufunktioita, missä ottelupöytäkirja
+ * on ScoresheetFields muodossa. Sisältää funktioita ottelupöytäkirjan tarkistamiseen,
+ * pisteiden laskuun, ja funktioita API-kutsuille pelaajien ja tulosten hakemiseen.
+ * 
+ * HUOM! TODO Tämä tulisi refaktoroida ja yhdistää shared/parseMatch.ts kanssa, jotta
+ * pöytäkirjadatan käsittely olisi yhtenäisempää. Lisäksi API-kutsut voisi erottaa
+ * omaksi kokonaisuudeksi.
  */
 
 import { ScoresheetFields, ScoresheetPlayer, createEmptyScores } from "../components/scoresheet/scoresheetTypes";
@@ -10,12 +16,16 @@ const PLAYER_1_EMPTY_SCORES = JSON.stringify([[' ',' ',' ',' ',' '], ['1','1','1
 const PLAYER_2_EMPTY_SCORES = JSON.stringify([['1','1','1',' ',' '], [' ',' ',' ',' ',' ']]);
 const BOTH_PLAYERS_EMPTY_SCORES = JSON.stringify([[' ',' ',' ',' ',' '], [' ',' ',' ',' ',' ']]);
 
+/**
+ * Tyyppi väliaikatulosten tallennukseen, sisältää tuloksen jos kaikki on ok
+ * ja muutoin tietoa virheistä.
+ */
 type GameRunningStatRow = {
-    isValidGame: boolean;
-    isAllGamesValid: boolean;
-    roundWins: number[];
-    runningMatchScore: number[];
-    gameErrorMessage: string;
+    isValidGame: boolean;           // onko kyseinen peli validi?
+    isAllGamesValid: boolean;       // onko kaikki pelit tähän asti valideja? 
+    roundWins: number[];            // voitettujen erien lkm kummallekin pelaajalle
+    runningMatchScore: number[];    // ottelun tilanne pelin jälkeen
+    gameErrorMessage: string;       // virheilmoitus ei-validille pelille
 };
 
 /**
@@ -70,7 +80,7 @@ function playerIndexesToGameIndex(playerHomeIndex: number, playerAwayIndex: numb
 };
 
 /**
- * Palauttaa pelin lopputuloksen muodossa [koti erävoitot, vieras erävoitot].
+ * Palauttaa yhden pelin lopputuloksen muodossa [koti erävoitot, vieras erävoitot].
  */
 function computeGameScore(results: string[][]) {
     let gameScore = [0, 0];
@@ -86,7 +96,8 @@ function computeGameScore(results: string[][]) {
 }
 
 /**
- * Tarkistaa, että erien tulokset ovat oikein ja päättyy kolmeen voittoon.
+ * Tarkistaa, että erien tulokset ovat oikein ja peli päättyy kolmeen voittoon.
+ * Palauttaa tekstimuotoisen kuvauksen ongelmasta, jos jokin on pielessä.
  */
 function checkGameResults(gameResult: string[][], playerId1: number, playerId2: number) {
     if (playerId1 == -1 && playerId2 == -1) 
@@ -126,11 +137,8 @@ function checkGameResults(gameResult: string[][], playerId1: number, playerId2: 
 }
 
 /**
- * Palauttaa taulukon, missä pelin indeksiä (0-8) vastaa arvo
- * { isValidGame, roundWins, runningMatchScore } ja 
- * isValidGame on totuusarvo, joka kertoo onko kyseisen pelin tulokset validit,
- * roundWins kertoo kummankin pelaajan voitettujen erien lukumäärän pelissä, ja
- * runningMatchScore kertoo ottelun tilanteen pelin jälkeen.
+ * Palauttaa taulukon, missä kutakin pelin indeksiä (0-8) vastaa GameRunningStatRow.
+ * Kukin GameRunningStatRow sisältää väliaikatilanteen ja tietoa validointivirheistä.
  */
 function computeGameRunningStats(data: ScoresheetFields): GameRunningStatRow[] {
     const stats: GameRunningStatRow[] = [];
@@ -169,7 +177,8 @@ function computeGameRunningStats(data: ScoresheetFields): GameRunningStatRow[] {
 }
 
 /**
- * Palauttaa viimeisimmän kirjatun tilanteen.
+ * Palauttaa viimeisimmän kirjatun tilanteen, missä kaikki pelit siihen asti 
+ * on valideja.
  */
 function currentScore(data: ScoresheetFields) {
     const runningStats = computeGameRunningStats(data);
@@ -180,19 +189,6 @@ function currentScore(data: ScoresheetFields) {
     }
     return score;
 }
-
-/**
- * Check the scoresheet data for errors.
- */
-// function validateAll(data: ScoresheetFields): boolean {
-//     const runningStats = computeGameRunningStats(data);
-//     if ((data.teamHome.selectedPlayers[0]?.id ?? -1 == -1) || (data.teamHome.selectedPlayers[1]?.id ?? -1 == -1)
-//         || (data.teamAway.selectedPlayers[0]?.id ?? -1 == -1) || (data.teamAway.selectedPlayers[0]?.id ?? -1 == -1))
-//         return false;
-//     if (!runningStats[8].isAllGamesValid)
-//         return false;
-//     return true;
-// }
 
 /**
  * Muuttaa tietokannasta saadut erien tulosrivit lomakkeella käytettyyn muotoon.
@@ -215,7 +211,7 @@ function parseScores(rawScores: any, teamHome: (ScoresheetPlayer | null)[], team
 }
 
 /**
- * Hakee pelaajat joukkueeseen sen id:n perusteella.
+ * Hakee tietokannasta pelaajat joukkueeseen sen id:n perusteella.
  */
 const fetchPlayers = async (teamId: number) => {
     console.log("ID", teamId);
@@ -237,7 +233,7 @@ const fetchPlayers = async (teamId: number) => {
 };
 
 /**
- * Hakee erien tulokset käytyyn otteluun.
+ * Hakee tietokannasta erien tulokset käytyyn otteluun.
  */
 const fetchScores = async (matchId: number) => {
     try {
@@ -258,7 +254,7 @@ const fetchScores = async (matchId: number) => {
 };
 
 /**
- * Hakee ottelun tiedot taulusta ep_ottelu.
+ * Hakee ottelun tiedot tietokannan taulusta ep_ottelu.
  */
 const fetchMatchInfo = async (matchId: number) => {
     try {
@@ -279,7 +275,7 @@ const fetchMatchInfo = async (matchId: number) => {
 };
 
 /**
- * Hakee joukkueiden pelaajat ja erien tulokset.
+ * Hakee tietokannasta koko ottelun ScoresheetFields muodossa.
  */
 const fetchMatchData = async (matchId: number) => {
     const matchInfo = await fetchMatchInfo(matchId) 
@@ -340,8 +336,8 @@ const fetchMatchData = async (matchId: number) => {
 };
 
 
+export type { GameRunningStatRow };
 export { getPlayerName, getSelectedPlayerName, computeGameRunningStats, 
     fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, 
     computeGameScore, checkGameResults, currentScore,
     isEmptyPlayer, gameHasEmptyPlayer };
-export type { GameRunningStatRow };

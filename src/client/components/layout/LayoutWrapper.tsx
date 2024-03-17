@@ -1,5 +1,7 @@
 /**
- * LayoutWrapper lisää sivuun valikot ja mainokset.
+ * LayoutWrapper lisää elementin ympärille valikot ja mainokset. Nämä
+ * valitaan responsiivisesti mutta tarkoitus on olla visuaalisesti 
+ * mahdollisimman lähellä PHP-vastinetta.
  */
 
 import MenuIcon from '@mui/icons-material/Menu';
@@ -7,65 +9,12 @@ import { AppBar, Box, Button, Divider, Drawer, IconButton, Toolbar, Typography, 
 import { SideNavigation } from "./SideNavigation";
 import { BannerBox } from "./BannerBox";
 import { ReactNode, useContext } from "react";
-// import DraftsIcon from '@mui/icons-material/Drafts';
-// import SendIcon from '@mui/icons-material/Send';
-// import ExpandLess from '@mui/icons-material/ExpandLess';
-// import ExpandMore from '@mui/icons-material/ExpandMore';
-// import StarBorder from '@mui/icons-material/StarBorder';
-// import InboxIcon from '@mui/icons-material/MoveToInbox';
 import React from "react";
 import { PageNameContext } from '../../contexts/PageNameContext';
 import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimeDifference } from '../../../shared/generalUtils';
-import { decodeToken } from 'react-jwt';
-import { AuthTokenPayload } from '../../../shared/commonTypes';
-
-// Side menu with List (not in use):
-// const MenuList: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-//     return (
-//         <List
-//             sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
-//             component="nav"
-//             aria-labelledby="nested-list-subheader"
-//             subheader={
-//                 <ListSubheader component="div" id="nested-list-subheader">
-//                 Nested List Items
-//                 </ListSubheader>
-//             }
-//             >
-//             <ListItemButton>
-//                 <ListItemIcon>
-//                 <SendIcon />
-//                 </ListItemIcon>
-//                 <ListItemText primary="Sent mail" />
-//             </ListItemButton>
-//             <ListItemButton>
-//                 <ListItemIcon>
-//                     <DraftsIcon />
-//                 </ListItemIcon>
-//                 <ListItemText primary="Drafts" />
-//             </ListItemButton>
-//             <ListItemButton>
-//                 <ListItemIcon>
-//                 <InboxIcon />
-//                 </ListItemIcon>
-//                 <ListItemText primary="Inbox" />
-//                 {true ? <ExpandLess /> : <ExpandMore />}
-//             </ListItemButton>
-//             <Collapse in={true} timeout="auto" unmountOnExit>
-//                 <List component="div" disablePadding>
-//                 <ListItemButton sx={{ pl: 4 }}>
-//                     <ListItemIcon>
-//                     <StarBorder />
-//                     </ListItemIcon>
-//                     <ListItemText primary="Starred" />
-//                 </ListItemButton>
-//                 </List>
-//             </Collapse>
-//         </List>
-//     );
-// };
+import { getAuthTokenPayload } from '../../../shared/commonTypes';
 
 /**
  * Esittää aikakentät (iat, exp) refresh ja access tokeneille.
@@ -74,15 +23,15 @@ import { AuthTokenPayload } from '../../../shared/commonTypes';
 const TokenInfoBlock: React.FC = () => {
     const accessToken = window.localStorage.getItem("accessToken");
     const refreshToken = window.localStorage.getItem("refreshToken");
-    const accessTokenPayload = accessToken ? decodeToken(accessToken) as AuthTokenPayload : null;
-    const refreshTokenPayload = refreshToken ? decodeToken(refreshToken) as AuthTokenPayload : null;
+    const accessTokenPayload = getAuthTokenPayload(accessToken);
+    const refreshTokenPayload = getAuthTokenPayload(refreshToken);
     const access_iat = accessTokenPayload ? formatTimeDifference(accessTokenPayload.iat) : "-";
     const access_exp = accessTokenPayload ? formatTimeDifference(accessTokenPayload.exp) : "-";
     const refresh_iat = refreshTokenPayload ? formatTimeDifference(refreshTokenPayload.iat) : "-";
     const refresh_exp = refreshTokenPayload ? formatTimeDifference(refreshTokenPayload.exp) : "-";
     return (
         <>
-        <Typography variant="body2">
+        <Typography variant="body2" color="#555">
             {`access iat: ${access_iat}, exp: ${access_exp}`}
             <br />
             {`refresh iat: ${refresh_iat}, exp: ${refresh_exp}`}
@@ -133,6 +82,9 @@ const AuthenticationBlock: React.FC = () => {
     );
 };
 
+/**
+ * Ylävalikko mobiilinäkymässä.
+ */
 const ButtonAppBar = () => {
     const pageNameContext = useContext(PageNameContext);
     const [open, setOpen] = React.useState(false);
@@ -195,6 +147,11 @@ const ButtonAppBar = () => {
     );
 };
 
+/**
+ * LayoutWrapper lisää elementin ympärille valikot ja mainokset. Nämä
+ * valitaan responsiivisesti mutta tarkoitus on olla visuaalisesti 
+ * mahdollisimman lähellä PHP-vastinetta.
+ */
 const LayoutWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
     const isMinimumL = useMediaQuery('(min-width: 992px)');
     const isMinimumXL = useMediaQuery('(min-width: 1200px)');

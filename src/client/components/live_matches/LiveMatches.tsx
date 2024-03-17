@@ -6,28 +6,24 @@ import { LiveMatchEntry } from "../../../shared/commonTypes";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { LiveMatchCard } from "./LiveMatchCard";
 
+/**
+ * Live otteluiden esityssivu. Näyttää kutakin ottelua kohden kortin sen tiedoista.
+ * Kun korttia painetaan, näkyy ottelun pöytäkirja. Pöytäkirja päivitty automaattisesti
+ * käyttäen SSE:tä.
+ * Katso https://en.wikipedia.org/wiki/Server-sent_events
+ */
 const LiveMatches: React.FC = () => {
     const [matchId, setMatchId] = useState<number | undefined>(undefined);
     const [matchData, setMatchData] = useState<any>(undefined);
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
 
-    // Hakee live ottelut:
-    // const fetchLiveMatchList = async () => {
-    //     try {
-    //         const response = await serverFetch("/api/live/get_match_list")
-    //         if (!response.ok) 
-    //             throw new Error(`HTTP error! Status: ${response.status}`);
-    //         const jsonData = await response.json();
-    //         setLiveMatchList(jsonData.data);
-    //     } catch(error) {
-    //         console.error('Error:', error);
-    //         setLiveMatchList([]);
-    //     }
-    // };
-
+    // Aloitetaan uusi koko ajan auki pidettävä SSE yhteys palvelimeen. Se suljetaan kun 
+    // valittu ottelu muutetaan tai komponentti poistetaan.
     useEffect(() => {
         const eventSource = new EventSource(`${getBackendUrl()}/api/live/watch_match/${matchId}`);
 
+        // Kun serveri lähettää viestin, päivitetään seurattavaa ottelua (type="matchUpdate")
+        // tai listaa otteluista (type="matchListUpdate"):
         eventSource.onmessage = (event) => {
             const eventData = event.data;
             const parsedData = base64JSONparse(eventData);
@@ -49,10 +45,9 @@ const LiveMatches: React.FC = () => {
             setLiveMatchList([]);
         };
 
-        // Firefox bugin 
+        // Firefox bugin takia joudutaan tekemään vielä ylimääräinen loppusiivous:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=712329
         // https://stackoverflow.com/questions/14140414/websocket-was-interrupted-while-page-is-loading-on-firefox-for-socket-io
-        // takia joudutaan tekemään vielä varmuuden vuoksi ylimääräinen loppusiivous:
         window.addEventListener('beforeunload', () => eventSource.close());
 
         // Suljetaan eventSource lopuksi:

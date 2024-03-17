@@ -5,7 +5,6 @@
  * esitetään Scoresheet (mode='verify') hyväksyttäväksi.
  */
 
-// import { Scoresheet } from "./Scoresheet";
 import { useContext, useState } from "react";
 import { MatchChooser, MatchChooserSubmitFields } from "./MatchChooser";
 import { Scoresheet } from "../scoresheet/Scoresheet";
@@ -18,14 +17,23 @@ import { ScoresheetFields, createEmptyScores, createEmptyTeam } from "../scoresh
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { AuthError, roleIsAtLeast } from "../../../shared/commonTypes";
 
-type PageState = "choose_match" | "scoresheet_fresh" | "scoresheet_modify" |
-    "scoresheet_verify" | "scoresheet_submit" | "submit_success" | "submit_failure";
+/**
+ * Sivun tila
+ */
+type PageState = 
+    "choose_match"              // käyttäjä valitsee ottelua, esitetään MatchChooser
+    | "scoresheet_fresh"        // uuden ottelun ilmoitus: Scoresheet "modify" moodissa
+    | "scoresheet_modify"       // olemassaolevan ottelun muokkaaminen: Scoresheet "modify" moodissa
+    | "scoresheet_verify"       // esitetään ottelu Scoresheet "verify" moodissa
+    | "scoresheet_submit"       // väliaikainen tila kun ottelu lähetetään palvelimelle, esitetään ottelu ja sen päällä latausikoni
+    | "submit_success";         // esitetään ottelu Scoresheet "display" moodissa
 
 /**
  * Tulosten ilmoitussivu.
  */
 const ResultSubmission: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
+    // Ottelun tila:
     const [result, setResult] = useState<ScoresheetFields>({
         id: -1,
         status: 'T',
@@ -40,7 +48,7 @@ const ResultSubmission: React.FC = () => {
     const setSnackbarState = useContext(SnackbarContext);
 
     /**
-     * Lähettää lomakkeen tiedot serverille kirjattavaksi tietokantaan.
+     * Lähettää lomakkeen tiedot palvelimelle kirjattavaksi tietokantaan.
      */
     const fetchSendResult = async (newStatus: string, result: ScoresheetFields, oldPageState: PageState) => {
         console.log("fetchSendResult()");
@@ -63,17 +71,19 @@ const ResultSubmission: React.FC = () => {
             setResult(matchData);
             setPageState("submit_success");
             console.log("matchData", matchData);
-            setSnackbarState?.({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
+            setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
         } catch(error) {
+            // Jokin meni pieleen - palataan edelliseen sivun tilaan 
+            // ja näytetään virheilmoitus käyttäjälle:
             console.error('Error:', error);
             setPageState(oldPageState);
-
-            setSnackbarState?.({ isOpen: true, message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", severity: "error" });
+            setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", severity: "error" });
         }
     };
 
     /**
      * Lähettää lomakkeen tiedot serverille live-seurantaa varten.
+     * Tämä tehdään jokaisen muutoksen jälkeen.
      */
     const fetchSendSSE = async (data: ScoresheetFields) => {
         console.log("fetchSendSSE()");
@@ -87,16 +97,14 @@ const ResultSubmission: React.FC = () => {
             }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
-
-            // setSnackbarState?.({ isOpen: true, message: "Muutos kirjattu.", severity: "success", autoHideDuration: 1000 });
         } catch(error) {
             console.error('Error:', error);
-            // setSnackbarState?.({ isOpen: true, message: "Muutoksen kirjaus epäonnistui.", severity: "error", autoHideDuration: 2000 });
         }
     };
 
     /**
-     * Tätä funktiota kutsutaan kun käyttäjä lähettää täytetyn/muokatun Scoresheet lomakkeen.
+     * Tätä funktiota kutsutaan kun käyttäjä yritää lähettää täytetyn/muokatun 
+     * Scoresheet lomakkeen.
      */
     const handleSubmit = (data: ScoresheetFields) => {
         console.log("handleSubmit()");
@@ -126,18 +134,15 @@ const ResultSubmission: React.FC = () => {
      * Kutsutaan kun ottelupöytäkirjaan tehdään muutoksia tilassa "scoresheet_fresh".
      */
     const handleScoresheetSSE = (data: ScoresheetFields) => {
-        if (!useLivescore)
-            return;
-        console.log("handleScoresheetSSE", data);
-        fetchSendSSE(data);
+        if (useLivescore)
+            fetchSendSSE(data);
     };
 
     /**
-     * Tämä kutsutaan kun vierasjoukkueen edustaja hylkää kotijoukkueen antamat tulokset ja
-     * haluaa tehdä niihin muutoksia.
+     * Tämä kutsutaan kun vierasjoukkueen edustaja hylkää kotijoukkueen 
+     * antamat tulokset ja haluaa tehdä niihin muutoksia.
      */
     const handleReject = () => {
-        console.log("handleReject()");
         setPageState("scoresheet_modify");
     };
 
@@ -152,7 +157,7 @@ const ResultSubmission: React.FC = () => {
         console.log("matchChooserCallback()", matchChooserValues.match, matchChooserValues.date);
         console.log("result", result);
         setUseLivescore(matchChooserValues.useLivescore);
-        if (matchChooserValues.match.status == 'T')
+        if (matchChooserValues.match.status === 'T')
             setPageState("scoresheet_fresh");
         else 
             setPageState("scoresheet_verify");
@@ -162,32 +167,32 @@ const ResultSubmission: React.FC = () => {
     console.log("result", result);
 
     return (<>
-        {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
         {/* Valitaan ottelu: */}
         {pageState == "choose_match" && 
             <MatchChooser submitCallback={matchChooserCallback} />}
 
-        {/* Kotijoukkue kirjaa tulokset: */}
+        {/* Tulosten kirjaus tyhjään pöytäkirjaan: */}
         {(pageState == "scoresheet_fresh") && 
             <Scoresheet initialValues={result} mode="modify" onChangeCallback={handleScoresheetSSE}
                 submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
 
-        {/* Vierasjoukkue haluaa tehdä muutoksia tuloksiin: */}
+        {/* Jo olemassaolevan pöytäkirjan muuttaminen: */}
         {(pageState == "scoresheet_modify") && 
             <Scoresheet initialValues={result} mode="modify" 
                 submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>}
 
-        {/* Vierasjoukkue tarkistaa tulokset: */}
+        {/* Tulosten tarkistus: */}
         {pageState == "scoresheet_verify" && 
             <Scoresheet initialValues={result} mode="verify" 
                 submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {handleReject()}}/>}
 
-        {/* Tulosten lähetys: */}
+        {/* Tulosten lähetys. Tämän tulisi näkyä vain lyhyen hetken
+            kun odotetaan palvelimen vastausta: */}
         {pageState == "scoresheet_submit" && 
         <>
         <Scoresheet initialValues={result} mode="display"
-            submitCallback={(data) => handleSubmit(data)} rejectCallback={() => {}}/>
+            submitCallback={() => {}} rejectCallback={() => {}}/>
         <Backdrop
             sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
             open={true}
@@ -200,7 +205,7 @@ const ResultSubmission: React.FC = () => {
             </Box>
         </Backdrop></>}
 
-        {/* Ilmoitetaan käyttäjälle, että tulosten lähetys onnistui */}
+        {/* Ilmoitetaan käyttäjälle, että tulosten lähetys onnistui: */}
         {pageState == "submit_success" && 
             <Scoresheet initialValues={result} mode="display" />
         }

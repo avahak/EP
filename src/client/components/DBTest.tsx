@@ -1,12 +1,13 @@
-/**
- * Tietokannan luontia ja testausta.
- */
-
 import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { serverFetch } from '../utils/apiUtils';
 import { AuthenticationContext } from '../contexts/AuthenticationContext';
 
+/**
+ * Testisivu tietokannan uudelleenluontiin. Näyttää tietokannan perustamiskyselyt
+ * ja napit uudelleenluontiin.
+ * HUOM! Tämä poistetaan ehdottomasti tuotantoversiossa.
+ */
 const DBTest: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
     const [data, setData] = useState<any>(null);
@@ -62,19 +63,6 @@ const DBTest: React.FC = () => {
             DB nimi: 
             {!!data ? data.DB_NAME : "-"}
             <br />
-            {/* Ottelut: 
-            {!!data ? <DataTable data={data.matches} />: "-"}
-            <br /> */}
-            {/*Kaavio tauluille: 
-            <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema1) : "No data" }}>
-            </pre>
-            <br />
-            <hr />
-            Herättimet: 
-            <pre dangerouslySetInnerHTML={{ __html: !!data ? JSON.stringify(data.schema2) : "No data" }}>
-            </pre>
-            <br />
-            <hr />*/}
             Tietokannan luonti: 
             <hr style={{marginTop: "100px", marginBottom: "100px"}} />
             {!!data ? data.commands1.map((query: string, queryIndex: number) => (

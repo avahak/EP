@@ -1,3 +1,7 @@
+/**
+ * Tyyppejä ja triviaaleja apufunktioita Scoresheet liittyen.
+ */
+
 type ScoresheetPlayer = {
     id: number;
     name: string;
@@ -11,6 +15,9 @@ type ScoresheetTeam = {
     selectedPlayers: (ScoresheetPlayer | null)[];
 };
 
+/**
+ * Sisältää ottelupöytäkirjan kaikki tiedot.
+ */
 type ScoresheetFields = {
     id: number;
     status: string;
@@ -45,5 +52,5 @@ function createEmptyScores() {
     return emptyScores;
 }
 
-export { createEmptyTeam, createEmptyScores };
 export type { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode };
+export { createEmptyTeam, createEmptyScores };

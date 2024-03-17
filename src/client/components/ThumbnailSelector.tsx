@@ -1,8 +1,3 @@
-/**
- * ThumbnailSelector on vieritettävä esikatselukuvien osio, jossa kuvia voi klikata.
- * TODO Esikatselukuvat tulisi ladata tarpeen mukaan, ei kaikkia kerralla.
- */
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getBackendUrl, thumbnailToImageName } from "../utils/apiUtils";
@@ -11,6 +6,12 @@ type ThumbnailSelectorProps = {
     selectionCallback: (name: string) => void;
 }
 
+/**
+ * ThumbnailSelector on primitiivinen vieritettävä esikatselukuvien osio, 
+ * jossa kuvia voi valita klikkaamalla.
+ * TODO Esikatselukuvat tulisi ladata tarpeen mukaan, ei kaikkia kerralla.
+ * HUOM! Ei käytössä tuotantoversiossa.
+ */
 const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({ selectionCallback }) => {
     const [thumbnails, setThumbnails] = useState<string[]>([]);
     

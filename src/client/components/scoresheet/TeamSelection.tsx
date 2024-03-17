@@ -12,7 +12,7 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
     // const defaultOptionText = (team.teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
 
     /**
-     * Palauttaa <Select> elementin valitun arvon.
+     * Palauttaa select elementin valitun arvon.
      */
     const getSelectValue = (playerIndex: number) => {
         let id = team.selectedPlayers[playerIndex]?.id;
@@ -23,7 +23,6 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
         return `${id}`;
     }
 
-    console.log("team", team);
     return (
         <Box>
         <Paper sx={{ m: 1 }} elevation={10}>

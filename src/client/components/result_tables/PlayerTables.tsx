@@ -1,15 +1,26 @@
+/**
+ * Useita koti- ja vierasotteluiden pistepörssi taulukoita.
+ * Taulut ovat ResultTable komponentteja ja ne järjestetään käyttäen
+ * addMultiSortRankColumn.
+ * TODO Masters pörssi
+ */
+
 import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
 import { ResultTable } from "../tables/ResultTable";
 
-// Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+/** 
+ * Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+ */
 function roundPercentageformatter(row: any) {
     if (row.v_erat + row.h_erat == 0)
         return "-";
     return (row.p_erat as number).toFixed(2);
 };
 
-// Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+/**
+ * Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+ */
 function gamePercentageformatter(row: any) {
     if (row.v_pelit + row.h_pelit == 0)
         return "-";
@@ -17,7 +28,7 @@ function gamePercentageformatter(row: any) {
 };
 
 /**
- * Koti/vierasotteluiden pistepörssi taulukko.
+ * Taulukko, jossa mukana yleisiä tuloksia kaikista peleistä ("kaikki" taulukko).
  */
 const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableName }) => {
     const table = [];
@@ -39,13 +50,13 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
         table.push(newRow);
     }
 
+    // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "h_erat">("h_erat", "asc"), 
         numberColumnComparator<any, "v_erat">("v_erat", "desc"), 
         numberColumnComparator<any, "h_pelit">("h_pelit", "asc"), 
         numberColumnComparator<any, "v_pelit">("v_pelit", "desc"), 
     ];
-
     addMultiSortRankColumn(table, "sija", comparators, true);
 
     const headCells = [
@@ -72,7 +83,8 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
 };
 
 /**
- * Koti/vierasotteluiden pistepörssi taulukko.
+ * Taulukko, jossa mukana yleisiä tuloksia koti- ja vieraspeleistä 
+ * ("koti", "vieras" taulukot).
  */
 const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away", tableName: string }> = ({ rows, designation, tableName }) => {
     const affix = designation == "home" ? "_koti" : "_vieras";
@@ -99,13 +111,13 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
         table.push(newRow);
     }
 
+    // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "h_erat">("h_erat", "asc"), 
         numberColumnComparator<any, "v_erat">("v_erat", "desc"), 
         numberColumnComparator<any, "h_pelit">("h_pelit", "asc"), 
         numberColumnComparator<any, "v_pelit">("v_pelit", "desc"), 
     ];
-
     addMultiSortRankColumn(table, "sija", comparators, true);
 
     const headCells = [
@@ -150,12 +162,12 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
         table.push(newRow);
     }
 
+    // Lasketaan sija:
     const comparators = [
-        numberColumnComparator<any, "koti">("koti", "desc"), 
+        // numberColumnComparator<any, "koti">("koti", "desc"), // Ei tarvitse koska jos vieras ja yhteensä ovat samat, niin silloin myös koti on oltava sama koska koti=yhteensa-vieras.
         numberColumnComparator<any, "vieras">("vieras", "desc"), 
         numberColumnComparator<any, "yhteensa">("yhteensa", "desc"), 
     ];
-
     addMultiSortRankColumn(table, "sija", comparators, true);
 
     const headCells = [
