@@ -65,9 +65,10 @@ src/client/utils - Sekalaisia apufunktioita React koodin käyttöön
         dataSort.ts - Funktio addMultiSortRankColumn ja siihen liittyvä apufunktiot. 
                 Se lisää taulumuotoiseen dataan järjestyssarakkeita, joiden avulla 
                 data voidaan järjestää prioriteettijärjestelmällä usean sarakkeen mukaan.
-        matchTools.ts - Kokoelma ottelupöytäkirjoja käsitteleviä apufunktioita, 
-                missä ottelupöytäkirja on ScoresheetFields muodossa. Sisältää 
-                funktioita ottelupöytäkirjan tarkistamiseen, pisteiden laskuun, ja funktioita API-kutsuille pelaajien ja tulosten hakemiseen.
+        matchTools.ts - Kokoelma ottelupöytäkirjoja käsitteleviä apufunktioita,
+                missä ottelupöytäkirja on ScoresheetFields muodossa. Sisältää
+                funktioita ottelupöytäkirjan tarkistamiseen, pisteiden laskuun, ja
+                funktioita API-kutsuille pelaajien ja tulosten hakemiseen.
 
 src/client/contexts/ - React konteksteja, (="globaaleja tiloja Reactissa").
         AuthenticationContext.tsx - AuthenticationContext on React conteksti, 
@@ -132,9 +133,13 @@ src/client/components/result_submit/ - Komponentteja otteluiden tulosten ilmoitt
         ResultSubmission.tsx - Sivu tulosten ilmoittamiseksi.
 
 src/client/components/scoresheet/ - Komponentteja tulosten ottelupöytäkirjan esittämiseen
-        Scoresheet.tsx - Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen. 
-                Käyttäjä valitsee ensin molempien joukkueiden pelaajat TeamSelection 
-                komponenttia käyttäen ja siinä voi lisätä uusia pelaajia käyttäen AddPlayerDialog komponenttia. Erien tulokset näytetään taulukkomuodossa RoundResultsTable komponentilla ja niitä voi muokata GameDialog komponentilla. Näiden alla on pelien tulokset GameResultsTable komponentissa. 
+        Scoresheet.tsx - Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
+                Käyttäjä valitsee ensin molempien joukkueiden pelaajat TeamSelection
+                komponenttia käyttäen ja siinä voi lisätä uusia pelaajia käyttäen
+                AddPlayerDialog komponenttia. Erien tulokset näytetään taulukkomuodossa
+                RoundResultsTable komponentilla ja niitä voi muokata GameDialog
+                komponentilla. Näiden alla on pelien tulokset GameResultsTable
+                komponentissa. 
         TeamSelection.tsx - Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
                 ja pelaajien valintaan käytettävät select-elementit.
         GameDialog.tsx - Tämä komponentti vastaa yhden pelin kirjaamisesta ottelun
