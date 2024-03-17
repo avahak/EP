@@ -114,7 +114,7 @@ const ButtonAppBar = () => {
                 position="static" 
                 sx={{
                     backgroundColor: "#001401",
-                    backgroundImage: "url('http://www.eastpool.fi/images/Banneri.jpg')",
+                    backgroundImage: "url('Banneri.jpg')",
                     backgroundSize: "auto 100%",
                     backgroundRepeat: 'no-repeat',
                     opacity: "100%"
@@ -160,7 +160,7 @@ const LayoutWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
         <>
         {isMinimumL &&
         <Box overflow="hidden" width="100%" sx={{height: "163px", p: 0, m: 0, background: "#001401"}}>
-            <img src="http://www.eastpool.fi/images/Banneri.jpg"/>
+            <img src="Banneri.jpg"/>
         </Box>
         }
         {!isMinimumL && <ButtonAppBar />}
