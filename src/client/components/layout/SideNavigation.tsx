@@ -4,11 +4,12 @@ import { Box } from "@mui/material";
  * Sivukartta komponentti (Linkit.gif) navigointiin sivujen välillä.
  */
 const SideNavigation: React.FC = () => {
-    const url = "./";       // Korvaa tämä PHP palvelin linkillä tuotantoversiossa
+    const url = "http://www.eastpool.fi/"; 
+    const src = "http://www.eastpool.fi/Linkit.gif";
     return (
         <Box sx={{minHeight: "700px", minWidth: "217px", overflow: "hidden", background: "#e1faed"}}>
             <Box maxHeight="700px">
-            <img alt="Linkkilista" src="Linkit.gif" useMap="#linkkikartta" />
+            <img alt="Linkkilista" src={src} useMap="#linkkikartta" />
             <map name="linkkikartta">
                 <area alt="Etusivu" shape="rect" coords="0,30,190,50" href={`${url}`}/>
                 <area alt="Uutiset" shape="rect" coords="0,70,190,88" href={`${url}`+"Uutiset.php"}/>
