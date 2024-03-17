@@ -11,7 +11,7 @@ const SideNavigation: React.FC = () => {
             <Box maxHeight="700px">
             <img alt="Linkkilista" src={src} useMap="#linkkikartta" />
             <map name="linkkikartta">
-                <area alt="Etusivu" shape="rect" coords="0,30,190,50" href={`${url}`}/>
+                <area alt="Etusivu" shape="rect" coords="0,30,190,50" href={`/test/`}/>
                 <area alt="Uutiset" shape="rect" coords="0,70,190,88" href={`${url}`+"Uutiset.php"}/>
                 <area alt="Kilpailut" shape="rect" coords="0,90,190,109" href={`${url}`+"Kilpailut.php"}/>
                 <area alt="Tiedotteet" shape="rect" coords="0,110,190,123" href={`${url}`+"Tiedotteet.php?vuosi=22&tieto=2"}/>
