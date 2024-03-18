@@ -9,6 +9,7 @@ import { isValidParsedMatch } from '../../shared/parseMatch.js';
 import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
 import { logger } from '../serverErrorHandler.js';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -307,6 +308,14 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     if (!match.ok || !isValidParsedMatch(match))
         throw Error("Invalid match.");
 
+    // Tarkistetaan, että ottelun tiedot ovat samat kuin tietokannassa:
+    const dbRows = await getMatchInfo({ matchId: match.id }, null);
+    if (!Array.isArray(dbRows) || dbRows.length !== 1)
+        throw Error("Invalid match.");
+    const dbMatch = dbRows[0] as RowDataPacket;
+    if (dbMatch.home !== match.homeTeamName || dbMatch.away !== match.awayTeamName || dbMatch.status !== match.status)
+        throw Error("Invalid match.");
+
     // Tavalliset käyttäjät voivat ilmoittaa ainoastaan otteluita, 
     // missä toinen joukkueista on heidän:
     if (!roleIsAtLeast(auth.role, "mod")) {
@@ -345,7 +354,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             // Lisätään uudet rivit tauluun ep_peli, ep_peli:
             for (let k = 0; k < 9; k++) {
                 // Ei talleteta kahden tyhjän pelaajan peliä:
-                if (match.games[k][1] == -1 && match.games[k][2] == -1)
+                if (match.games[k][1] === -1 && match.games[k][2] === -1)
                     continue;
 
                 const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
