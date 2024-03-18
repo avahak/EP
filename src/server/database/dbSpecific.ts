@@ -396,10 +396,12 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | n
     // tarvittaessa pelaaja vierasjoukkueeseenkin pöytäkirjan ilmoituksen yhteydessä.
     if (!auth)
         throw new AuthError();
-    if (!params.teamId || !params.name)
+    if (!params.teamId || !params.name || typeof params.name !== "string")
         throw Error('Missing player info.');
-    const name = removeSpecialChars(params.name).slice(0, 15);
-    const sex = (params.sex == 'M' || params.sex == 'N') ? params.sex : '-';
+    const name = removeSpecialChars(params.name.trim()).slice(0, 15);
+    if (!name)
+        throw Error('Invalid name.');
+    const sex = (params.sex === 'M' || params.sex === 'N') ? params.sex : '-';
     const query = `INSERT INTO ep_pelaaja (nimi, joukkue, sukupuoli) VALUES (?, ?, ?)`;
     return myQuery(pool, query, [name, params.teamId, sex]);
 }
