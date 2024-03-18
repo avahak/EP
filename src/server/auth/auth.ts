@@ -129,8 +129,6 @@ async function findUserInDatabase(name: string, team: string) {
  * Ks. https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation
  */
 router.post('/create_access_token', async (req: Request, res: Response) => {
-    console.log("/create_access_token");
-    console.log("req.body.refresh_token", req.body.refresh_token);
     try {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string')
             return res.status(400).send("Missing token.");
@@ -152,7 +150,7 @@ router.post('/create_access_token', async (req: Request, res: Response) => {
 
         const newRefreshToken = encodeJWT(newRefreshTokenPayload);
         const accessToken = encodeJWT(accessTokenPayload);
-        console.log("/create_access_token done with", { refresh_token: newRefreshToken, access_token: accessToken });
+        console.log("/create_access_token issued new tokens");
         res.json({ refresh_token: newRefreshToken, access_token: accessToken });
     } catch (error) {
         logger.error('Error.', error);

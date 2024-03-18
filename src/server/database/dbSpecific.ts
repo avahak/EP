@@ -82,7 +82,6 @@ async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPa
  * käsiteltäväksi.
  */
 async function getMatchesToReportModerator(params: Record<string, any>, auth: AuthTokenPayload | null) {
-    console.log("auth", auth);
     if (!auth || !roleIsAtLeast(auth.role, "mod"))
         throw new AuthError();
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status ei ole 'H':

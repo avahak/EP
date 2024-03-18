@@ -32,9 +32,9 @@ const TokenInfoBlock: React.FC = () => {
     return (
         <>
         <Typography variant="body2" color="#555">
-            {`access iat: ${access_iat}, exp: ${access_exp}`}
+            {`access ${access_iat}, ${access_exp}`}
             <br />
-            {`refresh iat: ${refresh_iat}, exp: ${refresh_exp}`}
+            {`refresh ${refresh_iat}, ${refresh_exp}`}
         </Typography>
         </>
     )
