@@ -4,7 +4,7 @@
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToYYYYMMDD, deepCopy } from '../../shared/generalUtils.js';
+import { dateToYYYYMMDD, deepCopy, removeSpecialChars } from '../../shared/generalUtils.js';
 import { isValidParsedMatch } from '../../shared/parseMatch.js';
 import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
@@ -398,7 +398,7 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | n
         throw new AuthError();
     if (!params.teamId || !params.name)
         throw Error('Missing player info.');
-    const name = params.name.slice(0, 15);
+    const name = removeSpecialChars(params.name).slice(0, 15);
     const sex = (params.sex == 'M' || params.sex == 'N') ? params.sex : '-';
     const query = `INSERT INTO ep_pelaaja (nimi, joukkue, sukupuoli) VALUES (?, ?, ?)`;
     return myQuery(pool, query, [name, params.teamId, sex]);

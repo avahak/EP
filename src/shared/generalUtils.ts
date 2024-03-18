@@ -180,8 +180,17 @@ function formatTimeDifference(timestamp: number): string {
     return `${direction}${formattedTime.toFixed(1)}${timeUnit}`;
 }
 
+/**
+ * Poistaa html erikoismerkkejä merkkijonosta.
+ * HUOM! TODO Korvaa tämä tätä tarkoitusta varten tehdyllä kirjastolla kun
+ * käyttötarkoitus laajenee!
+ */
+function removeSpecialChars(str: string) {
+    return str.replace(/[&"<>\/\\`]/g, "");
+}
+
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
-    randomIntBetween, formatTimeDifference };
+    randomIntBetween, formatTimeDifference, removeSpecialChars };
