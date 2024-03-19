@@ -3,6 +3,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import { isAuthTokenPayload } from '../../shared/commonTypes';
 
 const SECRET_KEY = process.env.SECRET_KEY ?? "";
 
@@ -24,12 +25,10 @@ function verifyJWT(token: string) {
     try {
         const now = Math.floor(Date.now() / 1000);
         payload = jwt.verify(token, SECRET_KEY);
-        if (!payload || typeof payload === "string")
-            return null;
-        if (!("iat" in payload) || !("exp" in payload) || !("name" in payload) || !("team" in payload) || !("role" in payload))
+        if (!payload || !isAuthTokenPayload(payload))
             return null;
         const exp = payload.exp;
-        if (typeof exp !== "number" || exp < now)
+        if (exp < now)
             return null;
     } catch (err) {
         return null;

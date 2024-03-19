@@ -118,7 +118,7 @@ function crudeHash(obj: any) {
 }
 
 /**
- * Muutetaan serializable objekti JSON muotoon ja käytetään koodataan base64.
+ * Muutetaan serializable objekti JSON muotoon ja koodataan base64.
  */
 function base64JSONStringify(obj: any) {
     const s = JSON.stringify(obj);

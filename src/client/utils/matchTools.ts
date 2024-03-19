@@ -289,8 +289,8 @@ const fetchMatchData = async (matchId: number) => {
     console.log("rawScores fetch: ", rawScores);
 
     const idToName: (id: number, players: ScoresheetPlayer[]) => string = (id, players) => {
-        const index = players.findIndex((player) => player.id == id);
-        return (index == -1) ? "" : players[index].name;
+        const index = players.findIndex((player) => player.id === id);
+        return (index === -1) ? "" : players[index].name;
     }
 
     const playingHome: ScoresheetPlayer[] = [];
@@ -298,13 +298,13 @@ const fetchMatchData = async (matchId: number) => {
     for (const row of rawScores) {
         const playerHome = { id: row.kp, name: idToName(row.kp, playersHome) };
         const playerAway = { id: row.vp, name: idToName(row.vp, playersAway) };
-        let indexHome = playingHome.findIndex((player) => player.id == row.kp);
-        let indexAway = playingAway.findIndex((player) => player.id == row.vp);
-        if (indexHome == -1) {
+        let indexHome = playingHome.findIndex((player) => player.id === row.kp);
+        let indexAway = playingAway.findIndex((player) => player.id === row.vp);
+        if (indexHome === -1) {
             indexHome = playingHome.length;
             playingHome.push(playerHome);
         }
-        if (indexAway == -1) {
+        if (indexAway === -1) {
             indexAway = playingAway.length;
             playingAway.push(playerAway);
         }

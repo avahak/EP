@@ -32,6 +32,7 @@ type AuthTokenPayload = {
  */
 function isAuthTokenPayload(payload: any): payload is AuthTokenPayload {
     return (
+        !!payload && 
         typeof payload === "object" &&
         typeof payload.name === "string" &&
         typeof payload.team === "string" &&

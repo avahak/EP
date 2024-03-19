@@ -111,7 +111,7 @@ function sendMatchList(connectionId: string, matchList: any[]) {
 function broadcastLiveMatch(matchId: number) {
     const liveMatch = liveMatches.get(matchId);
     if (!liveMatch)
-    return;
+        return;
 
     // Käy läpi liveConnections ja kirjoita siihen jos matchId vastaavat:
     for (let [connectionId, connection] of liveConnections) {
@@ -145,6 +145,8 @@ function broadcastMatchList() {
 
 /**
  * Vastaanottaa keskeneräisen pöytäkirjan live-seurantaa varten.
+ * HUOM! TODO Tässäkin tulisi tehdä jonkinlaista validointia, muutoin 
+ * väärinkäyttö mahdollinen.
  */
 router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
     if (!req.body.result)
@@ -232,7 +234,8 @@ router.get('/watch_match/:matchId?', async (req, res) => {
     console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
 });
 
-// Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet ja live-ottelut.
+// Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet 
+// ja live-ottelut.
 setInterval(() => {
     const now = Date.now();
 
@@ -246,10 +249,6 @@ setInterval(() => {
     for (let key of liveMatchesToDelete)
         liveMatches.delete(key);
 
-    // Jos listaan tehtiin muutoksia, lähetetään uusi lista kaikille:
-    if (liveMatchesToDelete.length > 0)
-        broadcastMatchList();
-
     // Poistetaan vanhat liveConnections:
     const liveConnectionsToDelete = [];
     for (const [connectionId, connection] of liveConnections) 
@@ -257,6 +256,10 @@ setInterval(() => {
             liveConnectionsToDelete.push(connectionId);
     for (let key of liveConnectionsToDelete)
         liveConnections.delete(key);
+
+    // Jos liveMatches listaan tehtiin muutoksia, lähetetään uusi lista kaikille:
+    if (liveMatchesToDelete.length > 0)
+        broadcastMatchList();
 
     // console.log("#liveMatches: ", liveMatches.size, "#liveConnections: ", liveConnections.size);
 }, MAINTENANCE_INTERVAL);

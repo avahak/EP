@@ -7,7 +7,7 @@ import fs from 'fs';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
-import { RequestWithAuth, injectAuth, requireAuth } from '../auth/auth.js';
+import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { AuthError } from '../../shared/commonTypes.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
 
@@ -60,7 +60,7 @@ router.get('/schema', async (_req, res) => {
  * Sitten generoi ja lisää testidataa sen tauluihin (stage=3).
  * HUOM! Vain testausta varten, poistaa kaiken olemassaolevan tiedon tietokannasta.
  */
-router.get('/recreate/:stage', injectAuth, requireAuth("admin"), async (req, res) => {
+router.get('/recreate/:stage', async (req, res) => {
     if (process.env.ENVIRONMENT != 'LOCALHOST')
         return res.status(403).send("Database creation forbidden in this environment.");
     if (!process.env.DB_NAME)
@@ -105,7 +105,7 @@ const queryFunctions: Record<string, any> = {
  * funktioihin tarkistetaan funktiossa itsessään jos tarpeen, tässä vain 
  * liitetään pyyntöön mukaan käyttäjän tiedot (injectAuth).
  * 
- * Note. Tämä voisi olla parempi jakaa erillisiksi reiteiksi. Kaikkien
+ * NOTE Tämä voisi olla parempi jakaa erillisiksi reiteiksi. Kaikkien
  * tietokantafunktioiden laittaminen tämän reitin alle ei taida tuottaa etua.
  */
 router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => {

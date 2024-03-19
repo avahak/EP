@@ -76,7 +76,7 @@ app.use(BASE_URL + '/auth', authRouter);
 app.use(BASE_URL + '/api', generalRouter);
 
 /**
- * Muissa reiteissä käytetään Reactin omaa reititystä:
+ * Muuten käytetään Reactin omaa reititystä:
  */
 const wildcard = BASE_URL ? `${BASE_URL}/*` : '*';
 app.get(wildcard, (_req, res) => {
