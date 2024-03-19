@@ -1,5 +1,77 @@
 Express.js, React, ja MySQL koodia biljardiliigan verkkosivuille.  
   
+## Tietokannasta
+
+Tietokantaan on lisätty taulut
+* `ep_peli_tulokset`
+* `ep_ottelu_tulokset`
+* `ep_pelaaja_tulokset`
+* `ep_joukkue_tulokset`
+
+Nämä taulut sisältävät samat johdetut tuloskentät kuin takaisku_ep vastaavat varsinaiset taulut (tässä `ep_joukkue_tulokset` ja `ep_sarjat` vastaavat toisiaan). SQL-proseduurit ja triggerit määritelty tiedostoissa `sql_tulokset_1.sql` ja `sql_tulokset_2.sql` on tarkoitus pitää näitä tauluja automaattisesti ajan tasalla kun `ep_erat` tietoja muutetaan, lisätään, tai poistetaan.
+
+Johdetut tuloskentät on siis nyt talletettu sekä varsinaisissa tauluissa, että näissä `_tulokset` tauluissa. Kun tuloksia ilmoitetaan, niin `_tulokset` taulut päivittyvät automaattisesti kun `ep_erat` rivejä lisätään. Varsinaisissa tauluissa olevia tuloskenttiä voi päivittää kutsumalla `sql_procedures.sql` tiedostossa määriteltyä proseduuria `procedure_update_all_old_from_erat`, joka laskee annetun pelin vaikutuksen varsinaisten taulujen tuloskenttiin ja päivittää niitä. Tämä proseduuri on räätälöity toimimaan ottelun ilmoitustilanteessa ja ei välttämättä toimi muissa tilanteissa.
+
+## Tietoturva ja käyttäjien autentikaatio
+
+Frontendiltä tuleviin pyyntöihin ei voi tarkistamatta luottaa koska on mahdotonta täysin kontrolloida käyttäjän selaimen tilaa tai palvelimelle lähetettäviä pyyntöjä. Tästä syystä palvelimelle tuleva data tulee validoida vaikka se olisikin jo validoitu React-puolella ja käyttäjä tulee autentikoida palvelinpuolella jos tähän on tarvetta.
+
+Frontend-puolella validointi ja autentikaatio on siis käyttäjäkokemusta varten, backend-puolella validointi ja autentikaatio on tietoturvaa ja tietojen eheyttä varten.
+
+##### JWT-token
+
+Perusidea JWT-token autentikoinnissa on, että JWT-token on merkkijono, joka koodaa dataa. Sen voi lukea kuka tahansa mutta sen muuttaminen on rajoitettu kryptografisesti, joten palvelin voi aina varmista siitä, onko se itse luonut annetun tokenin. Tämä ominaisuus tekee JWT tokenista luotettavan tavan todentaa käyttäjän identiteetti.
+
+Kun käyttäjä kirjautuu sisään, palvelin luo ja lähettää käyttäjälle JWT-tokenin. Käyttäjän selain tallettaa tämän local storageen ja esittää sen palvelimelle digitaalisena "henkilökorttina" suojattuja API-reittejä käytettäessä. Palvelin tarkistaa tokenin varmistaen, että se on voimassa ja palvelimen luoma.
+
+Käytännössä käytetään kahta JWT-tokenia: refresh token ja access token. Molemmat sisältävät tiedot käyttäjän identifikaatioon mutta niitä käytetään eri tavalla. Access token on lyhytikäinen (esim. 1h), joka välitetään palvelimelle Authorization  headerissa suojatuilla API-reiteillä. Palvelin tunnistaa käyttäjän access tokenin perusteella. Refresh token on pitkäikäinen (esim. 3kk), ja sitä käytetään uusien access tokenien luomiseen, kun se välitetään palvelimelle.
+
+Kahden tokenin käyttäminen auttaa suojaamaan sovellusta: access tokenin lyhytikäisyys vähentää riskejä, jos se joutuu vääriin käsiin, ja refresh tokenin pitkäikäisyys tarjoaa käyttäjälle mukavuutta, kun hänen ei tarvitse kirjautua uudelleen sisään usein. Yhdellä tokenilla molemmat edut eivät olisi mahdollisia samanaikaisesti.
+
+## Tunnettuja puutteita ja ongelmia
+
+* Kaikkea koodia ei ole testattu tarpeeksi. Esimerkiksi tietokantaproseduurien ja triggerien toimintaa kannattaa seurata. Näiden tulisi toimia moitteetta kun tuloksia ilmoitetaan React frontend käyttäen mutta tietokannan tietoja voi muttaa monella tavalla ja kaikkia näitä ei ole testattu. 
+
+* Masters pörssi ei ole mukana html taulukoissa.
+
+* Taulujen muutos InnoDB:stä MyISAM moottoriin hidasti merkittävästi rivien lisäystä. InnoDB käyttäen 10000 pelin tietokannan perustaminen kesti noin 10sec, nyt MyISAM käyttäen siinä meni noin 2min. Perimmäinen syy tähän ei ole selvä mutta InnoDB on selvästi useasta syystä parempi ratkaisu kaikkiin tauluihin.
+
+# Kayttöönottoon tarvittavat askeleet
+
+Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava karkea lista ja on varmasti puutteellinen. 
+
+##### Esityö:
+
+1. Tietokannan varmuuskopiointi.
+
+##### Tietokantamuutokset:
+
+1. `_tulokset` taulujen lisäys tietokantaan: `sql_tables.sql` lopussa olevat taulut.
+2. Johdettujen tulosten kopionti varsinaisista tauluista _tulokset tauluihin:
+* `INSERT INTO ep_peli_tulokset (peli, ktulos, vtulos) SELECT id, ktulos, vtulos FROM ep_peli;`, 
+* `INSERT INTO ep_ottelu_tulokset (ottelu, ktulos, vtulos) SELECT id, ktulos, vtulos FROM ep_ottelu;`
+* `INSERT INTO ep_pelaaja_tulokset (pelaaja, v_era, h_era, v_peli, h_peli) SELECT id, v_era, h_era, v_peli, h_peli FROM ep_pelaaja;`
+* `INSERT INTO ep_joukkue_tulokset (joukkue, v_era, h_era, v_peli, h_peli, voitto, tappio) SELECT joukkue, v_era, h_era, v_peli, h_peli, voitto, tappio FROM ep_sarjat;`
+3. Proseduurien ja triggerien lisäys tietokantaan takaisku_ep:
+`sql_procedures.sql`, `sql_tulokset_1.sql`, `sql_tulokset_2.sql` ajo.
+
+##### PHP koodin muutokset
+
+1. Lisätään JWT (refresh) tokenin luonti ja talletus local storageen käyttäjän tarkistuksen yhteyteen.
+2. Lisätään PHP redirect sivu, jota voidaan kutsua React frontendiltä JWT-tokenin poimimiseeen.
+3. Muutetaan tulosten ilmoituslinkki PHP puolella osoittamaan React sivulle.
+
+##### Express.js palvelimen käynnistys:
+
+1. Päivitetään .env tiedosto ympäristömuuttujat (tietokantayhteys, jne.)
+2. Päivitetään `SideNavigation.tsx` linkit.
+3. Päivitetään `base url` seuraavissa paikoissa:
+* Tiedosto `vite.config.ts` muuttuja `base`
+* Tiedosto `AppRouter.tsx` prop `basename`
+* Tiedosto `apiUtils.ts` funktio `getBackendUrl()` palautusarvo
+4. Asennetaan tarvittavat paketit ajamalla "npm install".
+5. Käynnistetään Express.js palvelin.
+
 ---  
 ```
 Tiedostojen ja hakemistojen kuvaukset:  
@@ -157,3 +229,4 @@ src/client/components/scoresheet/ - Komponentteja tulosten ottelupöytäkirjan e
         AddPlayerDialog.tsx - AddPlayerDialog on dialog ikkuna, joka avataan Scoresheet 
                 päälle pelaajan lisäämiseksi joukkueeseen.
         scoresheetTypes.ts - Tyyppejä ja triviaaleja apufunktioita Scoresheet liittyen.
+```

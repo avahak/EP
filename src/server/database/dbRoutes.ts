@@ -109,6 +109,7 @@ const queryFunctions: Record<string, any> = {
  * tietokantafunktioiden laittaminen tämän reitin alle ei taida tuottaa etua.
  */
 router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => {
+    console.log("auth", req.auth);
     const queryName = req.body.queryName;
     const params = req.body.params || {};
     params._current_kausi = KULUVA_KAUSI;

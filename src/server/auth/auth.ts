@@ -9,7 +9,7 @@
  *     Kun käyttäjä kirjautuu sisään, palvelin luo ja lähettää käyttäjälle
  * JWT-tokenin. Käyttäjän selain tallettaa tämän local storageen ja esittää sen 
  * palvelimelle digitaalisena "henkilökorttina" suojattuja API-reittejä käytettäessä. 
- * Palvelin tarkistaa tokenin varmistaen että se on voimassa ja palvelimen luoma.
+ * Palvelin tarkistaa tokenin varmistaen, että se on voimassa ja palvelimen luoma.
  *     Käytännössä käytetään kahta JWT-tokenia: refresh token ja access token.
  * Molemmat sisältävät tiedot käyttäjän identifikaatioon mutta niitä käytetään eri tavalla. 
  * Access token on lyhytikäinen (esim. 1h) token, joka välitetään palvelimelle 
@@ -19,7 +19,7 @@
  *     Kahden tokenin käyttäminen auttaa suojaamaan sovellusta: access tokenin 
  * lyhytikäisyys vähentää riskejä, jos se joutuu vääriin käsiin, ja refresh tokenin 
  * pitkäikäisyys tarjoaa käyttäjälle mukavuutta, kun hänen ei tarvitse kirjautua 
- * uudelleen sisään usein. Yhdellä tokenilla molemmat edut eivät olisi mahdollista 
+ * uudelleen sisään usein. Yhdellä tokenilla molemmat edut eivät olisi mahdollisia
  * samanaikaisesti.
  * Lisää tietoa: https://en.wikipedia.org/wiki/JSON_Web_Token
  */
@@ -54,22 +54,30 @@ interface RequestWithAuth extends Request {
 };
 
 /**
- * Middleware, joka lukee JWT tokenin Authorization headerista. Jos token on olemassa ja
+ * Middleware, joka lukee JWT-tokenin Authorization headerista. Jos token on olemassa ja
  * vahvistetaan oikeaksi, se talletetaan req.auth kenttään. Muutoin asetetaan
  * req.auth = null.
  */
 const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
-    req.auth = null;
+    let authPayload: AuthTokenPayload | null = null;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.slice(7);
         const payload = verifyJWT(token);
         if (isAuthTokenPayload(payload)) {
-            // Lisää payload req objektiin:
-            req.auth = payload;
+            authPayload = payload;
+            Object.freeze(authPayload);
         }
     }
+
+    // Lisää authPayload req objektiin niin, että sitä ei voi enää muuttaa:
+    Object.defineProperty(req, 'auth', {
+        value: authPayload,
+        writable: false,
+        configurable: false,
+        enumerable: true
+    });
 
     next();
 };
@@ -82,8 +90,8 @@ const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) =>
 const requireAuth = (requiredRole: string | null = null) => {
     return (req: RequestWithAuth, res: Response, next: NextFunction) => {
         let isVerified = false;
-        if ("auth" in req && req.auth && typeof req.auth === 'object' && "role" in req.auth) {
-            if (roleIsAtLeast(req.auth.role as string, requiredRole))
+        if (isAuthTokenPayload(req.auth)) {
+            if (roleIsAtLeast(req.auth.role, requiredRole))
                 isVerified = true;
         }
         if (!isVerified) 
@@ -110,8 +118,8 @@ router.post('/create_refresh_token', async (req: Request, res: Response) => {
         const token = encodeJWT(payload);
         res.json({ token });
     } catch (error) {
-        logger.error('Error.', error);
-        res.status(500).send('Error.');
+        logger.error('Error creating refresh token.', error);
+        res.status(500).send('Error creating refresh token.');
     }
 });
 
