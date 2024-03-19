@@ -43,6 +43,11 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 ##### Esityö:
 
 1. Tietokannan varmuuskopiointi.
+2. Varmistetaan, että käyttöön tuleva "base url" on "/test/". Jos ei ole, niin tulee tehdä muutokset seuraavissa paikoissa:
+* Tiedosto `vite.config.ts` muuttuja `base`
+* Tiedosto `AppRouter.tsx` prop `basename`
+* Tiedosto `apiUtils.ts` funktio `getBackendUrl()` palautusarvo
+ja sitten rakentaa tiedostot uudelleen (`npm run build`).
 
 ##### Tietokantamuutokset:
 
@@ -66,14 +71,10 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 
 ##### Express.js palvelimen käynnistys:
 
-1. Päivitetään .env tiedosto ympäristömuuttujat (tietokantayhteys, jne.)
+1. Päivitetään .env tiedosto ympäristömuuttujat (tietokantayhteys, SECRET_KEY, jne.)
 2. Päivitetään `SideNavigation.tsx` linkit.
-3. Päivitetään `base url` seuraavissa paikoissa:
-* Tiedosto `vite.config.ts` muuttuja `base`
-* Tiedosto `AppRouter.tsx` prop `basename`
-* Tiedosto `apiUtils.ts` funktio `getBackendUrl()` palautusarvo
-4. Asennetaan tarvittavat paketit ajamalla "npm install".
-5. Käynnistetään Express.js palvelin.
+3. Asennetaan tarvittavat paketit ajamalla "npm install".
+4. Käynnistetään Express.js palvelin.
 
 ---
 ## Tiedostot ja hakemistot:  
