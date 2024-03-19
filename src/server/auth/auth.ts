@@ -1,26 +1,26 @@
 /**
  * Reittejä ja middleware määritelmiä käyttäjän autentikointiin liittyen.
  * 
- * Perusidea JWT token autentikoinnissa on, että JWT token on merkkijono, joka 
+ * Perusidea JWT-token autentikoinnissa on, että JWT-token on merkkijono, joka 
  * koodaa dataa. Sen voi lukea kuka tahansa mutta sen muuttaminen on rajoitettu 
- * kryptografisesti, joten palvelin voi aina tietää, onko se itse luonut sille
+ * kryptografisesti, joten palvelin voi aina varmista siitä, onko se itse luonut
  * annetun tokenin. Tämä ominaisuus tekee JWT tokenista luotettavan tavan todentaa
  * käyttäjän identiteetti.
  *     Kun käyttäjä kirjautuu sisään, palvelin luo ja lähettää käyttäjälle
- * JWT tokenin. Käyttäjä tallettaa tämän local storageen ja esittää sen palvelimelle
- * digitaalisena "henkilökorttina" suojattuja API-reittejä käytettäessä. Palvelin 
- * tarkistaa tokenin ja varmistaa, että se on voimassa ja palvelimen luoma.
- *     Käytännössä käytetään kahta JWT tokenia: refresh token ja access token.
+ * JWT-tokenin. Käyttäjän selain tallettaa tämän local storageen ja esittää sen 
+ * palvelimelle digitaalisena "henkilökorttina" suojattuja API-reittejä käytettäessä. 
+ * Palvelin tarkistaa tokenin varmistaen että se on voimassa ja palvelimen luoma.
+ *     Käytännössä käytetään kahta JWT-tokenia: refresh token ja access token.
  * Molemmat sisältävät tiedot käyttäjän identifikaatioon mutta niitä käytetään eri tavalla. 
- * Access token on lyhytikäinen token, joka välitetään serverille Authorization
- * headerissa suojatuilla API-reiteillä ja palvelin tunnistaa käyttäjän tämän 
- * perusteella. Refresh token on pitkäikäinen token, ja sitä käytetään uusien 
- * access tokenien luomiseen kun se välitetään palvelimelle. Syy kahden tokenin 
- * käyttämiseen on se, että näin lievitetään yhtä JWT tokenien heikkoutta: 
- * kun token on annettu, sen antamista on vaikea peruuttaa nopeasti. 
- * Refresh token on pitkäikäinen, jotta käyttäjän ei tarvitse kirjautua 
- * uudelleen sisään usein. Access token on lyhytikäinen, jotta se ei olisi 
- * voimassa kauan sen mahdollisen peruuttamisen jälkeen.
+ * Access token on lyhytikäinen (esim. 1h) token, joka välitetään palvelimelle 
+ * Authorization headerissa suojatuilla API-reiteillä. Palvelin tunnistaa 
+ * käyttäjän access tokenin perusteella. Refresh token on pitkäikäinen (esim. 3kk), 
+ * ja sitä käytetään uusien access tokenien luomiseen, kun se välitetään palvelimelle. 
+ *     Kahden tokenin käyttäminen auttaa suojaamaan sovellusta: access tokenin 
+ * lyhytikäisyys vähentää riskejä, jos se joutuu vääriin käsiin, ja refresh tokenin 
+ * pitkäikäisyys tarjoaa käyttäjälle mukavuutta, kun hänen ei tarvitse kirjautua 
+ * uudelleen sisään usein. Yhdellä tokenilla molemmat edut eivät olisi mahdollista 
+ * samanaikaisesti.
  * Lisää tietoa: https://en.wikipedia.org/wiki/JSON_Web_Token
  */
 

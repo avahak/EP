@@ -4,7 +4,7 @@ Express.js, React, ja MySQL koodia biljardiliigan verkkosivuille.
 ```
 Tiedostojen ja hakemistojen kuvaukset:  
   
-index.html - Reactin sovelluksen lataava html tiedosto
+index.html - React sovelluksen lataava html tiedosto
   
 src/ - Lähdekoodin hakemisto
 
@@ -27,7 +27,7 @@ src/server/ - Palvelinpuolen koodin hakemisto
         server.ts - Express.js serverin luonti. Serveri välittää staattiset tiedostot,
                 mukaanlukien React frontendin. Se vastaa myös API-pyyntöihin
                 tietokantadatan välittämiseksi frontendille.
-        /auth/ - Palvelimen autentikointikoodi
+        /auth/ - Palvelimen käyttäjien autentikointikoodi
                 auth.ts - Reittejä ja middleware määritelmiä käyttäjän 
                         autentikointiin liittyen.
                 jwt.ts - JWT token luonti ja tarkistus käyttäen kirjastoa jsonwebtoken.
@@ -154,6 +154,6 @@ src/client/components/scoresheet/ - Komponentteja tulosten ottelupöytäkirjan e
         RoundResultsTable.tsx - RoundResultsTable on tuloslomakkeen komponentti, 
                 joka sisältää erien tulokset taulukkona.
         RoundResultsTable.css - Tyylitiedosto RoundResultsTable.tsx käyttöön.
-        AddPlayerDialog.tsx - AddPlayerDialog on dialog ikkuna, joka avataan 'Scoresheet 
+        AddPlayerDialog.tsx - AddPlayerDialog on dialog ikkuna, joka avataan Scoresheet 
                 päälle pelaajan lisäämiseksi joukkueeseen.
         scoresheetTypes.ts - Tyyppejä ja triviaaleja apufunktioita Scoresheet liittyen.
