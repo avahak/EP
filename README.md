@@ -47,19 +47,22 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 ##### Tietokantamuutokset:
 
 1. `_tulokset` taulujen lisäys tietokantaan: `sql_tables.sql` lopussa olevat taulut.
-2. Johdettujen tulosten kopionti varsinaisista tauluista _tulokset tauluihin:
+2. Johdettujen tulosten kopiointi varsinaisista tauluista _tulokset tauluihin:
 * `INSERT INTO ep_peli_tulokset (peli, ktulos, vtulos) SELECT id, ktulos, vtulos FROM ep_peli;`, 
 * `INSERT INTO ep_ottelu_tulokset (ottelu, ktulos, vtulos) SELECT id, ktulos, vtulos FROM ep_ottelu;`
 * `INSERT INTO ep_pelaaja_tulokset (pelaaja, v_era, h_era, v_peli, h_peli) SELECT id, v_era, h_era, v_peli, h_peli FROM ep_pelaaja;`
 * `INSERT INTO ep_joukkue_tulokset (joukkue, v_era, h_era, v_peli, h_peli, voitto, tappio) SELECT joukkue, v_era, h_era, v_peli, h_peli, voitto, tappio FROM ep_sarjat;`
-3. Proseduurien ja triggerien lisäys tietokantaan takaisku_ep:
+3. Proseduurien ja triggerien lisäys tietokantaan `takaisku_ep`:
 `sql_procedures.sql`, `sql_tulokset_1.sql`, `sql_tulokset_2.sql` ajo.
 
 ##### PHP koodin muutokset
 
-1. Lisätään JWT (refresh) tokenin luonti ja talletus local storageen käyttäjän tarkistuksen yhteyteen.
-2. Lisätään PHP redirect sivu, jota voidaan kutsua React frontendiltä JWT-tokenin poimimiseeen.
-3. Muutetaan tulosten ilmoituslinkki PHP puolella osoittamaan React sivulle.
+1. Lisätään PHP palvelimelle ympäristömuuttuja `SECRET_KEY`, joka on sama kuin .env tiedostossa Express.js palvelimelle määriteltävä.
+2. Asennetaan `firebase/php-jwt` kirjasto käyttäen composer.
+3. Lisätään JWT (refresh) tokenin luonti ja talletus local storageen käyttäjän tarkistuksen yhteyteen tiedostossa `tarkista.php`.
+4. Lisätään PHP redirect sivu, jota voidaan kutsua React frontendiltä JWT-tokenin poimimiseeen. (TODO yksityiskohdat)
+5. Muutetaan tulosten ilmoituslinkki PHP puolella osoittamaan React sivulle.
+6. Lisätään linkki live otteluiden seuraamiseksi jonnekin sopivaan paikkaan.
 
 ##### Express.js palvelimen käynnistys:
 
@@ -72,10 +75,9 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 4. Asennetaan tarvittavat paketit ajamalla "npm install".
 5. Käynnistetään Express.js palvelin.
 
----  
+---
+## Tiedostot ja hakemistot:  
 ```
-Tiedostojen ja hakemistojen kuvaukset:  
-  
 index.html - React sovelluksen lataava html tiedosto
   
 src/ - Lähdekoodin hakemisto
