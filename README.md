@@ -98,26 +98,27 @@ src/client/components/layout/ - Komponentteja sivujen ulkoasuun ja osien ryhmitt
         SideNavigation.tsx - Sivukartta komponentti (Linkit.gif) navigointiin 
                 sivujen välillä.
         
-src/client/components/live_matches/ - Komponentteja live otteluiden esittämiseen
+src/client/components/live_matches/ - Komponentteja live otteluiden esittämiseen.
         LiveMatchCard.tsx - Kortti esittämään yhtä live ottelua. Siinä on joukkueet,
                 tulos, ja kirjauksen aloitusaika.
         LiveMatches.tsx - Live otteluiden esityssivu. Näyttää kutakin ottelua kohden
                 kortin sen tiedoista. Kun korttia painetaan, näkyy ottelun pöytäkirja.
                 Pöytäkirja päivitty automaattisesti käyttäen SSE:tä.
 
-src/client/components/machine_vision/ - Komponentteja konenäköön liittyen
+src/client/components/machine_vision/ - Komponentteja konenäköön liittyen.
         DrawHomography.tsx - Komponentti, joka piirtää homografia-esimerkin.
         HomographyDemo.tsx - Sivu homografian esittelemiseen. Palvelin laskee 
                 homografian kahden kuvan välille ja esittää sen graafisesti.
         HoughDemo.tsx - Sivu Hough-muunnoksen esittämiseksi.
         VisionExample.tsx - Esimerkki Google Vision API vastauksesta. 
 
-src/client/components/sandbox/ - Sekalaisia vain testauksessa käytettäviä komponentteja
+src/client/components/sandbox/ - Sekalaisia vain testauksessa käytettäviä komponentteja.
         DisplayScoresheet.tsx - Esittää yhden ottelun pöytäkirjan (ep_ottelu id=1).
         SimulateLogin.tsx - Simuloi käyttäjän kirjautumista esittämällä käyttäjät 
                 linkkeinä ja kun linkkiä painetaan, kirjautuu sisään käyttäjänä.
 
-src/client/components/tables/ - Yleiseen käyttöön sopivia html taulukoiden määritelmiä
+src/client/components/general_tables/ - Yleiseen käyttöön sopivia 
+                html taulukoiden määritelmiä.
         BasicTableStyles.tsx - Tyylejä taulujen kustomoinniksi minimaalisella tyylillä. 
         ResultTable.tsx - Wrapperi Material UI taululle. Esittää tietokantataulun 
                 tyyppistä dataa <table> elementtiin pohjautuvalla Material UI komponentilla.

@@ -288,7 +288,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 </Box>}
                 </Box>
             </Box>
-         </Box>
+        </Box>
         </form>
         </Box>
     );

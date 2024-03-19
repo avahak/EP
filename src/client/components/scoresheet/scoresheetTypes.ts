@@ -2,11 +2,17 @@
  * Tyyppejä ja triviaaleja apufunktioita Scoresheet liittyen.
  */
 
+/**
+ * Pelaajan tiedot Scoresheet muodossa.
+ */
 type ScoresheetPlayer = {
     id: number;
     name: string;
 };
 
+/**
+ * Joukkueen tiedot Scoresheet muodossa.
+ */
 type ScoresheetTeam = {
     id: number;
     teamName: string;

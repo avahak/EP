@@ -12,7 +12,7 @@ import { getAuthTokenPayload } from '../../shared/commonTypes';
  * Käyttäjän rooli on role: "admin" tai "mod" ja muut arvot ovat tavallisia käyttäjiä.
  * Kontekstin tilaa voi muttaa kutsumalla setFromRefreshToken ja uuden access
  * tokenin saa kutsumalla getAccessToken. Boolean isTokenChecked seuraa onko 
- * tokenin olemassaoloa vielä tarkistettu.
+ * refresh tokenin olemassaoloa vielä tarkistettu.
  */
 type AuthenticationState = {
     isAuthenticated: boolean;

@@ -6,7 +6,7 @@
 -- Erätulokset aiheuttavat muutoksia seuraaviin tauluihin ja kenttiin:
 --     ep_peli: ktulos, vtulos
 --     ep_ottelu: ktulos, vtulos
---     ep_pelaaja: v_era, h_era, v_peli, h_peli, pelit
+--     ep_pelaaja: v_era, h_era, e_era, v_peli, h_peli, e_peli, pelit
 --     ep_sarjat: v_era, h_era, v_peli, h_peli, ottelu, voitto, tappio.
 -- HUOM! _tulokset tauluja ei tässä tiedostossa muuteta tai käytetä.
 -- 
@@ -108,8 +108,10 @@ BEGIN
     UPDATE ep_pelaaja
         SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
             h_era = h_era + new_peli_vtulos - old_peli_vtulos,
+            e_era = v_era + new_peli_ktulos - old_peli_ktulos - (h_era + new_peli_vtulos - old_peli_vtulos),
             v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
             h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
+            e_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win - (h_peli + new_is_peli_away_win - old_is_peli_away_win),
             pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
         WHERE id = koti_pelaaja_id;
     
@@ -117,8 +119,10 @@ BEGIN
     UPDATE ep_pelaaja
         SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
             h_era = h_era + new_peli_ktulos - old_peli_ktulos,
+            e_era = v_era + new_peli_vtulos - old_peli_vtulos - (h_era + new_peli_ktulos - old_peli_ktulos),
             v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
             h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
+            e_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win - (h_peli + new_is_peli_home_win - old_is_peli_home_win),
             pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
         WHERE id = vieras_pelaaja_id;
 

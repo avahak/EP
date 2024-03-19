@@ -7,7 +7,7 @@ import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead
 import GameDialog from "./GameDialog";
 import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
-import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../tables/BasicTableStyles";
+import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../general_tables/BasicTableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
 import './RoundResultsTable.css';

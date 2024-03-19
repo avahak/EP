@@ -11,7 +11,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchTools';
-import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../tables/BasicTableStyles';
+import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../general_tables/BasicTableStyles';
 import { deepCopy } from '../../../shared/generalUtils';
 import { ScoresheetFields } from './scoresheetTypes';
 import './GameDialog.css';

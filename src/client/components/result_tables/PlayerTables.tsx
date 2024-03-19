@@ -7,7 +7,7 @@
 
 import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
-import { ResultTable } from "../tables/ResultTable";
+import { ResultTable } from "../general_tables/ResultTable";
 
 /** 
  * Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.

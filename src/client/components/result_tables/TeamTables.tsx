@@ -1,6 +1,6 @@
 import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
-import { ResultTable } from "../tables/ResultTable";
+import { ResultTable } from "../general_tables/ResultTable";
 
 /**
  * Joukkueiden sarjatilanne taulukko.
