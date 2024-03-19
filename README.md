@@ -43,11 +43,11 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 ##### Esityö:
 
 1. Tietokannan varmuuskopiointi.
-2. Varmistetaan, että käyttöön tuleva "base url" on "/test/". Jos ei ole, niin tulee tehdä muutokset seuraavissa paikoissa:
+2. Varmistetaan, että käyttöön tuleva "base url" on "/test/". Jos ei ole, niin tulee seuraavat muutokset ennen uudelleenrakentamista (`npm run build`):
+* Tiedosto `SideNavigation.tsx` linkit
 * Tiedosto `vite.config.ts` muuttuja `base`
 * Tiedosto `AppRouter.tsx` prop `basename`
 * Tiedosto `apiUtils.ts` funktio `getBackendUrl()` palautusarvo
-ja sitten rakentaa tiedostot uudelleen (`npm run build`).
 
 ##### Tietokantamuutokset:
 
@@ -64,17 +64,16 @@ ja sitten rakentaa tiedostot uudelleen (`npm run build`).
 
 1. Lisätään PHP palvelimelle ympäristömuuttuja `SECRET_KEY`, joka on sama kuin .env tiedostossa Express.js palvelimelle määriteltävä.
 2. Asennetaan `firebase/php-jwt` kirjasto käyttäen composer.
-3. Lisätään JWT (refresh) tokenin luonti ja talletus local storageen käyttäjän tarkistuksen yhteyteen tiedostossa `tarkista.php`.
-4. Lisätään PHP redirect sivu, jota voidaan kutsua React frontendiltä JWT-tokenin poimimiseeen. (TODO yksityiskohdat)
+3. Lisätään JWT (refresh) tokenin luonti ja talletus local storageen käyttäjän tarkistuksen yhteyteen tiedostossa `tarkista.php`. HUOM! Tässä oletetaan, että React sivut ovat `eastpool.fi` alla, koska muutoin ne eivät käytä samaa local storage tilaa. Jos näin ei ole, tulee käytettyä ratkaisua muuttaa.
+4. Lisätään PHP redirect sivu `login_redirect.php`, jonne navigoidaan React puolelta kun JWT refresh token puuttuu.
 5. Muutetaan tulosten ilmoituslinkki PHP puolella osoittamaan React sivulle.
 6. Lisätään linkki live otteluiden seuraamiseksi jonnekin sopivaan paikkaan.
 
 ##### Express.js palvelimen käynnistys:
 
-1. Päivitetään .env tiedosto ympäristömuuttujat (tietokantayhteys, SECRET_KEY, jne.)
-2. Päivitetään `SideNavigation.tsx` linkit.
-3. Asennetaan tarvittavat paketit ajamalla "npm install".
-4. Käynnistetään Express.js palvelin.
+1. Päivitetään .env tiedosto ympäristömuuttujat (tietokantayhteys, `SECRET_KEY`, `PORT`, `KULUVA_KAUSI`, jne.)
+2. Asennetaan tarvittavat paketit ajamalla "npm install".
+3. Käynnistetään Express.js palvelin.
 
 ---
 ## Tiedostot ja hakemistot:  
