@@ -11,7 +11,7 @@ const SideNavigation: React.FC = () => {
             <Box maxHeight="700px">
             <img alt="Linkkilista" src={src} useMap="#linkkikartta" />
             <map name="linkkikartta">
-                <area alt="Etusivu" shape="rect" coords="0,30,190,50" href={`/test/`}/>
+                <area alt="Etusivu" shape="rect" coords="0,30,190,50" href={`/node/`}/>
                 <area alt="Uutiset" shape="rect" coords="0,70,190,88" href={`${url}`+"Uutiset.php"}/>
                 <area alt="Kilpailut" shape="rect" coords="0,90,190,109" href={`${url}`+"Kilpailut.php"}/>
                 <area alt="Tiedotteet" shape="rect" coords="0,110,190,123" href={`${url}`+"Tiedotteet.php?vuosi=22&tieto=2"}/>
@@ -19,7 +19,7 @@ const SideNavigation: React.FC = () => {
                 <area alt="Ohjelma" shape="rect" coords="0,164,190,180" href={`${url}`+"Ohjelma35.php"}/>
                 <area alt="Mastersporssi" shape="rect" coords="0,181,190,195" href={`${url}`+"Mastersporssi35.php"}/>
                 <area alt="Arkisto" shape="rect" coords="0,197,190,212" href={`${url}`+"Arkisto.php"}/>
-                <area alt="Userfilu" shape="rect" coords="0,214,190,235" href="/test/report"/>
+                <area alt="Userfilu" shape="rect" coords="0,214,190,235" href="/node/report"/>
                 <area alt="Kilpailukalenteri" shape="rect" coords="0,260,190,275" href={`${url}`+"Kilpailukalenteri.php"}/>
                 <area alt="Raflat" shape="rect" coords="0,290,190,326" href={`${url}`+"Raflat.php"}/>
                 <area alt="Saannot" shape="rect" coords="0,356,190,371" href={`${url}`+"Saannot.php"}/>

@@ -42,7 +42,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
     const handleGameDialogSubmit = (gameIndex: number, results: string[][]) => {
         // console.log("RoundResultsTable: handleGameDialogSubmit: results", results);
         onGameDialogSubmit(gameIndex, results);
-        setGameDialogState({ isOpen: false });
+        // setGameDialogState({ isOpen: false });
     };
 
     /**

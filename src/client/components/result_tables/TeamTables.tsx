@@ -20,14 +20,16 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
             v_era: row.v_era,
             h_era: row.h_era,
             e_era: row.v_era - row.h_era,
-            pisteet: row.v_peli,
+            pisteet: row.voitto,
         };
         table.push(newRow);
     }
 
     // Lasketaan sija:
     const comparators = [
-        numberColumnComparator<any, "pisteet">("pisteet", "desc"), 
+        numberColumnComparator<any, "v_era">("v_era", "desc"),
+        numberColumnComparator<any, "v_peli">("v_peli", "desc"),
+        numberColumnComparator<any, "voitto">("voitto", "desc"), 
     ];
     addMultiSortRankColumn(table, "sija", comparators, true);
 

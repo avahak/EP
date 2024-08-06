@@ -58,7 +58,7 @@ const AppRouter = () => {
         <AuthenticationProvider>
         <PageNameProvider>
         <SnackbarProvider>
-        <BrowserRouter basename='/test/'>
+        <BrowserRouter basename='/node/'>
             <Routes>
                 {/* Sivuja tai komponentteja */}
                 <Route path="/report" element={<Wrap pageName="Tulosten ilmoitus" restricted><ResultSubmission /></Wrap>} />

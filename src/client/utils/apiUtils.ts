@@ -111,7 +111,7 @@ const serverFetch = async (route: string, options: any = {}, authenticationState
  */
 const getBackendUrl = () => {
     const port = window.location.hostname === 'localhost' ? ':3001' : '';
-    return `${window.location.protocol}//${window.location.hostname}${port}/test`;
+    return `${window.location.protocol}//${window.location.hostname}${port}/node`;
 };
 
 /**

@@ -43,7 +43,8 @@ Seuraavassa on käyttöönottoon vaadittavia askelia. Tämän on kuvaa antava ka
 ##### Esityö:
 
 1. Tietokannan varmuuskopiointi.
-2. Varmistetaan, että käyttöön tuleva "base url" on "/test/". Jos ei ole, niin tulee seuraavat muutokset ennen uudelleenrakentamista (`npm run build`):
+2. Korvaa `BannerBox` elementit mainoksilla.
+3. Varmistetaan, että käyttöön tuleva "base url" on "/test/". Jos ei ole, niin tulee seuraavat muutokset ennen uudelleenrakentamista (`npm run build`):
 * Tiedosto `SideNavigation.tsx` linkit
 * Tiedosto `vite.config.ts` muuttuja `base`
 * Tiedosto `AppRouter.tsx` prop `basename`

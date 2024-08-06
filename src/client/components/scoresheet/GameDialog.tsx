@@ -68,14 +68,25 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
         newResults[playerIndex][round] = result;
         newResults[1-playerIndex][round] = " ";
         setResults(newResults);
+        // Sen sijaan, että odotettaisiin "kirjaa"-painikkeen klikkausta, välitetään uudet tulokset heti:
+        onSubmit(state.gameIndex!, newResults);
         if (result !== " ")
             setCurrentRound(round+1);
         setErrorMessage("");
     }
 
     useEffect(() => {
-        setCurrentRound(state.roundIndex ?? 0);
-        setResults(formFields.scores[state.gameIndex ?? 0]);
+        // setCurrentRound(state.roundIndex ?? 0);
+        let newResults = formFields.scores[state.gameIndex ?? 0];
+        let firstEmptyIndex = 0;
+        for (let k = 0; k < 5; k++)
+            if ((newResults[0][k] === " ") && (newResults[1][k] === " ")) {
+                firstEmptyIndex = k;
+                break;
+            }
+        // console.log("firstEmptyIndex: ", firstEmptyIndex);
+        setCurrentRound(firstEmptyIndex);
+        setResults(newResults);
         setErrorMessage("");
     }, [state]);
 
@@ -286,15 +297,20 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 }
 
 
-            {/* "Peruuta" ja "Kirjaa peli" nappulat: */}
+            {/* Nappulat: */}
             </DialogContent>
             <DialogActions>
-                <Button variant="contained" color="error" onClick={onClose}>
-                    Peruuta
+                {(isFinished && !errorMessage) && 
+                <Button variant="contained" color="primary" onClick={() => { setCurrentRound(0); }}>
+                    Muokkaa
                 </Button>
-                <Button variant="contained" color="primary" onClick={() => onSubmit(state.gameIndex!, results)}>
+                }
+                <Button variant="contained" color="primary" onClick={onClose}>
+                    Sulje
+                </Button>
+                {/* <Button variant="contained" color="primary" onClick={() => onSubmit(state.gameIndex!, results)}>
                     Kirjaa peli
-                </Button>
+                </Button> */}
             </DialogActions>
         </Dialog>
         </>
