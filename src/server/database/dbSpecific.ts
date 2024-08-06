@@ -333,19 +333,19 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
     try {
         const connection = await pool.getConnection();
-        // await connection.beginTransaction();  // MyISAM ei tue transaktioita
+        await connection.beginTransaction();  // MyISAM ei tue transaktioita
         try {
             // Haetaan seuraavat vapaat id:t ep_peli, ep_erat tauluissa.
             // HUOM! Tämä on ongelmallinen lähestymistapa: 
             // kaksi yhtäaikaista lisäystä voivat sekoittaa tauluja.
-            const queryId1 = `SELECT MAX(id)+1 AS nextId FROM ep_peli`;
-            const [idRow1] = await connection.query(queryId1) as any;
-            const queryId2 = `SELECT MAX(id)+1 AS nextId FROM ep_erat`;
-            const [idRow2] = await connection.query(queryId2) as any;
-            const nextId_peli = idRow1[0].nextId;
-            const nextId_erat = idRow2[0].nextId;
-            if (typeof nextId_peli !== "number" || typeof nextId_peli !== "number" || nextId_peli <= 0 || nextId_erat <= 0)
-                throw Error(`Error executing ${queryId1}`);
+            // const queryId1 = `SELECT MAX(id)+1 AS nextId FROM ep_peli`;
+            // const [idRow1] = await connection.query(queryId1) as any;
+            // const queryId2 = `SELECT MAX(id)+1 AS nextId FROM ep_erat`;
+            // const [idRow2] = await connection.query(queryId2) as any;
+            // const nextId_peli = idRow1[0].nextId;
+            // const nextId_erat = idRow2[0].nextId;
+            // if (typeof nextId_peli !== "number" || typeof nextId_peli !== "number" || nextId_peli <= 0 || nextId_erat <= 0)
+            //     throw Error(`Error executing ${queryId1}`);
 
             // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_erat:
             const query1 = `
@@ -369,28 +369,28 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 if (match.games[k][1] === -1 && match.games[k][2] === -1)
                     continue;
 
-                const query3 = `INSERT INTO ep_peli (id, ottelu, kp, vp) VALUES (?, ?, ?, ?)`;
+                const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
                 // HUOM! Seuraava on AUTO_INCREMENT käyttäen:
                 // Liitetään rounds taulukkoon lisätyn rivin id:
-                // let [insertedRow] = await connection.query(query3, match.games[k]);
-                // if ('insertId' in insertedRow)
-                //     rounds[k][0] = insertedRow.insertId;
-                // else 
-                //     throw Error("Error during ep_peli INSERT.");
+                let [insertedRow] = await connection.query(query3, match.games[k]);
+                if ('insertId' in insertedRow)
+                    rounds[k][0] = insertedRow.insertId;
+                else 
+                    throw Error("Error during ep_peli INSERT.");
                 // HUOM! Seuraava on ilman AUTO_INCREMENT:
-                await connection.query(query3, [nextId_peli+k, ...match.games[k]]);
-                rounds[k][0] = nextId_peli+k;
+                // await connection.query(query3, [nextId_peli+k, ...match.games[k]]);
+                // rounds[k][0] = nextId_peli+k;
 
                 // Lisätään uusi rivi tauluun ep_erat:
-                const query4_1 = `INSERT INTO ep_erat (id, peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-                await connection.query(query4_1, [nextId_erat+k, ...rounds[k]]);
+                const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
+                await connection.query(query4_1, rounds[k]);
                 
                 // Jos uusi status on 'H', niin päivitetään varsinaisten taulujen
                 // tulosmuuttujat:
                 if (match.newStatus == 'H') {
                     const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
-                    // await connection.query(query4_2, [insertedRow.insertId]);
-                    await connection.query(query4_2, [nextId_peli+k]);
+                    await connection.query(query4_2, [insertedRow.insertId]);
+                    // await connection.query(query4_2, [nextId_peli+k]);
                 }
             }
 
@@ -398,9 +398,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             const query5 = `UPDATE ep_ottelu SET paiva = ?, status = ? WHERE id = ?`;
             await connection.query(query5, [match.date, match.newStatus, match.id]);
 
-            // await connection.commit();
+            await connection.commit();
         } catch (error) {
-            // await connection.rollback();
+            await connection.rollback();
             throw error;
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia

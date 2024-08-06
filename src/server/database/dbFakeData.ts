@@ -9,7 +9,7 @@ import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
 import { dateToYYYYMMDD, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
 
-const RAVINTOLAT = 7;       // max 7
+const RAVINTOLAT = 5;       // max 7
 const MIN_KAUSI = 37;
 const MAX_KAUSI = 38;
 const MAX_TEAMS_IN_RAVINTOLA = 6;
@@ -326,7 +326,7 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
     const data = generateFakeData();
     try {
         const connection = await pool.getConnection();
-        // await connection.beginTransaction();
+        await connection.beginTransaction();
         try {
             // Lisää tauluun ep_rafla:
             let sql = `INSERT INTO ep_rafla (lyhenne, nimi, osoite, postosoite, kauposa, yhdhenk, yhdpuh) VALUES ?`;
@@ -389,10 +389,10 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_joukkue batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_sarjat:
-            sql = `INSERT INTO ep_sarjat (id, nimi, joukkue, lyhenne, lohko) VALUES ?`;
+            sql = `INSERT INTO ep_sarjat (nimi, joukkue, lyhenne, lohko) VALUES ?`;
             batch = data.sarjat.map((sarja) => {
                 return [
-                    sarja.index+1,
+                    // sarja.index+1,
                     sarja.nimi.slice(0, 15),
                     sarja.joukkue+1,
                     sarja.lyhenne.slice(0, 3),
@@ -441,10 +441,10 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`userpw batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_ottelu:
-            sql = `INSERT INTO ep_ottelu (id, lohko, paiva, koti, vieras, status) VALUES ?`;
+            sql = `INSERT INTO ep_ottelu (lohko, paiva, koti, vieras, status) VALUES ?`;
             batch = data.ottelut.map((ottelu) => {
                 return [
-                    ottelu.index+1,
+                    // ottelu.index+1,
                     ottelu.lohko+1,
                     dateToYYYYMMDD(ottelu.paiva),
                     ottelu.koti+1,
@@ -456,10 +456,10 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_ottelu batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_peli:
-            sql = `INSERT INTO ep_peli (id, ottelu, kp, vp) VALUES ?`;
+            sql = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES ?`;
             batch = data.pelit.map((peli) => {
                 return [
-                    peli.index+1,
+                    // peli.index+1,
                     peli.ottelu+1,
                     peli.kp+1,
                     peli.vp+1
@@ -469,10 +469,10 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             console.log(`ep_peli batch n=${batch.length}, first: ${batch[0]}`);
 
             // Lisää tauluun ep_erat:
-            sql = `INSERT INTO ep_erat (id, peli, era1, era2, era3, era4, era5) VALUES ?`;
+            sql = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES ?`;
             batch = data.erat.map((era) => {
                 return [
-                    era.index+1,
+                    // era.index+1,
                     era.peli+1,
                     era.era1,
                     era.era2,
@@ -490,11 +490,11 @@ async function generateAndInsertToDatabase(pool: mysql.Pool) {
             await connection.query(sql);
             console.log(`\"CALL procedure_update_all_old_from_all_erat_slow\" finished`);
 
-            // await connection.commit();
+            await connection.commit();
             console.log("generateAndInsertToDatabase success");
         } catch (error) {
             console.error("Error during generateAndInsertToDatabase:", error);
-            // await connection.rollback();
+            await connection.rollback();
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();

@@ -87,7 +87,7 @@ CREATE TABLE `ep_pelaaja` (
 -- ep_ottelu
 DROP TABLE IF EXISTS `ep_ottelu`;
 CREATE TABLE `ep_ottelu` (
-    `id` INT(10) UNSIGNED PRIMARY KEY,
+    `id` INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     `lohko` TINYINT(3) NOT NULL,
     `paiva` DATE DEFAULT NULL,
     `koti` SMALLINT(6) DEFAULT NULL,
@@ -95,13 +95,13 @@ CREATE TABLE `ep_ottelu` (
     `ktulos` TINYINT(4) DEFAULT NULL,
     `vtulos` TINYINT(4) DEFAULT NULL,
     `status` VARCHAR(1) NOT NULL
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 -- ep_sarjat
 -- Nämä ovat tilastoja joukkueelle
 DROP TABLE IF EXISTS `ep_sarjat`;
 CREATE TABLE `ep_sarjat` (
-    `id` SMALLINT(6) PRIMARY KEY,
+    `id` SMALLINT(6) PRIMARY KEY AUTO_INCREMENT,
     `nimi` VARCHAR(15) DEFAULT NULL COMMENT 'kaudella nimi',
     `joukkue` SMALLINT(6) UNSIGNED NOT NULL,
     `lyhenne` TEXT NOT NULL,
@@ -113,32 +113,32 @@ CREATE TABLE `ep_sarjat` (
     `h_era` SMALLINT(6) NOT NULL DEFAULT 0,
     `h_peli` SMALLINT(6) NOT NULL DEFAULT 0,
     `v_peli` SMALLINT(6) NOT NULL DEFAULT 0
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 -- ep_peli
 DROP TABLE IF EXISTS `ep_peli`;
 CREATE TABLE `ep_peli` (
-    `id` INT(11) UNSIGNED PRIMARY KEY,
+    `id` INT(11) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     `ottelu` INT(11) UNSIGNED NOT NULL,
     `kp` INT(11) DEFAULT NULL,
     `vp` INT(11) DEFAULT NULL,
     `ktulos` TINYINT(3) DEFAULT NULL,
     `vtulos` TINYINT(3) DEFAULT NULL
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 -- ep_erat
 -- erien mahdolliset tulokset: V0-V6, K0-K6
 -- K0: -, K1: 1, K2: A, K3: 9, K4: K, K5: C, K6: V
 DROP TABLE IF EXISTS `ep_erat`;
 CREATE TABLE `ep_erat` (
-    `id` INT(10) UNSIGNED PRIMARY KEY,
+    `id` INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     `peli` INT(10) UNSIGNED NOT NULL,
     `era1` VARCHAR(2) NOT NULL,
     `era2` VARCHAR(2) NOT NULL,
     `era3` VARCHAR(2) NOT NULL,
     `era4` VARCHAR(2) NOT NULL,
     `era5` VARCHAR(2) NOT NULL
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 -- userpw
 DROP TABLE IF EXISTS `userpw`;
