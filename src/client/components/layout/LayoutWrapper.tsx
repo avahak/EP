@@ -12,7 +12,6 @@ import { ReactNode, useContext } from "react";
 import React from "react";
 import { PageNameContext } from '../../contexts/PageNameContext';
 import { AuthenticationContext } from '../../contexts/AuthenticationContext';
-import { Link, useNavigate } from 'react-router-dom';
 import { formatTimeDifference } from '../../../shared/generalUtils';
 import { getAuthTokenPayload } from '../../../shared/commonTypes';
 
@@ -45,27 +44,28 @@ const TokenInfoBlock: React.FC = () => {
  */
 const AuthenticationBlock: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
-    const logout = () => {
+    // const logout = () => {
+    //     authenticationState.setFromRefreshToken(null);
+    //     navigate("/");
+    // };
+
+    const navigateUser = () => {
         authenticationState.setFromRefreshToken(null);
-        navigate("/");
+        window.location.href = "/Userfilu.php";
     };
 
     return (
         <>
             <TokenInfoBlock />
-            {authenticationState.isAuthenticated ?
-                <Button color="inherit" onClick={logout}>
-                    Logout
+            {!authenticationState.isAuthenticated &&
+                <Button color="inherit" onClick={navigateUser}>
+                    Login
                 </Button>
-                :
-                <Link to="/simulate_login" style={{color: "inherit"}}>
-                    <Button color="inherit">Login</Button>
-                </Link>
             }
             {authenticationState.isAuthenticated &&
-                <Typography textAlign="center" sx={{pl: 3}}>
+                <Typography textAlign="center" sx={{pl: 3, cursor: 'pointer'}} onClick={navigateUser} role="button">
                     {authenticationState.name}
                     <br />
                     {authenticationState.team}

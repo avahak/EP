@@ -51,7 +51,18 @@ const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL || "";
 
 // Käytetään Helmet kirjastoa parantamaan tietoturvaa, asettaa esim. HTTP headereita:
-app.use(helmet());
+// app.use(helmet());
+// console.log(helmet.contentSecurityPolicy.getDefaultDirectives());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                'default-src': ["'self'", 'https://www.example.com'],
+                'style-src': ["'self'", 'https:', "'unsafe-inline'"],
+            },
+        },
+    }));
 // Sallitaan CORS-pyynnöt kaikille lähteille:
 app.use(cors());
 // Määritetään middleware JSON-parsija:

@@ -297,7 +297,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 }
 
 
-            {/* Nappulat: */}
+            {/* "Muokkaa" ja "Sulje" nappulat: */}
             </DialogContent>
             <DialogActions>
                 {(isFinished && !errorMessage) && 
