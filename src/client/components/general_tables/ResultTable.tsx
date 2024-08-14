@@ -231,7 +231,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
             page*rowsPerPage,
             page*rowsPerPage + rowsPerPage,
         ),
-        [order, orderBy, page, rowsPerPage],
+        [order, orderBy, page, rowsPerPage, rows],
     );
 
     return (

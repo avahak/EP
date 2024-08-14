@@ -4,11 +4,11 @@
  * Material UI Tabs pohjana käytetty: https://mui.com/material-ui/react-tabs/
  */
 
-import { crudeHash, deepCopy, extractKeys } from "../../../shared/generalUtils";
-import { useInitialServerFetch } from "../../utils/apiUtils";
-import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
+import { deepCopy, extractKeys, findStringDifference } from "../../../shared/generalUtils";
+import { serverFetch } from "../../utils/apiUtils";
+import { Box, Container, FormControl, InputLabel, MenuItem, Select, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type TabPanelProps = {
     children?: React.ReactNode;
@@ -35,14 +35,16 @@ const playerDataProcessor = (data: any) => {
         newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
     });
     const keys = extractKeys(newResults);
-    console.log("keys", keys);
-
+    
     newResults.forEach((row: any, _index: number) => {
         for (const [key, _type] of keys) 
             if (!row[key])
                 row[key] = 0;
     });
 
+    console.log("keys", keys);
+    console.log("newResults", newResults);
+        
     return newResults;
 };
 
@@ -119,7 +121,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <TotalWinsTable rows={results.data} tableName={"Pistepörssi"} />
+            <TotalWinsTable rows={results} tableName={"Pistepörssi"} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={1}>
@@ -128,7 +130,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit.
             </Typography>
-            <GoldenBreakWinsTable rows={results.data} />
+            <GoldenBreakWinsTable rows={results} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={2}>
@@ -137,7 +139,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP.
             </Typography>
-            <RunoutWinsTable rows={results.data} />
+            <RunoutWinsTable rows={results} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={3}>
@@ -146,7 +148,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit.
             </Typography>
-            <CombinationWinsTable rows={results.data} />
+            <CombinationWinsTable rows={results} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={4}>
@@ -155,7 +157,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat.
             </Typography>
-            <CaromWinsTable rows={results.data} />
+            <CaromWinsTable rows={results} />
         </CustomTabPanel>
         
         <CustomTabPanel value={activeTab} index={5}>
@@ -164,7 +166,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot.
             </Typography>
-            <ThreeFoulWinsTable rows={results.data} />
+            <ThreeFoulWinsTable rows={results} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={6}>
@@ -173,7 +175,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <DesignationWinsTable designation={"home"} rows={results.data} tableName={"Kotiotteluiden Pistepörssi"} />
+            <DesignationWinsTable designation={"home"} rows={results} tableName={"Kotiotteluiden Pistepörssi"} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={7}>
@@ -182,7 +184,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <DesignationWinsTable designation={"away"} rows={results.data} tableName={"Vierasotteluiden Pistepörssi"} />
+            <DesignationWinsTable designation={"away"} rows={results} tableName={"Vierasotteluiden Pistepörssi"} />
         </CustomTabPanel>
     </Box>
     );
@@ -192,43 +194,148 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
  * Testisivu pelaajien tulosten esittämiselle.
  */
 const DisplayResultsPlayers: React.FC = () => {
-    const resultsOld = useInitialServerFetch({ 
-        route: "/api/db/specific_query", 
-        method: "POST", 
-        params: { queryName: "get_results_players_old" },
-        dataProcessor: playerDataProcessor,
-        authenticationState: null,
-    });
+    const [kausi, setKausi] = useState<any>("");
+    const [kaudet, setKaudet] = useState<any>(null);
+    const [resultsOld, setResultsOld] = useState<any>("");
+    const [resultsNew, setResultsNew] = useState<any>("");
 
-    const resultsNew = useInitialServerFetch({ 
-        route: "/api/db/specific_query", 
-        method: "POST", 
-        params: { queryName: "get_results_players" },
-        dataProcessor: playerDataProcessor,
-        authenticationState: null,
-    });
+    /**
+     * Hakee tietokannasta sarjatilanteen varsinaisten taulujen perusteella.
+     */
+    const fetchResultsOld = async () => {
+        try {
+            const response = await serverFetch("/api/db/specific_query", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ queryName: "get_results_players_old", ...(kausi && { params: { kausi: kausi } }) }),
+            }, null);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            setResultsOld(playerDataProcessor(jsonData));
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
 
+    /**
+     * Hakee tietokannasta sarjatilanteen _tulokset taulujen perusteella.
+     */
+    const fetchResultsNew = async () => {
+        try {
+            const response = await serverFetch("/api/db/specific_query", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ queryName: "get_results_players", ...(kausi && { params: { kausi: kausi } }) }),
+            }, null);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            console.log("jsonData", jsonData);
+            setResultsNew(playerDataProcessor(jsonData));
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
+
+    /**
+     * Hakee kaudet.
+     */
+    const fetchSeasons = async () => {
+        try {
+            const response = await serverFetch("/api/db/specific_query", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ queryName: "get_seasons" }),
+            }, null);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            setKaudet(jsonData.rows.data);
+            setKausi(jsonData.rows.current_kausi);
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
+
+    // Haetaan kaudet:
+    useEffect(() => {
+        fetchSeasons();
+    }, []);
+
+    // Haetaan data uudestaan jos kausi muuttuu:
+    useEffect(() => {
+        fetchResultsOld();
+        fetchResultsNew();
+    }, [kausi]);
+
+    console.log("kausi", kausi);
+    console.log("kaudet", kaudet);
     console.log("resultsOld", resultsOld);
     console.log("resultsNew", resultsNew);
 
-    console.log("hash for old:", crudeHash(resultsOld));
-    console.log("hash for new:", crudeHash(resultsNew));
+    const str1 = JSON.stringify(resultsOld);
+    const str2 = JSON.stringify(resultsNew);
+    const index = findStringDifference(str1, str2);
+
+    if (resultsOld && resultsNew) {
+        if (index === -1) {
+            console.log("Pelaajapörssit ovat samat varsinaisissa tauluissa ja _tulokset tauluissa.")
+        } else {
+            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", str1.slice(0, index), " --> ", str1.slice(index, index+1), " <-- ", str1.slice(index+1, str1.length));
+        }
+    }
 
     return (
         <>
         {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
-        {resultsOld.status.ok ?
-        <PlayerResults results={resultsOld}/>
-        : 
-        "Ladataan.."
+        {kaudet && 
+        <>
+        <FormControl sx={{mt: 2, mb: 5}}>
+        <InputLabel>Kausi</InputLabel>
+            <Select
+                value={kausi}
+                label="Kausi"
+                onChange={(event) => setKausi(event.target.value)}
+            >
+                {kaudet.map((season: any, index: number) => (
+                    <MenuItem key={index} value={season.id}>{`${season.kausi} (${season.Laji})`}</MenuItem>
+                ))}
+            </Select>
+        </FormControl>
+        </>
         }
 
-        {resultsNew.status.ok ?
+        <Box sx={{my: 2}}>
+        {index === -1 ?
+        <Typography sx={{color: 'green'}}>
+            Tulokset molemmissa tauluissa ovat samat.
+        </Typography>
+        :
+        <Typography sx={{color: 'red', fontSize: '1.5rem'}}>
+            Ongelma: Tulokset eroavat toisistaan! Katso konsoli.
+        </Typography>
+        }
+        </Box>
+
+        {resultsOld ?
+        <PlayerResults results={resultsOld}/>
+        : 
+        "Ladataan pelaajapörssiä.."
+        }
+
+        {resultsNew ?
         <PlayerResults results={resultsNew}/>
         : 
-        "Ladataan.."
+        "Ladataan pelaajapörssiä.."
         }
 
         </Container>

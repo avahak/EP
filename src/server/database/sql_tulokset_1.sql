@@ -4,8 +4,7 @@
 -- Tässä tiedostossa määritellään proseduuri "procedure_update_all_tulokset_from_erat",
 -- joka on toiminnaltaan hyvin samankaltainen kuin "procedure_update_all_from_erat",
 -- joka määriteltiin tiedostossa "sql_procedures.sql" mutta nyt muutetaan 
--- _tulokset tauluja varsinaisten taulujen sijasta. Lisäksi muutoksia tehdään
--- ainoastaan jos ottelun status on 'H'. Tämän tiedoston proseduureja ei
+-- _tulokset tauluja varsinaisten taulujen sijasta. Tämän tiedoston proseduureja ei
 -- kutsuta manuaalisesti vaan niitä kutsutaan tiedostossa "sql_tulokset_2.sql"
 -- määritellyissä triggereissä kun erätuloksia tai muita varsinaisten taulujen rivejä
 -- muutetaan.
@@ -104,8 +103,8 @@ BEGIN
         FROM ep_ottelu
         WHERE id = ottelu_id;
 
-    -- Jos status ei ole 'H', niin ei tehdä mitään (tuloksia ei vielä ole vahvistettu):
-    IF ottelu_status = 'H' THEN 
+    -- Jos status on 'T', niin ei tehdä mitään (tuloksia ei vielä ole syötetty):
+    IF ottelu_status <> 'T' THEN 
 
         -- Alustetaan old_peli_ktulos, old_peli_vtulos:
         SELECT COALESCE(ktulos, 0), COALESCE(vtulos, 0) 

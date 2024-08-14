@@ -189,8 +189,25 @@ function removeSpecialChars(str: string) {
     return str.replace(/[&"<>\/\\`]/g, "");
 }
 
+/**
+ * Palauttaa ensimmäisen indeksin, missä merkkijonot poikkeavat toisistaan.
+ * Jos merkkijonot ovat samat, palauttaa -1.
+ */
+function findStringDifference(s1: string, s2: string) {
+    const minLength = Math.min(s1.length, s2.length);
+    
+    for (let i = 0; i < minLength; i++)
+        if (s1[i] !== s2[i])
+            return i;
+    
+    if (s1.length !== s2.length)
+        return minLength;
+    
+    return -1;
+}
+
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
-    randomIntBetween, formatTimeDifference, removeSpecialChars };
+    randomIntBetween, formatTimeDifference, removeSpecialChars, findStringDifference };

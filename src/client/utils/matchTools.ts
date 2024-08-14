@@ -275,6 +275,26 @@ const fetchMatchInfo = async (matchId: number) => {
 };
 
 /**
+ * Hakee live-ottelun jos sellainen on olemassa.
+ */
+const fetchLiveMatch = async (matchId: number) => {
+    try {
+        const response = await serverFetch(`/api/live/get_match/${matchId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }, null);
+        if (!response.ok) 
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        const jsonData = await response.json();
+        return jsonData.data;
+    } catch(error) {
+        console.info('No matching live match found.');
+    }
+};
+
+/**
  * Hakee tietokannasta koko ottelun ScoresheetFields muodossa.
  */
 const fetchMatchData = async (matchId: number) => {
@@ -282,7 +302,9 @@ const fetchMatchData = async (matchId: number) => {
     const playersHome = await fetchPlayers(matchInfo.homeId);
     const playersAway = await fetchPlayers(matchInfo.awayId);
     const rawScores = await fetchScores(matchInfo.id);
-
+    const liveMatch = await fetchLiveMatch(matchId);
+    
+    console.log("liveMatch", liveMatch);
     console.log("matchInfo", matchInfo);
     console.log("playersHome fetch: ", playersHome);
     console.log("playersAway fetch: ", playersAway);
@@ -312,6 +334,11 @@ const fetchMatchData = async (matchId: number) => {
 
     console.log("playingHome", playingHome);
     console.log("playingAway", playingAway);
+
+    if (liveMatch) {
+        console.log("Using livematch data.")
+        return liveMatch;
+    }
 
     return {
         id: matchId,

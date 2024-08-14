@@ -4,7 +4,7 @@
 
 import express, { Router } from 'express';
 import fs from 'fs';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator, getSeasons } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
@@ -97,6 +97,7 @@ const queryFunctions: Record<string, any> = {
     "submit_match_result": submitMatchResult,
     "add_player": addPlayer,
     "get_users": getUsers,
+    "get_seasons": getSeasons,
 };
 
 /**

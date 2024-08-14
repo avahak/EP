@@ -126,7 +126,7 @@ async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenP
         JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
         WHERE ep_lohko.kausi = ?
     `;
-    return myQuery(pool, query, [params._current_kausi]);
+    return myQuery(pool, query, [params.kausi ?? params._current_kausi]);
 }
 
 /**
@@ -143,7 +143,7 @@ async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayl
         JOIN ep_joukkue ON ep_joukkue.id = ep_joukkue_tulokset.joukkue
         WHERE ep_joukkue.kausi = ?
     `;
-    return myQuery(pool, query, [params._current_kausi]);
+    return myQuery(pool, query, [params.kausi ?? params._current_kausi]);
 }
 
 /**
@@ -187,7 +187,7 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.kp
     `;
@@ -210,13 +210,13 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.vp
     `;
-    const resultGeneral = await myQuery(pool, queryGeneral, [params._current_kausi]);
-    const resultHome = await myQuery(pool, queryHome, [params._current_kausi]);
-    const resultAway = await myQuery(pool, queryAway, [params._current_kausi]);
+    const resultGeneral = await myQuery(pool, queryGeneral, [params.kausi ?? params._current_kausi]);
+    const resultHome = await myQuery(pool, queryHome, [params.kausi ?? params._current_kausi]);
+    const resultAway = await myQuery(pool, queryAway, [params.kausi ?? params._current_kausi]);
     return [resultGeneral, resultHome, resultAway];
 }
 
@@ -262,7 +262,7 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.kp
     `;
@@ -286,13 +286,13 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
             JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status = 'H'
+            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.vp
     `;
-    const resultGeneral = await myQuery(pool, queryGeneral, [params._current_kausi]);
-    const resultHome = await myQuery(pool, queryHome, [params._current_kausi]);
-    const resultAway = await myQuery(pool, queryAway, [params._current_kausi]);
+    const resultGeneral = await myQuery(pool, queryGeneral, [params.kausi ?? params._current_kausi]);
+    const resultHome = await myQuery(pool, queryHome, [params.kausi ?? params._current_kausi]);
+    const resultAway = await myQuery(pool, queryAway, [params.kausi ?? params._current_kausi]);
     return [resultGeneral, resultHome, resultAway];
 }
 
@@ -305,7 +305,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         throw new AuthError();
 
     const match = params.result;
-    if (!match.ok || !isValidParsedMatch(match) || match.status === 'H')
+    if (!match.ok || !isValidParsedMatch(match) || match.status === 'H' || match.newStatus === 'T')
         throw Error("Invalid match.");
 
     // Tarkistetaan, että ottelun tiedot ovat samat kuin tietokannassa:
@@ -347,6 +347,20 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             // if (typeof nextId_peli !== "number" || typeof nextId_peli !== "number" || nextId_peli <= 0 || nextId_erat <= 0)
             //     throw Error(`Error executing ${queryId1}`);
 
+            // Kumotaan vanhat tulokset varsinaisissa tauluissa:
+            const query0_1 = `
+                SELECT p.id FROM ep_peli p 
+                WHERE p.ottelu = ?
+            `;
+            let [rows] = await connection.query(query0_1, [match.id]) as any;
+            if (rows && typeof rows[Symbol.iterator] === 'function') {
+                for (let row of (rows as any)) {
+                    const query0_2 = `CALL procedure_update_all_old_from_peli(?, ?, ?)`;
+                    await connection.query(query0_2, [row.id, 0, 0]);
+                    // console.log("handling id:", row.id);
+                }
+            }
+
             // Poistetaan kaikki otteluun liittyvät rivit taulusta ep_erat:
             const query1 = `
                 DELETE e 
@@ -381,17 +395,16 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 // await connection.query(query3, [nextId_peli+k, ...match.games[k]]);
                 // rounds[k][0] = nextId_peli+k;
 
+                console.log("ep_peli insertId", insertedRow.insertId);
+
                 // Lisätään uusi rivi tauluun ep_erat:
                 const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
                 await connection.query(query4_1, rounds[k]);
-                
-                // Jos uusi status on 'H', niin päivitetään varsinaisten taulujen
-                // tulosmuuttujat:
-                if (match.newStatus == 'H') {
-                    const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
-                    await connection.query(query4_2, [insertedRow.insertId]);
-                    // await connection.query(query4_2, [nextId_peli+k]);
-                }
+
+                // Päivitetään varsinaisten taulujen tulosmuuttujat:
+                const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
+                await connection.query(query4_2, [insertedRow.insertId]);
+                // await connection.query(query4_2, [nextId_peli+k]);
             }
 
             // Muutetaan ottelun päivämäärä ja status:
@@ -435,12 +448,20 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | n
  * Hakee listan käyttäjistä userpw taulusta.
  * HUOM! Tämä on vain testikäyttöön, poista production vaiheessa.
  */
-async function getUsers(_auth: AuthTokenPayload | null) {
+async function getUsers(_params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `SELECT Nimi, Joukkue FROM userpw`;
     return myQuery(pool, query);
+}
+
+/**
+ * Hakee listan kausista.
+ */
+async function getSeasons(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    const query = `SELECT id, vuosi, kausi, Laji FROM ep_kausi`;
+    return { current_kausi: params._current_kausi, data: await myQuery(pool, query) };
 }
 
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
     getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
     getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
-    getUsers };
+    getUsers, getSeasons };

@@ -234,6 +234,16 @@ router.get('/watch_match/:matchId?', async (req, res) => {
     console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
 });
 
+/**
+ * Palauttaa ottelun ilman SSE-yhteyttä.
+ */
+router.get('/get_match/:matchId', async (req, res) => {
+    const matchId = parseInt(req.params.matchId);
+    if (!matchId || !liveMatches.has(matchId))
+        return res.status(400).send("Invalid matchId.");
+    res.json({data: liveMatches.get(matchId)?.data});
+});
+
 // Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet 
 // ja live-ottelut.
 setInterval(() => {

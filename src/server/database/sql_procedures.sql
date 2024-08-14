@@ -182,7 +182,7 @@ BEGIN
 END //
 
 -- Kutsuu procedure_update_all_old_from_erat jokaiselle ep_erat riville,
--- joka liittyy hyväksyttyyn otteluun.
+-- joka liittyy syötettyyn otteluun.
 -- HUOM! Hidas, käytä vain testaukseen.
 DROP PROCEDURE IF EXISTS procedure_update_all_old_from_all_erat_slow //
 CREATE PROCEDURE procedure_update_all_old_from_all_erat_slow()
@@ -195,7 +195,7 @@ BEGIN
         SELECT ep_erat.peli FROM ep_erat
             JOIN ep_peli ON ep_peli.id = ep_erat.peli
             JOIN ep_ottelu ON ep_ottelu.id = ep_peli.ottelu
-            WHERE ep_ottelu.status = 'H';
+            WHERE ep_ottelu.status <> 'T';
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
