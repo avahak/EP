@@ -458,7 +458,8 @@ async function getUsers(_params: Record<string, any>, _auth: AuthTokenPayload | 
  */
 async function getSeasons(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `SELECT id, vuosi, kausi, Laji FROM ep_kausi`;
-    return { current_kausi: params._current_kausi, data: await myQuery(pool, query) };
+    const data = await myQuery(pool, query);
+    return { current_kausi: params._current_kausi, data };
 }
 
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
