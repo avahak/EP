@@ -5,7 +5,7 @@
 import { serverFetch } from "../../utils/apiUtils";
 import { Box, Container, FormControl, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { TeamsTable } from "./TeamTables";
-import { findStringDifference } from "../../../shared/generalUtils";
+import { compareJsonObjects } from "../../../shared/generalUtils";
 import { useEffect, useState } from "react";
 
 const DisplayResultsTeams: React.FC = () => {
@@ -95,15 +95,14 @@ const DisplayResultsTeams: React.FC = () => {
     console.log("resultsOld", resultsOld);
     console.log("resultsNew", resultsNew);
 
-    const str1 = JSON.stringify(resultsOld);
-    const str2 = JSON.stringify(resultsNew);
-    const index = findStringDifference(str1, str2);
+    let diff = [];
 
     if (resultsOld && resultsNew) {
-        if (index === -1) {
+        diff = compareJsonObjects(resultsOld, resultsNew);
+        if (diff.length === 0) {
             console.log("Sarjatilanteet ovat samat varsinaisissa tauluissa ja _tulokset tauluissa.")
         } else {
-            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", str1.slice(0, index), " --> ", str1.slice(index, index+1), " <-- ", str1.slice(index+1, str1.length));
+            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", diff);
         }
     }
 
@@ -128,8 +127,9 @@ const DisplayResultsTeams: React.FC = () => {
         </>
         }
 
+        {resultsOld && resultsNew && 
         <Box sx={{my: 2}}>
-        {index === -1 ?
+        {diff.length === 0 ?
         <Typography sx={{color: 'green'}}>
             Tulokset molemmissa tauluissa ovat samat.
         </Typography>
@@ -139,6 +139,7 @@ const DisplayResultsTeams: React.FC = () => {
         </Typography>
         }
         </Box>
+        }
 
         {resultsOld ?
         <TeamsTable rows={resultsOld} tableName="Sarjatilanne varsinaisten taulujen mukaan" />

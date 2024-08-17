@@ -44,11 +44,21 @@ import databaseRouter from './database/dbRoutes.js';
 import generalRouter from './generalRoutes.js';
 import { logger, initializeErrorHandling } from './serverErrorHandler.js';
 import 'express-async-errors';
+import { buildTimestamp } from '../shared/build-info.js';
 
 const app = express();
 
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL || "";
+
+const serverStartTime = new Date().toLocaleString('en-FI', { 
+    timeZone: 'Europe/Helsinki', 
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+});
 
 // Käytetään Helmet kirjastoa parantamaan tietoturvaa, asettaa esim. HTTP headereita:
 // app.use(helmet());
@@ -85,6 +95,12 @@ app.use(BASE_URL + '/api/db', databaseRouter);
 app.use(BASE_URL + '/auth', authRouter);
 // Lisätään sekalaiset reitit (voi poistaa tuotantoversiossa):
 app.use(BASE_URL + '/api', generalRouter);
+
+// Tietoa serveristä:
+app.get(BASE_URL + '/info', (_req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`Koodi rakennettu: ${buildTimestamp}<br>Serveri käynnistetty: ${serverStartTime}`);
+});
 
 /**
  * Muuten käytetään Reactin omaa reititystä:

@@ -3,6 +3,8 @@
  * päivämäärämuunnoksia.
  */
 
+import { isObject, isEqual } from 'lodash';
+
 /**
  * Palauttaa annetun Date olion merkkijonona muodossa YYYY-MM-DD.
  */
@@ -206,8 +208,36 @@ function findStringDifference(s1: string, s2: string) {
     return -1;
 }
 
+/**
+ * Vertaa kahta JSON objektia.
+ */
+function compareJsonObjects(obj1: any, obj2: any, path: string[] = []): string[] {
+    const differences: string[] = [];
+
+    function compareSubObjects(o1: any, o2: any, currentPath: string[]) {
+        // Get all unique keys from both objects
+        for (const key of new Set([...Object.keys(o1), ...Object.keys(o2)])) {
+            const newPath = [...currentPath, key];
+            const value1 = o1[key];
+            const value2 = o2[key];
+
+            // If both values are objects, recursively compare them
+            if (isObject(value1) && isObject(value2)) {
+                compareSubObjects(value1, value2, newPath);
+            } else if (!isEqual(value1, value2)) {
+                // Record differences in the path
+                differences.push(`Difference at ${newPath.map(p => `[${p}]`).join('')}`);
+            }
+        }
+    }
+
+    compareSubObjects(obj1, obj2, path);
+    return differences;
+}
+
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
-    randomIntBetween, formatTimeDifference, removeSpecialChars, findStringDifference };
+    randomIntBetween, formatTimeDifference, removeSpecialChars, findStringDifference,
+    compareJsonObjects };

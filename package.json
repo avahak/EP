@@ -8,7 +8,8 @@
     },
     "scripts": {
         "dev": "vite",
-        "build": "tsc -p tsconfig.server.json && tsc && vite build && tsc -p tsconfig.server.json",
+        "buildtimestamp": "node -e \"const fs = require('fs'); const path = require('path'); const timestamp = new Date().toLocaleString('en-FI', { timeZone: 'Europe/Helsinki', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); const content = `export const buildTimestamp = '${timestamp}';\\n`; fs.writeFileSync(path.join('src', 'shared', 'build-info.ts'), content, 'utf8');\"",
+        "build": "npm run buildtimestamp && tsc -p tsconfig.server.json && tsc && vite build && tsc -p tsconfig.server.json",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
         "start": "tsc -p tsconfig.server.json && node dist/server/server.js"
@@ -30,6 +31,7 @@
         "helmet": "^7.1.0",
         "jsfeat": "^0.0.8",
         "jsonwebtoken": "^9.0.2",
+        "lodash": "^4.17.21",
         "multer": "^1.4.5-lts.1",
         "mysql2": "^3.7.1",
         "react": "^18.2.0",
@@ -44,6 +46,7 @@
         "@faker-js/faker": "^8.4.1",
         "@types/cors": "^2.8.17",
         "@types/jsonwebtoken": "^9.0.6",
+        "@types/lodash": "^4.17.7",
         "@types/parse-multipart": "^1.0.2",
         "@types/react": "^18.2.43",
         "@types/react-dom": "^18.2.17",

@@ -192,8 +192,7 @@ BEGIN
     
     -- Määritellään kursori hakemaan rivejä:
     DECLARE id_cursor CURSOR FOR
-        SELECT ep_erat.peli FROM ep_erat
-            JOIN ep_peli ON ep_peli.id = ep_erat.peli
+        SELECT ep_peli.id FROM ep_peli
             JOIN ep_ottelu ON ep_ottelu.id = ep_peli.ottelu
             WHERE ep_ottelu.status <> 'T';
 

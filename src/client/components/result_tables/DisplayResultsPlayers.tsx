@@ -4,7 +4,7 @@
  * Material UI Tabs pohjana käytetty: https://mui.com/material-ui/react-tabs/
  */
 
-import { deepCopy, extractKeys, findStringDifference } from "../../../shared/generalUtils";
+import { compareJsonObjects, deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { serverFetch } from "../../utils/apiUtils";
 import { Box, Container, FormControl, InputLabel, MenuItem, Select, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
@@ -280,15 +280,14 @@ const DisplayResultsPlayers: React.FC = () => {
     console.log("resultsOld", resultsOld);
     console.log("resultsNew", resultsNew);
 
-    const str1 = JSON.stringify(resultsOld);
-    const str2 = JSON.stringify(resultsNew);
-    const index = findStringDifference(str1, str2);
+    let diff = [];
 
     if (resultsOld && resultsNew) {
-        if (index === -1) {
+        diff = compareJsonObjects(resultsOld, resultsNew);
+        if (diff.length === 0) {
             console.log("Pelaajapörssit ovat samat varsinaisissa tauluissa ja _tulokset tauluissa.")
         } else {
-            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", str1.slice(0, index), " --> ", str1.slice(index, index+1), " <-- ", str1.slice(index+1, str1.length));
+            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", diff);
         }
     }
 
@@ -314,8 +313,9 @@ const DisplayResultsPlayers: React.FC = () => {
         </>
         }
 
+        { resultsOld && resultsNew &&
         <Box sx={{my: 2}}>
-        {index === -1 ?
+        { diff.length === 0 ?
         <Typography sx={{color: 'green'}}>
             Tulokset molemmissa tauluissa ovat samat.
         </Typography>
@@ -325,6 +325,7 @@ const DisplayResultsPlayers: React.FC = () => {
         </Typography>
         }
         </Box>
+        }
 
         {resultsOld ?
         <PlayerResults results={resultsOld}/>
