@@ -117,7 +117,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => 
 
     const queryFunction = queryFunctions[queryName];
     if (!queryName || !queryFunction)
-        return res.status(400).send("Invalid or missing queryName.");
+        return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
     try {
         const rows = await queryFunction(params, req.auth);
         res.json({ rows });
