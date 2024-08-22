@@ -34,7 +34,7 @@ type ScoresheetFields = {
     isSubmitted: boolean;
 };
 
-type ScoresheetMode = "modify" | "verify" | "display";
+type ScoresheetMode = "modify" | "verify" | "display" | "display_modifiable";
 
 /**
  * Luo tyhjän joukkueen.

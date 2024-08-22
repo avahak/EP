@@ -26,15 +26,19 @@ type PageState =
     | "scoresheet_modify"       // olemassaolevan ottelun muokkaaminen: Scoresheet "modify" moodissa
     | "scoresheet_verify"       // esitetään ottelu Scoresheet "verify" moodissa
     | "scoresheet_submit"       // väliaikainen tila kun ottelu lähetetään palvelimelle, esitetään ottelu ja sen päällä latausikoni
-    | "submit_success";         // esitetään ottelu Scoresheet "display" moodissa
+    | "display"                 // esitetään ottelu Scoresheet "display" moodissa
+    | "display_modifiable";     // esitetään ottelu Scoresheet "display_modifiable" moodissa, jolloin tuloksia voi muokata
 
 /**
  * Tulosten ilmoitussivu.
  */
-const ResultSubmission: React.FC = () => {
+const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resultProp}) => {
     const authenticationState = useContext(AuthenticationContext);
-    // Ottelun tila:
-    const [result, setResult] = useState<ScoresheetFields>({
+    const setSnackbarState = useContext(SnackbarContext);
+
+    const acceptResultProp = resultProp && (resultProp.status !== "T");
+
+    const initialResult = acceptResultProp ? resultProp : {
         id: -1,
         status: 'T',
         teamHome: {...createEmptyTeam(), teamRole: "home"},
@@ -42,10 +46,15 @@ const ResultSubmission: React.FC = () => {
         date: '',
         scores: createEmptyScores(),
         isSubmitted: false,
-    });
-    const [useLivescore, setUseLivescore] = useState<boolean>(true);
-    const [pageState, setPageState] = useState<PageState>("choose_match");
-    const setSnackbarState = useContext(SnackbarContext);
+    } as ScoresheetFields;
+    const initialPageState = acceptResultProp ? 
+        (roleIsAtLeast(authenticationState.role, "admin") ? "display_modifiable" : "display") 
+        : "choose_match";
+
+    // Ottelun tila:
+    const [result, setResult] = useState<ScoresheetFields>(initialResult);
+    const [useLivescore, setUseLivescore] = useState<boolean>(acceptResultProp ? false : true);
+    const [pageState, setPageState] = useState<PageState>(initialPageState);
 
     /**
      * Lähettää lomakkeen tiedot palvelimelle kirjattavaksi tietokantaan.
@@ -69,7 +78,7 @@ const ResultSubmission: React.FC = () => {
             const matchData = await fetchMatchData(result.id);
 
             setResult(matchData);
-            setPageState("submit_success");
+            setPageState("display");
             console.log("matchData", matchData);
             setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
         } catch(error) {
@@ -103,7 +112,7 @@ const ResultSubmission: React.FC = () => {
     };
 
     /**
-     * Tätä funktiota kutsutaan kun käyttäjä yritää lähettää täytetyn/muokatun 
+     * Tätä funktiota kutsutaan kun käyttäjä yrittää lähettää täytetyn/muokatun 
      * Scoresheet lomakkeen.
      */
     const handleSubmit = (data: ScoresheetFields) => {
@@ -205,9 +214,14 @@ const ResultSubmission: React.FC = () => {
             </Box>
         </Backdrop></>}
 
-        {/* Ilmoitetaan käyttäjälle, että tulosten lähetys onnistui: */}
-        {pageState == "submit_success" && 
+        {/* Täytetyn pöytäkirjan esittäminen: */}
+        {pageState == "display" && 
             <Scoresheet initialValues={result} mode="display" />
+        }
+
+        {/* Täytetyn pöytäkirjan esittäminen muokattavana: */}
+        {pageState == "display_modifiable" && 
+            <Scoresheet initialValues={result} mode="display_modifiable" rejectCallback={() => {handleReject()}} />
         }
 
         </Container>

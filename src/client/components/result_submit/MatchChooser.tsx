@@ -5,7 +5,7 @@
  */
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { getDayOfWeekStrings, dateToDDMMYYYY } from "../../../shared/generalUtils";
+import { getDayOfWeekStrings, dateToDDMMYYYY, dateToYYYYMMDD } from "../../../shared/generalUtils";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { serverFetch } from "../../utils/apiUtils";
 import { Box, Button, Checkbox, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
@@ -122,15 +122,18 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
         else if (category === 'moderator_status_M')
             selectedMatch = moderatorMatchesStatus_M[index];
         return selectedMatch;
-    }
+    };
 
     /** 
      * Funktio, joka kutsutaan kun lomake lähetetään.
      */
     const onSubmit: SubmitHandler<any> = (data: FormFields) => {
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
-        submitCallback({ match, date: data.date, useLivescore: data.useLivescore });
-    }
+        let submitDate = data.date;
+        if (data.useLivescore && match.status === "T")
+            submitDate = dateToYYYYMMDD(new Date());
+        submitCallback({ match, date: submitDate, useLivescore: data.useLivescore });
+    };
 
     /** 
      * Hakee ottelut tietokannasta. Moderaattorille käytetään specific_query 
@@ -230,6 +233,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
             {selectedMatch && <>
                 <Box sx={{ mb: 1, mt: 5 }}>
                     <Typography variant="h2" textAlign="center">{selectedMatch.home} - {selectedMatch.away}</Typography>
+                    {(!formValues.useLivescore || selectedMatch.status !== "T") &&
                     <Box sx={{ mt:4 }}>
                         <Typography textAlign="center" variant="body1">Muuta päivämäärää tarvittaessa:</Typography>
                         <Box display="flex" gap="10px" justifyContent="center">
@@ -241,12 +245,13 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                             />
                         </Box>
                     </Box>
+                    }
                     {selectedMatch.status === "T" &&
                     <Box sx={{ mt: 3 }} display="flex" justifyContent="center">
                         <FormControlLabel
                             control={<Checkbox checked={formValues.useLivescore} onChange={(event) => { setValue('useLivescore', event.target.checked) }} />}
                             title="Valitse jos haluat tulosten näkyvän reaaliajassa otteluseuranta sivulla"
-                            label="Tulosten kirjaaminen reaaliajassa otteluseurantaan"
+                            label="Kirjaa tulokset reaaliajassa otteluseurantaan"
                         />
                     </Box>
                     }

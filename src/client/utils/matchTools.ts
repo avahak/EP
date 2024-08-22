@@ -298,7 +298,9 @@ const fetchLiveMatch = async (matchId: number) => {
  * Hakee tietokannasta koko ottelun ScoresheetFields muodossa.
  */
 const fetchMatchData = async (matchId: number) => {
-    const matchInfo = await fetchMatchInfo(matchId) 
+    const matchInfo = await fetchMatchInfo(matchId);
+    if (!matchInfo)
+        throw Error("Match not found.");
     const playersHome = await fetchPlayers(matchInfo.homeId);
     const playersAway = await fetchPlayers(matchInfo.awayId);
     const rawScores = await fetchScores(matchInfo.id);

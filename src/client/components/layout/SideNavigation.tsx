@@ -5,7 +5,7 @@ import { Box } from "@mui/material";
  */
 const SideNavigation: React.FC = () => {
     const url = "http://www.eastpool.fi/"; 
-    const src = "Linkit.gif";
+    const src = "/node/Linkit.gif";
     return (
         <Box sx={{minHeight: "700px", minWidth: "217px", overflow: "hidden", background: "#e1faed"}}>
             <Box maxHeight="700px">

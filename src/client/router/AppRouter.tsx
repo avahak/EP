@@ -14,7 +14,7 @@ import { DBTest } from '../components/DBTest';
 import { ResultSubmission } from '../components/result_submit/ResultSubmission';
 import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsTeams';
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
-import { DisplayScoresheet } from '../components/sandbox/DisplayScoresheet';
+import { DisplayScoresheet } from '../components/result_submit/DisplayScoresheet';
 import { SnackbarProvider } from '../contexts/SnackbarContext';
 import { LiveMatches } from '../components/live_matches/LiveMatches';
 import { LayoutWrapper } from '../components/layout/LayoutWrapper';
@@ -65,7 +65,7 @@ const AppRouter = () => {
                 <Route path="/results_teams" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams /></Wrap>} />
                 <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
                 <Route path="/live_matches" element={<Wrap pageName="Live ottelut"><LiveMatches /></Wrap>} />
-                <Route path="/display_match" element={<Wrap pageName="Esimerkki ottelusta"><DisplayScoresheet /></Wrap>} />
+                <Route path="/display_match/:matchId" element={<Wrap pageName="Esimerkki ottelusta"><DisplayScoresheet /></Wrap>} />
 
                 {/* Konenäkö */}
                 <Route path="/hough" element={<HoughDemo />} />

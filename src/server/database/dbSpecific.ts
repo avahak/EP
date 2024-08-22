@@ -118,15 +118,17 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
  * @param params - Sisältää kentän _current_kausi.
  */
 async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
     const query = `
-        SELECT ep_sarjat.nimi, ep_sarjat.lyhenne, 
+        SELECT ep_sarjat.joukkue, ep_sarjat.nimi, ep_sarjat.lyhenne, 
             ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
             ep_sarjat.h_era, ep_sarjat.v_peli, ep_sarjat.h_peli
         FROM ep_sarjat
         JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
-        WHERE ep_lohko.kausi = ?
+        WHERE ep_lohko.id = ?
     `;
-    return myQuery(pool, query, [params.kausi ?? params._current_kausi]);
+    return myQuery(pool, query, [params.lohko]);
 }
 
 /**
@@ -134,16 +136,18 @@ async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenP
  * @param params - Sisältää kentän _current_kausi.
  */
 async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
     const query = `
-        SELECT ep_joukkue.nimi, ep_joukkue.lyhenne, 
+        SELECT ep_joukkue.id AS joukkue, ep_joukkue.nimi, ep_joukkue.lyhenne, 
             ep_joukkue_tulokset.voitto, ep_joukkue_tulokset.tappio, 
             ep_joukkue_tulokset.v_era, ep_joukkue_tulokset.h_era, 
             ep_joukkue_tulokset.v_peli, ep_joukkue_tulokset.h_peli
         FROM ep_joukkue_tulokset
         JOIN ep_joukkue ON ep_joukkue.id = ep_joukkue_tulokset.joukkue
-        WHERE ep_joukkue.kausi = ?
+        WHERE ep_joukkue.lohko = ?
     `;
-    return myQuery(pool, query, [params.kausi ?? params._current_kausi]);
+    return myQuery(pool, query, [params.lohko]);
 }
 
 /**
@@ -152,6 +156,8 @@ async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayl
  * @param params Sisältää kentän _current_kausi.
  */
 async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -166,7 +172,7 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
             ep_pelaaja
             JOIN ep_joukkue ON ep_joukkue.id = ep_pelaaja.joukkue
         WHERE 
-            ep_joukkue.kausi = ?
+            ep_joukkue.lohko = ?
     `;
     const queryHome = `
         SELECT
@@ -185,9 +191,8 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
             ep_erat AS e
             JOIN ep_peli AS p ON p.id = e.peli
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
+            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.kp
     `;
@@ -208,15 +213,14 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
             ep_erat AS e
             JOIN ep_peli AS p ON p.id = e.peli
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
+            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.vp
     `;
-    const resultGeneral = await myQuery(pool, queryGeneral, [params.kausi ?? params._current_kausi]);
-    const resultHome = await myQuery(pool, queryHome, [params.kausi ?? params._current_kausi]);
-    const resultAway = await myQuery(pool, queryAway, [params.kausi ?? params._current_kausi]);
+    const resultGeneral = await myQuery(pool, queryGeneral, [params.lohko]);
+    const resultHome = await myQuery(pool, queryHome, [params.lohko]);
+    const resultAway = await myQuery(pool, queryAway, [params.lohko]);
     return [resultGeneral, resultHome, resultAway];
 }
 
@@ -225,6 +229,8 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
  * @param params Sisältää kentän _current_kausi.
  */
 async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
     const queryGeneral = `
         SELECT 
             ep_pelaaja.id,
@@ -240,7 +246,7 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
             JOIN ep_pelaaja_tulokset ON ep_pelaaja_tulokset.pelaaja = ep_pelaaja.id
             JOIN ep_joukkue ON ep_joukkue.id = ep_pelaaja.joukkue
         WHERE 
-            ep_joukkue.kausi = ?
+            ep_joukkue.lohko = ?
     `;
     const queryHome = `
         SELECT
@@ -260,9 +266,8 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
             JOIN ep_peli AS p ON p.id = e.peli
             JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
+            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.kp
     `;
@@ -284,15 +289,14 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
             JOIN ep_peli AS p ON p.id = e.peli
             JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
             JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-            JOIN ep_lohko ON ep_lohko.id = ep_ottelu.lohko
         WHERE
-            ep_lohko.kausi = ? AND ep_ottelu.status <> 'T'
+            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
         GROUP BY
             p.vp
     `;
-    const resultGeneral = await myQuery(pool, queryGeneral, [params.kausi ?? params._current_kausi]);
-    const resultHome = await myQuery(pool, queryHome, [params.kausi ?? params._current_kausi]);
-    const resultAway = await myQuery(pool, queryAway, [params.kausi ?? params._current_kausi]);
+    const resultGeneral = await myQuery(pool, queryGeneral, [params.lohko]);
+    const resultHome = await myQuery(pool, queryHome, [params.lohko]);
+    const resultAway = await myQuery(pool, queryAway, [params.lohko]);
     return [resultGeneral, resultHome, resultAway];
 }
 
@@ -305,7 +309,10 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         throw new AuthError();
 
     const match = params.result;
-    if (!match.ok || !isValidParsedMatch(match) || match.status === 'H' || match.newStatus === 'T')
+    if (!match.ok || !isValidParsedMatch(match) || match.newStatus === 'T')
+        throw Error("Invalid match.");
+    // Vain admin voi muuttaa jo hyväksytyn ottelun tulosta:
+    if (match.status === 'H' && !roleIsAtLeast(auth.role, "admin"))
         throw Error("Invalid match.");
 
     // Tarkistetaan, että ottelun tiedot ovat samat kuin tietokannassa:
@@ -454,15 +461,22 @@ async function getUsers(_params: Record<string, any>, _auth: AuthTokenPayload | 
 }
 
 /**
- * Hakee listan kausista.
+ * Hakee listan lohkoista.
  */
-async function getSeasons(params: Record<string, any>, _auth: AuthTokenPayload | null) {
-    const query = `SELECT id, vuosi, kausi, Laji FROM ep_kausi`;
+async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload | null) {
+    const query = `
+        SELECT k.id, k.vuosi, k.kausi, k.Laji, l.tunnus, l.selite
+        FROM 
+            ep_kausi AS k
+            JOIN ep_lohko AS l ON l.kausi = k.id
+        ORDER BY
+            k.id ASC
+    `;
     const data = await myQuery(pool, query);
-    return { current_kausi: params._current_kausi, data };
+    return data;
 }
 
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
     getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
     getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
-    getUsers, getSeasons };
+    getUsers, getGroups };

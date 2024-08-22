@@ -164,7 +164,7 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
 
     // Lasketaan sija:
     const comparators = [
-        // numberColumnComparator<any, "koti">("koti", "desc"), // Ei tarvitse koska jos vieras ja yhteensä ovat samat, niin silloin myös koti on oltava sama koska koti=yhteensa-vieras.
+        numberColumnComparator<any, "erat">("erat", "asc"), 
         numberColumnComparator<any, "vieras">("vieras", "desc"), 
         numberColumnComparator<any, "yhteensa">("yhteensa", "desc"), 
     ];

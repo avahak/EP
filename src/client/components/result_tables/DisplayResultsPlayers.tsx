@@ -6,9 +6,10 @@
 
 import { compareJsonObjects, deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { serverFetch } from "../../utils/apiUtils";
-import { Box, Container, FormControl, InputLabel, MenuItem, Select, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
 import React, { useEffect, useState } from "react";
+import { GroupSelector } from "./GroupSelector";
 
 type TabPanelProps = {
     children?: React.ReactNode;
@@ -194,8 +195,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
  * Testisivu pelaajien tulosten esittämiselle.
  */
 const DisplayResultsPlayers: React.FC = () => {
-    const [kausi, setKausi] = useState<any>("");
-    const [kaudet, setKaudet] = useState<any>(null);
+    const [lohko, setLohko] = useState<any>("");
     const [resultsOld, setResultsOld] = useState<any>("");
     const [resultsNew, setResultsNew] = useState<any>("");
 
@@ -209,7 +209,7 @@ const DisplayResultsPlayers: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_results_players_old", ...(kausi && { params: { kausi: kausi } }) }),
+                body: JSON.stringify({ queryName: "get_results_players_old", ...(lohko && { params: { lohko } }) }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -230,7 +230,7 @@ const DisplayResultsPlayers: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_results_players", ...(kausi && { params: { kausi: kausi } }) }),
+                body: JSON.stringify({ queryName: "get_results_players", ...(lohko && { params: { lohko } }) }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -242,48 +242,30 @@ const DisplayResultsPlayers: React.FC = () => {
         }
     };
 
-    /**
-     * Hakee kaudet.
-     */
-    const fetchSeasons = async () => {
-        try {
-            const response = await serverFetch("/api/db/specific_query", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ queryName: "get_seasons" }),
-            }, null);
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            const jsonData = await response.json();
-            setKaudet(jsonData.rows.data);
-            setKausi(jsonData.rows.current_kausi);
-        } catch(error) {
-            console.error('Error:', error);
+    // Haetaan data jos lohko muuttuu:
+    useEffect(() => {
+        if (lohko !== "") {
+            fetchResultsOld();
+            fetchResultsNew();
         }
-    };
+    }, [lohko]);
 
-    // Haetaan kaudet:
-    useEffect(() => {
-        fetchSeasons();
-    }, []);
-
-    // Haetaan data uudestaan jos kausi muuttuu:
-    useEffect(() => {
-        fetchResultsOld();
-        fetchResultsNew();
-    }, [kausi]);
-
-    console.log("kausi", kausi);
-    console.log("kaudet", kaudet);
+    console.log("lohko", lohko);
     console.log("resultsOld", resultsOld);
     console.log("resultsNew", resultsNew);
 
     let diff = [];
 
     if (resultsOld && resultsNew) {
-        diff = compareJsonObjects(resultsOld, resultsNew);
+        const reduction = (results: any[]) => results.reduce((acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+        }, {} as Record<string, any>);
+        const reductionOld = reduction(resultsOld);
+        const reductionNew = reduction(resultsNew);
+        console.log("reductionOld", reductionOld);
+        console.log("reductionNew", reductionNew);
+        diff = compareJsonObjects(reductionOld, reductionNew);
         if (diff.length === 0) {
             console.log("Pelaajapörssit ovat samat varsinaisissa tauluissa ja _tulokset tauluissa.")
         } else {
@@ -296,22 +278,7 @@ const DisplayResultsPlayers: React.FC = () => {
         {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
-        {kaudet && 
-        <>
-        <FormControl sx={{mt: 2, mb: 5}}>
-        <InputLabel>Kausi</InputLabel>
-            <Select
-                value={kausi}
-                label="Kausi"
-                onChange={(event) => setKausi(event.target.value)}
-            >
-                {kaudet.map((season: any, index: number) => (
-                    <MenuItem key={index} value={season.id}>{`${season.kausi} (${season.Laji})`}</MenuItem>
-                ))}
-            </Select>
-        </FormControl>
-        </>
-        }
+        <GroupSelector lohko={lohko} setLohko={setLohko} />
 
         { resultsOld && resultsNew &&
         <Box sx={{my: 2}}>

@@ -22,7 +22,7 @@ import { SnackbarContext } from "../../contexts/SnackbarContext";
 
 /**
  * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
- * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys.
+ * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys, "display_modifiable"=esitys adminille joka voi vielä muokata.
  */
 const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: ScoresheetFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
@@ -285,6 +285,11 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                     {playersAllSelected &&
                     <Button type="submit" variant="contained" color="success">Hyväksy</Button>
                     }
+                </Box>}
+
+                {(mode == "display_modifiable") && 
+                <Box display="flex" gap="20px">
+                    <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
                 </Box>}
                 </Box>
             </Box>

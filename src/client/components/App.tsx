@@ -23,7 +23,7 @@ const App = () => {
                 <br />
                 <Link to="/live_matches">Live otteluseuranta</Link> 
                 <br />
-                <Link to="/display_match">Näytä yksittäisen ottelun tulos</Link> 
+                <Link to="/display_match/1">Näytä yksittäisen ottelun tulos</Link> 
                 <br />
                 <Link to="/simulate_login">Simuloi login</Link> 
                 <br />
