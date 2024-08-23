@@ -29,6 +29,7 @@ const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>}> = ({l
             const jsonData = await response.json();
             setLohkot(jsonData.rows);
             setLohko(jsonData.rows[jsonData.rows.length-1].id);
+            console.log("lohkot", jsonData.rows);
         } catch(error) {
             console.error('Error:', error);
         }
@@ -37,7 +38,6 @@ const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>}> = ({l
     // Haetaan lohkot:
     useEffect(() => {
         fetchGroups();
-        console.log("lohkot", lohkot);
     }, []);
 
     return (

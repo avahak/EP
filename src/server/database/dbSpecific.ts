@@ -465,12 +465,12 @@ async function getUsers(_params: Record<string, any>, _auth: AuthTokenPayload | 
  */
 async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
-        SELECT k.id, k.vuosi, k.kausi, k.Laji, l.tunnus, l.selite
+        SELECT l.id, k.vuosi, k.kausi, k.Laji, l.tunnus, l.selite
         FROM 
             ep_kausi AS k
             JOIN ep_lohko AS l ON l.kausi = k.id
         ORDER BY
-            k.id ASC
+            l.id ASC
     `;
     const data = await myQuery(pool, query);
     return data;
