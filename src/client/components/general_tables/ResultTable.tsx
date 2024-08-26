@@ -235,7 +235,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     );
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ display: 'flex', overflowX: 'scroll' }}>
         <Paper sx={{ minWidth: minWidth, width: maxWidth, px: 1, mx: 'auto' }} elevation={10}>
             <Typography sx={{width: '100%', textAlign: 'center', fontSize: '1.5rem'}}>{tableName}</Typography>
             <TableContainer>

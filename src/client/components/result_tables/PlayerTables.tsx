@@ -15,7 +15,7 @@ import { ResultTable } from "../general_tables/ResultTable";
 function roundPercentageformatter(row: any) {
     if (row.v_erat + row.h_erat == 0)
         return "-";
-    return (row.p_erat as number).toFixed(2);
+    return (row.p_erat as number).toFixed(1);
 };
 
 /**
@@ -24,7 +24,7 @@ function roundPercentageformatter(row: any) {
 function gamePercentageformatter(row: any) {
     if (row.v_pelit + row.h_pelit == 0)
         return "-";
-    return (row.p_pelit as number).toFixed(2);
+    return (row.p_pelit as number).toFixed(1);
 };
 
 /**
@@ -67,12 +67,12 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
         { id: 'v_erat', numeric: true, label: 'Erä-voitot', width: "10%" },
         { id: 'h_erat', numeric: true, label: 'Erä-häviöt', width: "10%" },
         // { id: 'e_erat', numeric: true, label: 'Erä V-H', width: "10%" },
-        { id: 'p_erat', numeric: true, label: 'Erä-%', width: "10%", entryFormatter: roundPercentageformatter },
+        { id: 'p_erat', numeric: true, label: 'Erä-%', width: "15%", entryFormatter: roundPercentageformatter },
         { id: 'pelit', numeric: true, label: 'Pelit', width: "10%" },
         { id: 'h_pelit', numeric: true, label: 'Peli-häviöt', width: "10%" },
         // { id: 'e_pelit', numeric: true, label: 'Peli V-H', width: "10%" },
-        { id: 'p_pelit', numeric: true, label: 'Peli-%', width: "10%", entryFormatter: gamePercentageformatter },
-        { id: 'v_pelit', numeric: true, label: 'Pelivoitot', width: "10%" },
+        { id: 'p_pelit', numeric: true, label: 'Peli-%', width: "15%", entryFormatter: gamePercentageformatter },
+        { id: 'v_pelit', numeric: true, label: 'Peli-voitot', width: "10%" },
     ];
 
     console.log("TotalWinsTable:", tableName, "rows:", table);
@@ -128,12 +128,12 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
         { id: 'v_erat', numeric: true, label: 'Erä-voitot', width: "10%" },
         { id: 'h_erat', numeric: true, label: 'Erä-häviöt', width: "10%" },
         // { id: 'e_erat', numeric: true, label: 'Erä V-H', width: "10%" },
-        { id: 'p_erat', numeric: true, label: 'Erä-%', width: "10%", entryFormatter: roundPercentageformatter },
+        { id: 'p_erat', numeric: true, label: 'Erä-%', width: "15%", entryFormatter: roundPercentageformatter },
         { id: 'pelit', numeric: true, label: 'Pelit', width: "10%" },
         { id: 'h_pelit', numeric: true, label: 'Peli-häviöt', width: "10%" },
         // { id: 'e_pelit', numeric: true, label: 'Peli V-H', width: "10%" },
-        { id: 'p_pelit', numeric: true, label: 'Peli-%', width: "10%", entryFormatter: gamePercentageformatter },
-        { id: 'v_pelit', numeric: true, label: 'Pelivoitot', width: "10%" },
+        { id: 'p_pelit', numeric: true, label: 'Peli-%', width: "15%", entryFormatter: gamePercentageformatter },
+        { id: 'v_pelit', numeric: true, label: 'Peli-voitot', width: "10%" },
     ];
 
     console.log("TotalWinsTable:", tableName, "rows:", table);
