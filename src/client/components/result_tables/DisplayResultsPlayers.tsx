@@ -6,7 +6,7 @@
 
 import { compareJsonObjects, deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { serverFetch } from "../../utils/apiUtils";
-import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Container, Link, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
 import React, { useEffect, useState } from "react";
 import { GroupSelector } from "./GroupSelector";
@@ -281,6 +281,14 @@ const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) =
         <Container maxWidth="md">
 
         <GroupSelector lohko={lohko} setLohko={setLohko} />
+
+        {<Box sx={{my: 2}}>
+            <Typography>
+                Alla pelaajien pistepörssit. 
+                Masters karsinta löytyy{" "}
+                <Link href="/Mporssi37.php">täältä</Link>.
+            </Typography>
+        </Box>}
 
         { debug && resultsOld && resultsNew &&
         <Box sx={{my: 2}}>

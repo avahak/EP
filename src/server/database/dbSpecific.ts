@@ -381,8 +381,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                     continue;
 
                 const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
-                // Liitetään rounds taulukkoon lisätyn rivin id:
                 let [insertedRow] = await connection.query(query3, match.games[k]);
+                // Liitetään rounds taulukkoon lisätyn rivin id:
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
@@ -446,7 +446,7 @@ async function getUsers(_params: Record<string, any>, _auth: AuthTokenPayload | 
 }
 
 /**
- * Hakee listan lohkoista.
+ * Hakee listan lohkoista, joilla Laji='r'.
  */
 async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
