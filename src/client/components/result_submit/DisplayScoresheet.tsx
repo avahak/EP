@@ -17,6 +17,8 @@ const DisplayScoresheet: React.FC = () => {
         try {
             const numericMatchId = parseInt(matchId || "", 10);
             const matchData = await fetchMatchData(numericMatchId);
+            if (matchData && matchData.status === 'T')
+                throw Error(`Match status is "T".`);
             setResult(matchData);
         } catch(error) {
             setResult(null);

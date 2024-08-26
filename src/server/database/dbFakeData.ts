@@ -9,12 +9,12 @@ import mysql from 'mysql2/promise';
 import { faker } from '@faker-js/faker';
 import { dateToYYYYMMDD, pickRandomDistinctElements, randomIntBetween } from "../../shared/generalUtils.js";
 
-const RAVINTOLAT = 5;       // max 7
+const RAVINTOLAT = 4;       // max 7
 const MIN_KAUSI = 37;
 const MAX_KAUSI = 38;
-const MAX_TEAMS_IN_RAVINTOLA = 6;
+const MAX_TEAMS_IN_RAVINTOLA = 5;
 const MIN_PLAYERS_IN_TEAM = 3;
-const MAX_PLAYERS_IN_TEAM = 6;
+const MAX_PLAYERS_IN_TEAM = 5;
 
 /**
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
@@ -51,7 +51,8 @@ function generate_kaudet() {
             index: kaudet.length,
             vuosi: vuosi,
             kausi: `${vuosi+2004}-${vuosi+2005}`,
-            Laji: (k % 2 == 0) ? 'r' : 'p',
+            // Laji: (k % 2 == 0) ? 'r' : 'p',
+            Laji: 'r',
         };
         kaudet.push(kausi);
     }
@@ -213,7 +214,9 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
                     else 
                         status = ['T', 'M', 'V', 'K'][Math.floor(4*Math.random())];
                 }
-                // ['H', 'M', 'V', 'K', 'T'][Math.floor(5*Math.random())]
+                // Jätetään viimeinen lohko avoimeksi:
+                if (lohko === lohkot.length-1)
+                    status = 'T';
 
                 const ottelu = {
                     index: ottelut.length,

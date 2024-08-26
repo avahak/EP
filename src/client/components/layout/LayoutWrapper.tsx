@@ -7,7 +7,7 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { AppBar, Box, Button, Divider, Drawer, IconButton, Toolbar, Typography, useMediaQuery } from "@mui/material";
 import { SideNavigation } from "./SideNavigation";
-import { BannerBox } from "./BannerBox";
+// import { BannerBox } from "./BannerBox";
 import { ReactNode, useContext } from "react";
 import React from "react";
 import { PageNameContext } from '../../contexts/PageNameContext';
@@ -154,7 +154,7 @@ const ButtonAppBar = () => {
  */
 const LayoutWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
     const isMinimumL = useMediaQuery('(min-width: 992px)');
-    const isMinimumXL = useMediaQuery('(min-width: 1200px)');
+    // const isMinimumXL = useMediaQuery('(min-width: 1200px)');
 
     return (
         <>
@@ -175,26 +175,26 @@ const LayoutWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
                 <Divider sx={{ m: 2 }} />
 
                 {/* Alamainokset */}
-                <Box>
+                {/* <Box>
                     <BannerBox text="Ad 1"/>
-                </Box>
-                {!isMinimumXL &&
+                </Box> */}
+                {/* {!isMinimumXL &&
                 <Box display="flex" flexWrap="wrap">
                     <BannerBox text="Ad A"/>
                     <BannerBox text="Ad B"/>
                     <BannerBox text="Ad C"/>
-                </Box>
+                </Box> } */
                 }
             </Box>
 
-            {/* Mainokset oikealla */}
+            {/* Mainokset oikealla
             {isMinimumXL &&
             <Box>
                 <BannerBox text="Ad A"/>
                 <BannerBox text="Ad B"/>
                 <BannerBox text="Ad C"/>
             </Box>
-            }
+            } */}
         </Box>
         </>
     );

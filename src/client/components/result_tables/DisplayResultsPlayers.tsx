@@ -194,7 +194,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
 /**
  * Testisivu pelaajien tulosten esittämiselle.
  */
-const DisplayResultsPlayers: React.FC = () => {
+const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) => {
     const [lohko, setLohko] = useState<any>("");
     const [resultsOld, setResultsOld] = useState<any>("");
     const [resultsNew, setResultsNew] = useState<any>("");
@@ -246,17 +246,19 @@ const DisplayResultsPlayers: React.FC = () => {
     useEffect(() => {
         if (lohko !== "") {
             fetchResultsOld();
-            fetchResultsNew();
+            if (debug)
+                fetchResultsNew();
         }
     }, [lohko]);
 
     console.log("lohko", lohko);
     console.log("resultsOld", resultsOld);
-    console.log("resultsNew", resultsNew);
+    if (debug)
+        console.log("resultsNew", resultsNew);
 
     let diff = [];
 
-    if (resultsOld && resultsNew) {
+    if (debug && resultsOld && resultsNew) {
         const reduction = (results: any[]) => results.reduce((acc, curr) => {
             acc[curr.id] = curr;
             return acc;
@@ -280,7 +282,7 @@ const DisplayResultsPlayers: React.FC = () => {
 
         <GroupSelector lohko={lohko} setLohko={setLohko} />
 
-        { resultsOld && resultsNew &&
+        { debug && resultsOld && resultsNew &&
         <Box sx={{my: 2}}>
         { diff.length === 0 ?
         <Typography sx={{color: 'green'}}>
@@ -300,11 +302,11 @@ const DisplayResultsPlayers: React.FC = () => {
         "Ladataan pelaajapörssiä.."
         }
 
-        {resultsNew ?
+        {debug && (resultsNew ?
         <PlayerResults results={resultsNew}/>
         : 
         "Ladataan pelaajapörssiä.."
-        }
+        )}
 
         </Container>
         </>

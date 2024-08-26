@@ -89,6 +89,7 @@ const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator 
 const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ submitCallback }) => {
     const authenticationState = useContext(AuthenticationContext);
     const [matches, setMatches] = useState<any[]>([]);
+    const [serverDate, setServerDate] = useState<string>(dateToYYYYMMDD(new Date()));
     // Lomakkeen kenttien tila:
     const { setValue, handleSubmit, watch } = useForm<FormFields>({
         defaultValues: {
@@ -131,7 +132,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
         const match = getSelectedMatch(data.selectionCategory, data.selectionIndex);
         let submitDate = data.date;
         if (data.useLivescore && match.status === "T")
-            submitDate = dateToYYYYMMDD(new Date());
+            submitDate = serverDate;
         submitCallback({ match, date: submitDate, useLivescore: data.useLivescore });
     };
 
@@ -158,9 +159,29 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
         }
     };
 
+    /** 
+     * Hakee päivämäärän serveriltä. Tämä on tarpeen koska muutoin käytetään
+     * live-ottelun päivämäärään käyttäjän tietokoneen kelloa, joka voi olla väärässä.
+     */
+    const fetchServerDate = async () => {
+        try {
+            const response = await serverFetch("/date", {
+                method: 'GET',
+            }, authenticationState);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            console.log("server date: ", jsonData.date);
+            setServerDate(jsonData.date);
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
+
     useEffect(() => {
-        console.log("useEffect fetchMatches()");
+        console.log("useEffect");
         fetchMatches();
+        fetchServerDate();
     }, []);
 
     /**

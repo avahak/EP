@@ -126,7 +126,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
             {/* Pelaaja */}
             <BasicTableCellLow className={rowBaseClassName(gameIndex)} key={`player-${gameIndex}-${playerIndex}`}>
                 <BasicNameTypography>
-                    {getSelectedPlayerName(formFields, gameIndex, playerIndex)}
+                    {getSelectedPlayerName(formFields, gameIndex, playerIndex) || "-"}
                 </BasicNameTypography>
             </BasicTableCellLow>
 

@@ -327,11 +327,13 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     // missä toinen joukkueista on heidän:
     if (!roleIsAtLeast(auth.role, "mod")) {
         if (match.status === 'T')
-            if (auth.team !== match.homeTeamName)
+            if (auth.team !== match.homeTeamName || match.newStatus !== 'K')
                 throw new AuthError();
         if (match.status === 'K')
-            if (auth.team !== match.awayTeamName)
+            if (auth.team !== match.awayTeamName || (match.newStatus !== 'V' && match.newStatus !== 'M'))
                 throw new AuthError();
+        if (match.status !== 'T' && match.status !== 'K')
+            throw new AuthError();
     }
 
     const rounds = deepCopy(match.rounds);
@@ -340,20 +342,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
     try {
         const connection = await pool.getConnection();
-        await connection.beginTransaction();  // MyISAM ei tue transaktioita
+        await connection.beginTransaction(); 
         try {
-            // Haetaan seuraavat vapaat id:t ep_peli, ep_erat tauluissa.
-            // HUOM! Tämä on ongelmallinen lähestymistapa: 
-            // kaksi yhtäaikaista lisäystä voivat sekoittaa tauluja.
-            // const queryId1 = `SELECT MAX(id)+1 AS nextId FROM ep_peli`;
-            // const [idRow1] = await connection.query(queryId1) as any;
-            // const queryId2 = `SELECT MAX(id)+1 AS nextId FROM ep_erat`;
-            // const [idRow2] = await connection.query(queryId2) as any;
-            // const nextId_peli = idRow1[0].nextId;
-            // const nextId_erat = idRow2[0].nextId;
-            // if (typeof nextId_peli !== "number" || typeof nextId_peli !== "number" || nextId_peli <= 0 || nextId_erat <= 0)
-            //     throw Error(`Error executing ${queryId1}`);
-
             // Kumotaan vanhat tulokset varsinaisissa tauluissa:
             const query0_1 = `
                 SELECT p.id FROM ep_peli p 
@@ -384,23 +374,19 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             `;
             await connection.query(query2, [match.id]);
 
-            // Lisätään uudet rivit tauluun ep_peli, ep_peli:
+            // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
                 // Ei talleteta kahden tyhjän pelaajan peliä:
                 if (match.games[k][1] === -1 && match.games[k][2] === -1)
                     continue;
 
                 const query3 = `INSERT INTO ep_peli (ottelu, kp, vp) VALUES (?, ?, ?)`;
-                // HUOM! Seuraava on AUTO_INCREMENT käyttäen:
                 // Liitetään rounds taulukkoon lisätyn rivin id:
                 let [insertedRow] = await connection.query(query3, match.games[k]);
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
                     throw Error("Error during ep_peli INSERT.");
-                // HUOM! Seuraava on ilman AUTO_INCREMENT:
-                // await connection.query(query3, [nextId_peli+k, ...match.games[k]]);
-                // rounds[k][0] = nextId_peli+k;
 
                 console.log("ep_peli insertId", insertedRow.insertId);
 
@@ -411,7 +397,6 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 // Päivitetään varsinaisten taulujen tulosmuuttujat:
                 const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
                 await connection.query(query4_2, [insertedRow.insertId]);
-                // await connection.query(query4_2, [nextId_peli+k]);
             }
 
             // Muutetaan ottelun päivämäärä ja status:
@@ -469,6 +454,8 @@ async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload |
         FROM 
             ep_kausi AS k
             JOIN ep_lohko AS l ON l.kausi = k.id
+        WHERE 
+            k.Laji = 'r'
         ORDER BY
             l.id ASC
     `;

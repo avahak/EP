@@ -6,6 +6,20 @@
 import { isObject, isEqual } from 'lodash';
 
 /**
+ * Palauttaa Suomen ajan merkkijonona.
+ */
+const currentTimeInFinlandString = () => {
+    return new Date().toLocaleString('en-FI', { 
+        timeZone: 'Europe/Helsinki', 
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+/**
  * Palauttaa annetun Date olion merkkijonona muodossa YYYY-MM-DD.
  */
 const dateToYYYYMMDD = (date: Date) => {
@@ -240,4 +254,4 @@ export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements,
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
     crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
     randomIntBetween, formatTimeDifference, removeSpecialChars, findStringDifference,
-    compareJsonObjects };
+    compareJsonObjects, currentTimeInFinlandString };

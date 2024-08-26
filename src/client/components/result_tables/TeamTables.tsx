@@ -41,10 +41,10 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
         { id: 'tappio', numeric: true, label: 'Häviöt', width: "10%" },
         { id: 'v_peli', numeric: true, label: 'Pelit V', width: "10%" },
         { id: 'h_peli', numeric: true, label: 'Pelit H', width: "10%" },
-        { id: 'e_peli', numeric: true, label: 'Pelit V-H', width: "10%" },
+        // { id: 'e_peli', numeric: true, label: 'Pelit V-H', width: "10%" },
         { id: 'v_era', numeric: true, label: 'Erät V', width: "10%" },
         { id: 'h_era', numeric: true, label: 'Erät H', width: "10%" },
-        { id: 'e_era', numeric: true, label: 'Erät V-H', width: "10%" },
+        // { id: 'e_era', numeric: true, label: 'Erät V-H', width: "10%" },
         { id: 'pisteet', numeric: true, label: 'Pisteet', width: "10%" },
     ];
 

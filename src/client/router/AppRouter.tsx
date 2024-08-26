@@ -63,7 +63,9 @@ const AppRouter = () => {
                 {/* Sivuja tai komponentteja */}
                 <Route path="/report" element={<Wrap pageName="Tulosten ilmoitus" restricted><ResultSubmission /></Wrap>} />
                 <Route path="/results_teams" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams /></Wrap>} />
+                <Route path="/results_teams_debug" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams debug /></Wrap>} />
                 <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
+                <Route path="/results_players_debug" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers debug /></Wrap>} />
                 <Route path="/live_matches" element={<Wrap pageName="Live ottelut"><LiveMatches /></Wrap>} />
                 <Route path="/display_match/:matchId" element={<Wrap pageName="Ottelun tiedot"><DisplayScoresheet /></Wrap>} />
 

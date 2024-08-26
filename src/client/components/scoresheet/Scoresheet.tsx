@@ -163,7 +163,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, 
                 team.allPlayers[team.allPlayers.findIndex((player) => player?.id == parseInt(value))]);
         }
-        if (value === "noPlayer" || oldPlayer === "-")
+        if (value === "noPlayer" || oldPlayer === "-" || !oldPlayer)
             resetGameScores(isHome, slot);
     };
 

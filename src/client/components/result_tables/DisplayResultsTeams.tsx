@@ -9,7 +9,7 @@ import { compareJsonObjects } from "../../../shared/generalUtils";
 import { useEffect, useState } from "react";
 import { GroupSelector } from "./GroupSelector";
 
-const DisplayResultsTeams: React.FC = () => {
+const DisplayResultsTeams: React.FC<{ debug?: Boolean }> = ({debug = false}) => {
 
     const [lohko, setLohko] = useState<any>("");
     const [resultsOld, setResultsOld] = useState<any>("");
@@ -61,17 +61,19 @@ const DisplayResultsTeams: React.FC = () => {
     useEffect(() => {
         if (lohko !== "") {
             fetchResultsOld();
-            fetchResultsNew();
+            if (debug)
+                fetchResultsNew();
         }
     }, [lohko]);
 
     console.log("lohko", lohko);
     console.log("resultsOld", resultsOld);
-    console.log("resultsNew", resultsNew);
+    if (debug)
+        console.log("resultsNew", resultsNew);
 
     let diff = [];
 
-    if (resultsOld && resultsNew) {
+    if (debug && resultsOld && resultsNew) {
         const reduction = (results: any[]) => results.reduce((acc, curr) => {
             const { "nimi": _, ...rest } = curr; // cut out nimi
             acc[curr.joukkue] = rest;
@@ -95,7 +97,7 @@ const DisplayResultsTeams: React.FC = () => {
 
         <GroupSelector lohko={lohko} setLohko={setLohko} />
 
-        {resultsOld && resultsNew && 
+        {debug && resultsOld && resultsNew && 
         <Box sx={{my: 2}}>
         {diff.length === 0 ?
         <Typography sx={{color: 'green'}}>
@@ -110,16 +112,16 @@ const DisplayResultsTeams: React.FC = () => {
         }
 
         {resultsOld ?
-        <TeamsTable rows={resultsOld} tableName="Sarjatilanne varsinaisten taulujen mukaan" />
+        <TeamsTable rows={resultsOld} tableName={debug ? "Sarjatilanne varsinaisten taulujen mukaan" : "Sarjatilanne"} />
         : 
         "Ladataan taulua.."
         }
 
-        {resultsNew ?
+        {debug && (resultsNew ?
         <TeamsTable rows={resultsNew} tableName="Sarjatilanne _tulokset taulujen mukaan" />
         : 
         "Ladataan taulua.."
-        }
+        )}
 
         </Container>
         </>

@@ -1,7 +1,7 @@
 -- Manuaalisesti kutsuttavia proseduureja päivittämään varsinaisten taulujen
 -- tuloskenttiä.
 
--- Tässä tiedostossa luodaan proseduuri "procedure_update_all_from_erat",
+-- Tässä tiedostossa luodaan proseduuri "procedure_update_all_old_from_erat",
 -- joka muuttaa varsinaisten taulujen tuloskenttiä ottaen huomioon uudet erätulokset. 
 -- Erätulokset aiheuttavat muutoksia seuraaviin tauluihin ja kenttiin:
 --     ep_peli: ktulos, vtulos
@@ -11,7 +11,7 @@
 -- HUOM! _tulokset tauluja ei tässä tiedostossa muuteta tai käytetä.
 -- 
 -- Proseduuria ei kutsuta automaattisesti vaan sitä käytetään kutsumalla
--- manuaalisesti tulosten hyväksymisen yhteydessä.
+-- manuaalisesti tulosten kirjaamisen yhteydessä.
 
 DELIMITER //
 
