@@ -74,7 +74,7 @@ app.use(express.json());
 
 // Ei välitetä lähdetiedostoja:
 app.use([BASE_URL + '/server/*', BASE_URL + '/client/*', BASE_URL + '/shared/*'], (_req, res) => {
-    res.status(403).send("Forbidden.");
+    return res.status(403).send("Forbidden.");
 });
 
 // Välitä staattisia tiedostoja 'dist' hakemistosta:
