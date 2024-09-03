@@ -10,7 +10,7 @@ import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/data
 import { ResultTable } from "../general_tables/ResultTable";
 
 /** 
- * Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+ * Muotoilee prosentit ja tarkistaa nollalla jakamisen.
  */
 function roundPercentageformatter(row: any) {
     if (row.v_erat + row.h_erat == 0)
@@ -19,7 +19,7 @@ function roundPercentageformatter(row: any) {
 };
 
 /**
- * Muotoilee prosentit kahdella desimaalilla ja tarkistaa nollalla jakamisen.
+ * Muotoilee prosentit ja tarkistaa nollalla jakamisen.
  */
 function gamePercentageformatter(row: any) {
     if (row.v_pelit + row.h_pelit == 0)

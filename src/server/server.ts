@@ -38,7 +38,7 @@ import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import { authRouter } from './auth/auth.js';
-import liveScoreRouter from './liveScoreRoutes.js';
+import liveScoreRouter, { getLivescoreInfo } from './liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/dbRoutes.js';
 import generalRouter from './generalRoutes.js';
@@ -72,6 +72,11 @@ app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
 
+// Ei välitetä lähdetiedostoja:
+app.use([BASE_URL + '/server/*', BASE_URL + '/client/*', BASE_URL + '/shared/*'], (_req, res) => {
+    res.status(403).send("Forbidden.");
+});
+
 // Välitä staattisia tiedostoja 'dist' hakemistosta:
 app.use(BASE_URL, express.static(path.join(process.cwd(), 'dist'), {
     // maxAge on maksimiaika selaimen välimuistin käytölle (3600000 on yksi tunti). 
@@ -94,7 +99,11 @@ app.use(BASE_URL + '/api', generalRouter);
 app.get(BASE_URL + '/info', (_req, res) => {
     const serverTime = currentTimeInFinlandString();
     res.setHeader('Content-Type', 'text/html');
-    res.send(`Serverin aika: ${serverTime}<br>Koodi rakennettu: ${buildTimestamp}<br>Serveri käynnistetty: ${serverStartTime}`);
+    res.send(`Serverin aika: ${serverTime}<br>
+        Koodi rakennettu: ${buildTimestamp}<br>
+        Serveri käynnistetty: ${serverStartTime}<br>
+        Lives-ottelut: ${getLivescoreInfo()}<br>
+        `);
 });
 
 // Päivämäärä serverin mukaan:

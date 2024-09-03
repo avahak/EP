@@ -288,9 +288,15 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 labelDisplayedRows={({ from, to, count }) => (
-                    `${from}-${to}, yhteensä ${count}`
+                    `${from}-${to} (${count})`
                 )}
-                labelRowsPerPage="Rivejä sivulla"
+                labelRowsPerPage="Rivejä"
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                }}
+                showFirstButton={true}
+                // showLastButton={true}
             />
         </Paper>
         </Box>

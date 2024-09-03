@@ -31,6 +31,10 @@ const MINUTE_ms = 60*SECOND_ms;
 const HOUR_ms = 60*MINUTE_ms;
 
 /**
+ * Aikaväli, jolla lähetetään "heartbeat" yhteyksille pitämään ne elossa.
+ */
+const HEARTBEAT_INTERVAL = 15*SECOND_ms;
+/**
  * Aikaväli, jolla ajetaan siivoustoimenpiteitä.
  */
 const MAINTENANCE_INTERVAL = 10*MINUTE_ms;
@@ -144,6 +148,13 @@ function broadcastMatchList() {
 }
 
 /**
+ * Palauttaa tekstimuotoisen tiedon otteluiden ja seuraajien määrästä.
+ */
+function getLivescoreInfo() {
+    return `${liveMatches.size} ottelua, ${liveConnections.size} yhteyttä`;
+}
+
+/**
  * Vastaanottaa keskeneräisen pöytäkirjan live-seurantaa varten.
  * HUOM! TODO Tässäkin tulisi tehdä jonkinlaista validointia, muutoin 
  * väärinkäyttö mahdollinen.
@@ -215,8 +226,9 @@ router.get('/watch_match/:matchId?', async (req, res) => {
 
     // Headerit SSE varten:
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
     const now = Date.now();
     const connectionId = createRandomUniqueIdentifier();
@@ -274,4 +286,14 @@ setInterval(() => {
     // console.log("#liveMatches: ", liveMatches.size, "#liveConnections: ", liveConnections.size);
 }, MAINTENANCE_INTERVAL);
 
+// Asetetaan periodisesti toistuva tehtävä: lähetetään jokaiselle
+// yhteydelle "heartbeat" pitämään yhteys elossa.
+// Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
+setInterval(() => {
+    for (let [_connectionId, connection] of liveConnections) {
+        connection.res.write(`data: hb\n\n`);
+    }
+}, HEARTBEAT_INTERVAL);
+
 export default router;
+export { getLivescoreInfo };

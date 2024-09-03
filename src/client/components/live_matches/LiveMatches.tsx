@@ -26,6 +26,10 @@ const LiveMatches: React.FC = () => {
         // tai listaa otteluista (type="matchListUpdate"):
         eventSource.onmessage = (event) => {
             const eventData = event.data;
+            if (eventData === "hb") {
+                console.log(`Received: heartbeat.`);
+                return;
+            }
             const parsedData = base64JSONparse(eventData);
             const type = parsedData.type;
             const data = parsedData.data;
