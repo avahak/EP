@@ -4,8 +4,8 @@
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToYYYYMMDD, deepCopy, removeSpecialChars } from '../../shared/generalUtils.js';
-import { isValidParsedMatch } from '../../shared/parseMatch.js';
+import { dateToYYYYMMDD, removeSpecialChars } from '../../shared/generalUtils.js';
+import { enforceValidSymbolsInRounds, isValidParsedMatch } from '../../shared/parseMatch.js';
 import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
 import { logger } from '../serverErrorHandler.js';
@@ -309,6 +309,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         throw new AuthError();
 
     const match = params.result;
+    console.log("match", JSON.stringify(match));
+
     if (!match.ok || !isValidParsedMatch(match) || match.newStatus === 'T')
         throw Error("Invalid match.");
     // Vain admin voi muuttaa jo hyväksytyn ottelun tulosta:
@@ -336,9 +338,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             throw new AuthError();
     }
 
-    const rounds = deepCopy(match.rounds);
-    
-    console.log("match", JSON.stringify(match));
+    // Pakotetaan erätulossymbolit hyväksyttäviksi arvoiksi (K1-K6, V0-V6):
+    const rounds = enforceValidSymbolsInRounds(match.rounds);
 
     try {
         const connection = await pool.getConnection();
@@ -396,7 +397,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
                 // Päivitetään varsinaisten taulujen tulosmuuttujat:
                 const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
-                await connection.query(query4_2, [insertedRow.insertId]);
+                await connection.query(query4_2, [rounds[k][0]]);
             }
 
             // Muutetaan ottelun päivämäärä ja status:

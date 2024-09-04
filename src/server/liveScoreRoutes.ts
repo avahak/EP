@@ -322,4 +322,13 @@ setInterval(() => {
     }
 }, HEARTBEAT_INTERVAL);
 
+// DEBUGGING, REMOVE! Used to test SSE crashes.
+// setInterval(() => {
+//     for (let [_connectionId, connection] of liveConnections) {
+//         if (connection) {
+//             connection.res.end();
+//         }
+//     }
+// }, 43*SECOND_ms);
+
 export { router as liveScoreRouter, getLivescoreInfo };
