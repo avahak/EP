@@ -18,7 +18,7 @@ BEGIN
     IF era IS NOT NULL THEN
         IF era REGEXP 'K[1-6]$' THEN
             SET kt = kt + 1;
-        ELSEIF era != 'V0' THEN
+        ELSEIF era REGEXP 'V[1-6]$' THEN
             SET vt = vt + 1;
         END IF;
     END IF;

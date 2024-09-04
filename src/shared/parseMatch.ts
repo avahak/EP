@@ -6,7 +6,7 @@
  */
 
 import { ScoresheetFields } from "../client/components/scoresheet/scoresheetTypes";
-import { checkGameResults } from "../client/utils/matchTools";
+import { checkGameResults, playerIndexesToGameIndex } from "../client/utils/matchTools";
 
 /**
  * Ottelupöytäkirjan symbolien muttaminen kirjoitetusta muodosta tietokannassa käytettävään.
@@ -60,7 +60,7 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
     const rounds: any[] = [];
     for (let kpIndex = 0; kpIndex < 3; kpIndex++) {
         for (let vpIndex = 0; vpIndex < 3; vpIndex++) {
-            const roundNumber = (9 - kpIndex*2 + vpIndex*3) % 9;
+            const roundNumber = playerIndexesToGameIndex(kpIndex, vpIndex);
             const roundResults = [];
             for (let k = 0; k < 5; k++) {
                 const s = translateSymbol(match.scores[roundNumber][0][k], match.scores[roundNumber][1][k]);

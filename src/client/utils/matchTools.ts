@@ -196,15 +196,20 @@ function currentScore(data: ScoresheetFields) {
 function parseScores(rawScores: any, teamHome: (ScoresheetPlayer | null)[], teamAway: (ScoresheetPlayer | null)[]) {
     const results = createEmptyScores();
     for (const row of rawScores) {
-        let indexHome = teamHome.findIndex((player) => player?.id == row.kp);
-        let indexAway = teamAway.findIndex((player) => player?.id == row.vp);
-        if (indexHome == -1 || indexAway == -1)
+        let indexHome = teamHome.findIndex((player) => player?.id === row.kp);
+        let indexAway = teamAway.findIndex((player) => player?.id === row.vp);
+        if (indexHome === -1 || indexAway === -1)
             continue;
         const gameIndex = playerIndexesToGameIndex(indexHome, indexAway);
         for (let k = 0; k < 5; k++) {
             const result = row[`era${k+1}`];
-            results[gameIndex][result[0] == 'K' ? 0 : 1][k] =
-                [' ', '1', 'A', '9', 'K', 'C', 'V'][parseInt(result[1])];
+            if ((typeof result === "string" || result instanceof String) 
+                    && (result.length === 2) && (result[0] === 'K' || result[0] === 'V')) {
+                const playerIndex = (result[0] === 'K') ? 0 : 1;
+                let num = parseInt(result[1]);
+                if (num >= 1 && num <= 6)
+                    results[gameIndex][playerIndex][k] = [' ', '1', 'A', '9', 'K', 'C', 'V'][num];
+            }
         }
     }
     return results;
@@ -247,6 +252,7 @@ const fetchScores = async (matchId: number) => {
         if (!response.ok) 
             throw new Error(`HTTP error! Status: ${response.status}`);
         const jsonData = await response.json();
+        // console.log("scores", jsonData.rows);
         return jsonData.rows;
     } catch(error) {
         console.error('Error:', error);
@@ -277,7 +283,7 @@ const fetchMatchInfo = async (matchId: number) => {
 /**
  * Hakee live-ottelun jos sellainen on olemassa.
  */
-const fetchLiveMatch = async (matchId: number) => {
+const fetchLiveMatch = async (matchId: number): Promise<ScoresheetFields|null> => {
     try {
         const response = await serverFetch(`/api/live/get_match/${matchId}`, {
             method: 'GET',
@@ -292,12 +298,13 @@ const fetchLiveMatch = async (matchId: number) => {
     } catch(error) {
         console.info('No matching live match found.');
     }
+    return null;
 };
 
 /**
  * Hakee tietokannasta koko ottelun ScoresheetFields muodossa.
  */
-const fetchMatchData = async (matchId: number) => {
+const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
     const matchInfo = await fetchMatchInfo(matchId);
     if (!matchInfo)
         throw Error("Match not found.");
@@ -338,7 +345,7 @@ const fetchMatchData = async (matchId: number) => {
     console.log("playingAway", playingAway);
 
     if (liveMatch) {
-        console.log("Using livematch data.")
+        console.log("Using livematch data.");
         return liveMatch;
     }
 

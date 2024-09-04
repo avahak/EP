@@ -21,6 +21,7 @@ import { base64JSONStringify, createRandomUniqueIdentifier } from '../shared/gen
 import { currentScore } from '../client/utils/matchTools.js';
 import { LiveMatchEntry } from '../shared/commonTypes.js';
 import { injectAuth, requireAuth } from './auth/auth.js';
+import { ScoresheetFields } from '../client/components/scoresheet/scoresheetTypes.js';
 
 const router: Router = express.Router();
 
@@ -33,7 +34,7 @@ const HOUR_ms = 60*MINUTE_ms;
 /**
  * Aikaväli, jolla lähetetään "heartbeat" yhteyksille pitämään ne elossa.
  */
-const HEARTBEAT_INTERVAL = 15*SECOND_ms;
+const HEARTBEAT_INTERVAL = 20*SECOND_ms;
 /**
  * Aikaväli, jolla ajetaan siivoustoimenpiteitä.
  */
@@ -74,7 +75,7 @@ type LiveMatch = {
     startTime: number;
     lastActivity: number;
     score: number[];
-    data: any;
+    data: ScoresheetFields;
 };
 
 /**
@@ -291,9 +292,9 @@ setInterval(() => {
 // Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
 setInterval(() => {
     for (let [_connectionId, connection] of liveConnections) {
-        connection.res.write(`data: hb\n\n`);
+        if (connection)
+            connection.res.write(`data: hb\n\n`);
     }
 }, HEARTBEAT_INTERVAL);
 
-export default router;
-export { getLivescoreInfo };
+export { router as liveScoreRouter, getLivescoreInfo };

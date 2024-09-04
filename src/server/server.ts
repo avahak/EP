@@ -38,7 +38,7 @@ import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import { authRouter } from './auth/auth.js';
-import liveScoreRouter, { getLivescoreInfo } from './liveScoreRoutes.js';
+import { liveScoreRouter, getLivescoreInfo } from './liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/dbRoutes.js';
 import generalRouter from './generalRoutes.js';
