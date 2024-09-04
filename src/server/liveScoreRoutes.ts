@@ -91,7 +91,11 @@ function sendLiveMatch(connectionId: string, liveMatch: LiveMatch) {
     if (!connection)
         return;
     const data = { type: "matchUpdate", data: liveMatch.data };
-    connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+    try {
+        connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+    } catch (error) {
+        console.error(`Failed to send livescore data`);
+    }
 }
 
 /**
@@ -102,7 +106,11 @@ function sendMatchList(connectionId: string, matchList: any[]) {
     if (!connection)
         return;
     const data = { type: "matchListUpdate", data: matchList };
-    connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+    try {
+        connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+    } catch (error) {
+        console.error(`Failed to send livescore data`);
+    }
 }
 
 /**
@@ -161,45 +169,49 @@ function getLivescoreInfo() {
  * väärinkäyttö mahdollinen.
  */
 router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
-    if (!req.body.result)
-        return res.status(400).send(`Missing result.`);
-    const result = req.body.result;
-    if (result.status !== "T")
-        return res.status(400).send(`Invalid result.`);
-    const score = currentScore(result);
+    try {
+        if (!req.body.result)
+            return res.status(400).send(`Missing result.`);
+        const result = req.body.result;
+        if (result.status !== "T")
+            return res.status(400).send(`Invalid result.`);
+        const score = currentScore(result);
 
-    const matchId = result.id;
-    const now = Date.now();
+        const matchId = result.id;
+        const now = Date.now();
 
-    let liveMatch: LiveMatch | undefined = liveMatches.get(matchId);
-    let isMatchListChanged = false;
-    if (liveMatch) {
-        if (liveMatch.score[0] != score[0] || liveMatch.score[1] != score[1])
+        let liveMatch: LiveMatch | undefined = liveMatches.get(matchId);
+        let isMatchListChanged = false;
+        if (liveMatch) {
+            if (liveMatch.score[0] != score[0] || liveMatch.score[1] != score[1])
+                isMatchListChanged = true;
+            // Päivitä olemassaolevaa liveMatch:
+            liveMatch.lastActivity = now;
+            liveMatch.score = score;
+            liveMatch.data = result;
+        } else {
+            // Luodaan uusi liveMatch
+            liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
+            liveMatches.set(matchId, liveMatch);
             isMatchListChanged = true;
-        // Päivitä olemassaolevaa liveMatch:
-        liveMatch.lastActivity = now;
-        liveMatch.score = score;
-        liveMatch.data = result;
-    } else {
-        // Luodaan uusi liveMatch
-        liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
-        liveMatches.set(matchId, liveMatch);
-        isMatchListChanged = true;
-    }
-    
-    // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
-    if (liveMatch && liveMatch.data.isSubmitted) {
-        console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
-        liveMatches.delete(matchId);
-        isMatchListChanged = true;
-    }
+        }
+        
+        // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
+        if (liveMatch && liveMatch.data.isSubmitted) {
+            console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
+            liveMatches.delete(matchId);
+            isMatchListChanged = true;
+        }
 
-    if (isMatchListChanged)
-        broadcastMatchList();
-    broadcastLiveMatch(matchId);
+        if (isMatchListChanged)
+            broadcastMatchList();
+        broadcastLiveMatch(matchId);
 
-    console.log("Server received live match data, matchId:", matchId);
-    res.json({ ok: true });
+        console.log("Server received live match data, matchId:", matchId);
+        return res.json({ ok: true });
+    } catch (error) {
+        console.log(`Error during /submit_match: ${error}`);
+    }
 });
 
 /**
@@ -215,46 +227,54 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
  * Alustetaan uusi SSE-yhteys live-seurantaa varten.
  */
 router.get('/watch_match/:matchId?', async (req, res) => {
-    let liveMatch: LiveMatch | undefined = undefined;
-    let matchId = undefined;
-    if (req.params.matchId) {
-        matchId = parseInt(req.params.matchId);
-        if (isNaN(matchId))
-            matchId = undefined;
-        else
-            liveMatch = liveMatches.get(matchId);
+    try {
+        let liveMatch: LiveMatch | undefined = undefined;
+        let matchId = undefined;
+        if (req.params.matchId) {
+            matchId = parseInt(req.params.matchId);
+            if (isNaN(matchId))
+                matchId = undefined;
+            else
+                liveMatch = liveMatches.get(matchId);
+        }
+
+        // Headerit SSE varten:
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        const now = Date.now();
+        const connectionId = createRandomUniqueIdentifier();
+        liveConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
+
+        sendMatchList(connectionId, createMatchList());
+        if (liveMatch)
+            sendLiveMatch(connectionId, liveMatch);
+
+        // Käsitellään client disconnect:
+        req.on('close', () => {
+            liveConnections.delete(connectionId);
+        });
+
+        console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
+    } catch (error) {
+        console.log(`Error during /watch_match: ${error}`);
     }
-
-    // Headerit SSE varten:
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    const now = Date.now();
-    const connectionId = createRandomUniqueIdentifier();
-    liveConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
-
-    sendMatchList(connectionId, createMatchList());
-    if (liveMatch)
-        sendLiveMatch(connectionId, liveMatch);
-
-    // Käsitellään client disconnect:
-    req.on('close', () => {
-        liveConnections.delete(connectionId);
-    });
-
-    console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
 });
 
 /**
  * Palauttaa ottelun ilman SSE-yhteyttä.
  */
 router.get('/get_match/:matchId', async (req, res) => {
-    const matchId = parseInt(req.params.matchId);
-    if (!matchId || !liveMatches.has(matchId))
-        return res.status(400).send("Invalid matchId.");
-    res.json({data: liveMatches.get(matchId)?.data});
+    try {
+        const matchId = parseInt(req.params.matchId);
+        if (!matchId || !liveMatches.has(matchId))
+            return res.status(400).send("Invalid matchId.");
+        return res.json({data: liveMatches.get(matchId)?.data});
+    } catch (error) {
+        console.log(`Error during /get_match: ${error}`);
+    }
 });
 
 // Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet 
@@ -292,8 +312,13 @@ setInterval(() => {
 // Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
 setInterval(() => {
     for (let [_connectionId, connection] of liveConnections) {
-        if (connection)
-            connection.res.write(`data: hb\n\n`);
+        if (connection) {
+            try {
+                connection.res.write(`data: hb\n\n`);
+            } catch (error) {
+                console.error(`Failed to send livescore data`);
+            }
+        }
     }
 }, HEARTBEAT_INTERVAL);
 
