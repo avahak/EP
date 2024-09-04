@@ -102,7 +102,7 @@ app.get(BASE_URL + '/info', (_req, res) => {
     res.send(`Serverin aika: ${serverTime}<br>
         Koodi rakennettu: ${buildTimestamp}<br>
         Serveri käynnistetty: ${serverStartTime}<br>
-        Lives-ottelut: ${getLivescoreInfo()}<br>
+        Live-ottelut: ${getLivescoreInfo()}<br>
         `);
 });
 
