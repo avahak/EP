@@ -2,6 +2,8 @@ import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
 import { ResultTable } from "../general_tables/ResultTable";
 
+const rowsPerPageOptions = { default: 15, max: 20 };
+
 /**
  * Joukkueiden sarjatilanne taulukko.
  * TODO Poista "Pelit V-H" ja "Erät V-H" sarakkeet kapealla näytöllä?
@@ -24,6 +26,9 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
         };
         table.push(newRow);
     }
+
+    // Lajitellaan taulu ensin nimen mukaan (ei vaikuta sijaan):
+    table.sort((rowA, rowB) => rowA.nimi.localeCompare(rowB.nimi));
 
     // Lasketaan sija:
     const comparators = [
@@ -49,7 +54,15 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
     ];
 
     return (
-        <ResultTable tableName={tableName} headCells={headCells} rows={table} stripingId="sija_dense" minWidth="500px" maxWidth="800px"></ResultTable>
+        <ResultTable 
+            tableName={tableName} 
+            headCells={headCells} 
+            rowsPerPageOptions={rowsPerPageOptions} 
+            rows={table} 
+            stripingId="sija_dense" 
+            minWidth="500px" 
+            maxWidth="800px">
+        </ResultTable>
     );
 };
 

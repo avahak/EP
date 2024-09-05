@@ -6,7 +6,7 @@
 
 import { Fragment, useContext } from "react";
 import { serverFetch, useInitialServerFetch } from "../../utils/apiUtils";
-import { Box, Link, Paper, Typography } from "@mui/material";
+import { Box, Button, Link, Paper, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { useNavigate } from "react-router-dom";
 import { crudeHash } from "../../../shared/generalUtils";
@@ -132,6 +132,7 @@ const SimulateLogin: React.FC = () => {
         </Typography>
 
         {usersResult.status.ok ?
+        <>
         <Box display="flex" flexWrap="wrap">
             {teams?.map((team: string, index: number) => (
                 <Fragment key={`team-${index}`}>
@@ -143,6 +144,10 @@ const SimulateLogin: React.FC = () => {
                 </Fragment>
             ))}
         </Box>
+        <Button onClick={() => { authenticationState.setFromRefreshToken(null); }}>
+            Logout
+        </Button>
+        </>
         :
         "Ladataan..."}
         </>

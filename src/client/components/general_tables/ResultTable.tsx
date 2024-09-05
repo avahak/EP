@@ -74,7 +74,7 @@ type TableHeadProps = {
     headCells: HeadCell[];
     order: Order;
     orderBy: string;
-    onRequestSort: (event: React.MouseEvent<unknown>, property: string, defaultOrder: Order | undefined) => void;
+    onRequestSort: (event: React.MouseEvent<unknown>, property: string, defaultOrder: Order|undefined) => void;
 };
 
 type ResultTableProps = {
@@ -84,6 +84,7 @@ type ResultTableProps = {
     maxWidth: string;
     stripingId: string;     // määrää rivin värin, pitää olla integer
     rows: any[];
+    rowsPerPageOptions: { default: number, max: number };
 };
 
 /**
@@ -98,8 +99,6 @@ function getEntryValue(headCell: HeadCell, row: any) {
             return "-";
         if (headCell.numericToFixed)
             return (value as number).toFixed(headCell.numericToFixed);
-        else
-            return value;
     }
     return value;
 }
@@ -173,6 +172,8 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     let tableName: string = props.tableName ?? "Table";
     let minWidth: string = props.minWidth ?? "200px";
     let maxWidth: string = props.maxWidth ?? "750px";
+    let rowsPerPageOptions = props.rowsPerPageOptions ?? { default: 10, max: 20 };
+    let rowsPerPage = props.rows.length > rowsPerPageOptions.max ? rowsPerPageOptions.default : Math.max(props.rows.length, 1);
     let headCells: HeadCell[] = [];
     let rows: any[] = props.rows;
     if (props.headCells) {
@@ -195,7 +196,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     const [order, setOrder] = React.useState<Order>(headCells[0].numeric ? 'asc' : 'asc');
     const [orderBy, setOrderBy] = React.useState<string>(headCells[0].id);
     const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(10);
+    // const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
     // const theme = useTheme();
 
@@ -216,14 +217,14 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
         setPage(newPage);
     };
 
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value));
-        setPage(0);
-    };
+    // const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     setRowsPerPage(parseInt(event.target.value));
+    //     setPage(0);
+    // };
 
     // Tyhjien rivien lukumäärä (!=0 vain viimeisellä sivulla).
     const emptyRows =
-        page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+        page > 0 ? Math.max(0, (1+page)*rowsPerPage - rows.length) : 0;
 
     // Tällä hetkellä näkyvät rivit:
     const visibleRows = React.useMemo(() =>
@@ -280,23 +281,23 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
             </Table>
             </TableContainer>
             <TablePagination
-                rowsPerPageOptions={[10, 25]}
                 component="div"
-                count={rows.length}
                 rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[]}
+                // onRowsPerPageChange={handleChangeRowsPerPage}
+                // labelRowsPerPage="Rivejä"
+                count={rows.length}
                 page={page}
                 onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
                 labelDisplayedRows={({ from, to, count }) => (
                     `${from}-${to} (${count})`
                 )}
-                labelRowsPerPage="Rivejä"
                 sx={{
                     display: 'flex',
                     justifyContent: 'flex-start',
                 }}
                 showFirstButton={true}
-                // showLastButton={true}
+                showLastButton={true}
             />
         </Paper>
         </Box>

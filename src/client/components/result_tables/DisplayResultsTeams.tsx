@@ -111,6 +111,12 @@ const DisplayResultsTeams: React.FC<{ debug?: Boolean }> = ({debug = false}) => 
         </Box>
         }
 
+        <Typography sx={{pb: 2}}>
+            Mukana on kaikki alkusarjassa pelatut ottelut.
+            <br />
+            Lajittelun prioriteetti sijoituksille: 1. Voitot, 2. Pelivoitot, 3. Erävoitot.
+        </Typography>
+
         {resultsOld ?
         <TeamsTable rows={resultsOld} tableName={debug ? "Sarjatilanne varsinaisten taulujen mukaan" : "Sarjatilanne"} />
         : 

@@ -9,6 +9,8 @@ import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
 import { ResultTable } from "../general_tables/ResultTable";
 
+const rowsPerPageOptions = { default: 15, max: 20 };
+
 /** 
  * Muotoilee prosentit ja tarkistaa nollalla jakamisen.
  */
@@ -50,6 +52,9 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
         table.push(newRow);
     }
 
+    // Lajitellaan taulu ensin nimen mukaan (ei vaikuta sijaan):
+    table.sort((rowA, rowB) => rowA.nimi.localeCompare(rowB.nimi));
+
     // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "h_erat">("h_erat", "asc"), 
@@ -78,7 +83,15 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
     console.log("TotalWinsTable:", tableName, "rows:", table);
 
     return (
-        <ResultTable tableName={tableName} headCells={headCells} rows={table} stripingId="sija_dense" minWidth="700px" maxWidth="1000px"></ResultTable>
+        <ResultTable 
+            tableName={tableName} 
+            headCells={headCells} 
+            rows={table} 
+            rowsPerPageOptions={rowsPerPageOptions}
+            stripingId="sija_dense" 
+            minWidth="700px" 
+            maxWidth="1000px">
+        </ResultTable>
     );
 };
 
@@ -111,6 +124,9 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
         table.push(newRow);
     }
 
+    // Lajitellaan taulu ensin nimen mukaan (ei vaikuta sijaan):
+    table.sort((rowA, rowB) => rowA.nimi.localeCompare(rowB.nimi));
+
     // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "h_erat">("h_erat", "asc"), 
@@ -139,7 +155,15 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
     console.log("TotalWinsTable:", tableName, "rows:", table);
 
     return (
-        <ResultTable tableName={tableName} headCells={headCells} rows={table} stripingId="sija_dense" minWidth="700px" maxWidth="1000px"></ResultTable>
+        <ResultTable 
+            tableName={tableName} 
+            headCells={headCells} 
+            rows={table} 
+            rowsPerPageOptions={rowsPerPageOptions}
+            stripingId="sija_dense" 
+            minWidth="700px" 
+            maxWidth="1000px">
+        </ResultTable>
     );
 };
 
@@ -162,6 +186,9 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
         table.push(newRow);
     }
 
+    // Lajitellaan taulu ensin nimen mukaan (ei vaikuta sijaan):
+    table.sort((rowA, rowB) => rowA.nimi.localeCompare(rowB.nimi));
+
     // Lasketaan sija:
     const comparators = [
         numberColumnComparator<any, "erat">("erat", "asc"), 
@@ -182,7 +209,15 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
     console.log("PlayerWinsTable:", tableName, "rows:", table);
 
     return (
-        <ResultTable tableName={tableName} headCells={headCells} rows={table} stripingId="sija_dense" minWidth="300px" maxWidth="750px"></ResultTable>
+        <ResultTable 
+            tableName={tableName} 
+            headCells={headCells} 
+            rows={table} 
+            rowsPerPageOptions={rowsPerPageOptions}
+            stripingId="sija_dense" 
+            minWidth="300px" 
+            maxWidth="750px">
+        </ResultTable>
     );
 };
 
