@@ -108,10 +108,10 @@ BEGIN
     UPDATE ep_pelaaja
         SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
             h_era = h_era + new_peli_vtulos - old_peli_vtulos,
-            e_era = v_era + new_peli_ktulos - old_peli_ktulos - (h_era + new_peli_vtulos - old_peli_vtulos),
+            e_era = v_era - h_era,
             v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
             h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
-            e_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win - (h_peli + new_is_peli_away_win - old_is_peli_away_win),
+            e_peli = v_peli - h_peli,
             pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
         WHERE id = koti_pelaaja_id;
     
@@ -119,10 +119,10 @@ BEGIN
     UPDATE ep_pelaaja
         SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
             h_era = h_era + new_peli_ktulos - old_peli_ktulos,
-            e_era = v_era + new_peli_vtulos - old_peli_vtulos - (h_era + new_peli_ktulos - old_peli_ktulos),
+            e_era = v_era - h_era,
             v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
             h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
-            e_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win - (h_peli + new_is_peli_home_win - old_is_peli_home_win),
+            e_peli = v_peli - h_peli,
             pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
         WHERE id = vieras_pelaaja_id;
 
