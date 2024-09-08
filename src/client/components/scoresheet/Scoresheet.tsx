@@ -19,6 +19,7 @@ import { RoundResultsTable } from "./RoundResultsTable";
 import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
 import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
+import { LegendBox } from "./LegendBox";
 
 /**
  * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
@@ -259,12 +260,22 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             }
         </Box>
 
-        {/* Taulukko pelien tuloksille: */}
         {playersAllSelected &&
-        <Box display="flex" justifyContent="center">
-            <Box width="100%" maxWidth="400px">
-                <GameResultsTable gameRunningStats={gameRunningStats} displayErrors={displayErrors} teamHome={formFields.teamHome} teamAway={formFields.teamAway} />
-            </Box>
+        <Box sx={{mb: 2, mt: 1}}>
+            <Grid container direction={{ xs: 'column-reverse', sm: 'row' }}>
+                {/* Symbolien selitykset */}
+                <Grid item xs={12} sm={5} display="flex" justifyContent="center">
+                    <Box width="100%" maxWidth="400px">
+                        <LegendBox />
+                    </Box>
+                </Grid>
+                {/* Ottelutulokset */}
+                <Grid item xs={12} sm={7} display="flex" justifyContent="center">
+                    <Box width="100%" maxWidth="400px">
+                        <GameResultsTable gameRunningStats={gameRunningStats} displayErrors={displayErrors} teamHome={formFields.teamHome} teamAway={formFields.teamAway} />
+                    </Box>
+                </Grid>
+            </Grid>
         </Box>
         }
 

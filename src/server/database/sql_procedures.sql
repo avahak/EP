@@ -112,7 +112,7 @@ BEGIN
             v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
             h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
             e_peli = v_peli - h_peli,
-            pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
+            pelit = v_peli + h_peli
         WHERE id = koti_pelaaja_id;
     
     -- Päivitetään ep_pelaaja vieraspelaajalle:
@@ -123,7 +123,7 @@ BEGIN
             v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
             h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
             e_peli = v_peli - h_peli,
-            pelit = pelit + new_is_peli_away_win - old_is_peli_away_win + new_is_peli_home_win - old_is_peli_home_win
+            pelit = v_peli + h_peli
         WHERE id = vieras_pelaaja_id;
 
     -- Päivitetään ep_sarjat kotijoukkueelle:
