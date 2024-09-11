@@ -135,17 +135,38 @@ function crudeHash(obj: any) {
 
 /**
  * Muutetaan serializable objekti JSON muotoon ja koodataan base64.
+ * Tätä voi käyttää Reactissa.
  */
-function base64JSONStringify(obj: any) {
+function base64JSONStringify(obj: any): string {
     const s = JSON.stringify(obj);
     return btoa(s);
 }
 
 /**
- * Palauttaa base64JSONStringify muunnetun objektin takaisin alkuperäiseksi.
+ * Muutetaan serializable objekti JSON muotoon ja koodataan base64.
+ * Tätä voi käyttää Node.js koodissa.
  */
-function base64JSONparse(s64: string) {
-    const s = atob(s64);
+function base64JSONStringifyNode(obj: any): string {
+    const s = JSON.stringify(obj);
+    return Buffer.from(s).toString('base64');
+}
+
+/**
+ * Palauttaa base64JSONStringify muunnetun objektin takaisin alkuperäiseksi.
+ * Tätä voi käyttää Reactissa.
+ */
+function base64JSONparse(s64: string): any {
+    const s = new TextDecoder('utf-8').decode(Uint8Array.from(atob(s64), c => c.charCodeAt(0)));
+    // const s = atob(s64);
+    return JSON.parse(s);
+}
+
+/**
+ * Palauttaa base64JSONStringifyNode muunnetun objektin takaisin alkuperäiseksi.
+ * Tätä voi käyttää Node.js koodissa.
+ */
+function base64JSONparseNode(s64: string): any {
+    const s = Buffer.from(s64, 'base64').toString('utf8');
     return JSON.parse(s);
 }
 
@@ -251,7 +272,8 @@ function compareJsonObjects(obj1: any, obj2: any, path: string[] = []): string[]
 
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
-    getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy,
-    crudeHash, base64JSONStringify, base64JSONparse, createRandomUniqueIdentifier,
-    randomIntBetween, formatTimeDifference, removeSpecialChars, findStringDifference,
-    compareJsonObjects, currentTimeInFinlandString };
+    getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy, crudeHash,
+    base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
+    createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 
+    removeSpecialChars, findStringDifference, compareJsonObjects, 
+    currentTimeInFinlandString,  };

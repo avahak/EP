@@ -6,7 +6,7 @@ import { LiveMatchEntry } from "../../../shared/commonTypes";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { LiveMatchCard } from "./LiveMatchCard";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Live otteluiden esityssivu. Näyttää kutakin ottelua kohden kortin sen tiedoista.
@@ -18,8 +18,8 @@ const LiveMatches: React.FC = () => {
     const [matchId, setMatchId] = useState<number | null>(null);
     const [matchData, setMatchData] = useState<any>(null);
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
-    const retryCountRef = useRef<number>(0); // To track retry attempts
-    const hasHeartbeatRef = useRef<boolean>(false);
+    // const retryCountRef = useRef<number>(0); // To track retry attempts
+    // const hasHeartbeatRef = useRef<boolean>(false);
     const isMountedRef = useRef(false);
 
     // Kun serveri lähettää viestin, päivitetään seurattavaa ottelua (type="matchUpdate")
@@ -29,7 +29,7 @@ const LiveMatches: React.FC = () => {
         const eventData = event.data;
         if (eventData === "hb") {
             console.log(`Received: heartbeat.`);
-            hasHeartbeatRef.current = true;
+            // hasHeartbeatRef.current = true;
             return;
         }
         const parsedData = base64JSONparse(eventData);
@@ -46,24 +46,23 @@ const LiveMatches: React.FC = () => {
     const handleOnError = useCallback(async (error: any) => {
         console.log("EventSource failed:", error);
 
-        hasHeartbeatRef.current = false;    // presumed dead
-
-        // Retry logic with a delay
-        await delay(60*1000);
-        if (!hasHeartbeatRef.current && isMountedRef.current) { 
-            // no heartbeat in a minute
-            if (retryCountRef.current++ < 10) {
-                console.log(`Attempting to reconnect (${retryCountRef.current})`);
-                setMatchId(prevId => prevId); // This re-triggers useEffect to reconnect
-            }
-        }
+        // hasHeartbeatRef.current = false;    // presumed dead
+        // // Retry logic with a delay
+        // await delay(60*1000);
+        // if (!hasHeartbeatRef.current && isMountedRef.current) { 
+        //     // no heartbeat in a minute
+        //     if (retryCountRef.current++ < 10) {
+        //         console.log(`Attempting to reconnect (${retryCountRef.current})`);
+        //         setMatchId(prevId => prevId); // This re-triggers useEffect to reconnect
+        //     }
+        // }
     }, []);
 
     // Aloitetaan uusi koko ajan auki pidettävä SSE yhteys palvelimeen. Se suljetaan kun 
     // valittu ottelu muutetaan tai komponentti poistetaan.
     useEffect(() => {
         console.log("LiveMatches useEffect!");
-        hasHeartbeatRef.current = true;
+        // hasHeartbeatRef.current = true;
         isMountedRef.current = true;
         const eventSource = new EventSource(`${getBackendUrl()}/api/live/watch_match/${matchId}`);
         eventSource.onmessage = handleOnMessage;

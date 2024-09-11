@@ -1,3 +1,7 @@
+/**
+ * Laatikko, joka sisältää selitykset voittosymboleille.
+ * Lisätään Scoresheet kanssa.
+ */
 import { Paper, Typography } from "@mui/material";
 
 const LegendBox = () => {

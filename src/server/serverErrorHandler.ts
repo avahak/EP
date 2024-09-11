@@ -8,6 +8,15 @@ import winston from 'winston';
 
 const MB = 1024*1024;
 
+/**
+ * Maksimimäärä kiinnisaamattomia poikkeuksia ennen serverin pysäyttämistä.
+ * HUOM! Muista että tämä on vaarallinen lähestymistapa - serveri voi jäädä
+ * käyntiin vaikka sen sisäinen tila on epäkelpo ja toimii epäodotetulla tavalla.
+ */
+const MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN = 5;
+// Vastaava laskuri
+let shutdownErrorCounter = 0;
+
 // const BASE_URL = process.env.BASE_URL || "";
 const LOG_FILE_DIRECTORY = process.env.LOG_FILE_DIRECTORY || '.';
 
@@ -27,9 +36,9 @@ const winstonFileFormat = winston.format.combine(
     winston.format.errors({ stack: true }),
     winston.format.timestamp({ format: 'DD-MM-YYYYTHH:mm:ss' }),
     winston.format.printf(info => {
-        const { timestamp, ...restInfo } = info;
+        const { timestamp, level, message, ...restInfo } = info;
         // Tämä vain siirtää timestamp alkuun:
-        return JSON.stringify({ timestamp, ...restInfo });
+        return JSON.stringify({ timestamp, level, message, ...restInfo });
     }),
 );
 
@@ -48,8 +57,34 @@ const logger = winston.createLogger({
             level: 'error',
             maxFiles: 3,
         }),
+        new winston.transports.File({ 
+            format: winstonFileFormat,
+            filename: (process.env.LOG_FILE_DIRECTORY || '.') + '/info.log', 
+            maxsize: 5*MB,
+            level: 'info',
+            maxFiles: 3,
+        }),
     ],
 });
+
+/**
+ * Palauttaa shutdownErrorCounter arvon.
+ */
+function getShutdownErrorCounter(): number {
+    return shutdownErrorCounter;
+}
+
+/**
+ * Pysäyttää serverin jos virheitä tulee liikaa (ei jäädä loputtomaan looppiin).
+ */
+function handleCriticalError() {
+    shutdownErrorCounter += 1;
+    // Pysäytetään serveri jos :
+    if (shutdownErrorCounter >= MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN) {
+        logger.error("Server shutdown: too many unhandled errors.");
+        process.exit(1);
+    }
+}
 
 /**
  * Määrittelee globaalit virheenkäsittelijät.
@@ -64,18 +99,29 @@ function initializeErrorHandling(app: Express) {
     // });
 
     // Globaali virheenkäsittely:
-    app.use((err: Error, _req: Request, res: Response, _next: NextFunction): any => {
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction): any => {
         logger.error("Global error handler:", err);
-        res.status(500).send('Something went wrong.');
+        try {
+            res.status(500).send('Global error handler: something went wrong.');
+        } catch (error) {
+            // TODO remove
+            logger.error("This should never happen:", error);
+        }
     });
 
-    // Tapahtumankuuntelija, joka sieppaa käsittelemättömät lupaus-hylkäämiset:
-    // HUOM! Pysäyttää serverin.
+    // Tapahtumankuuntelija, joka sieppaa käsittelemättömät poikkeukset.
+    // HUOM! Voi pysäyttää serverin.
+    process.on('uncaughtException', (reason, _origin) => {
+        logger.error("UncaughtException: reason:", reason, "origin:");
+        handleCriticalError();
+    });
+
+    // Tapahtumankuuntelija, joka sieppaa käsittelemättömät lupaus-hylkäämiset.
+    // HUOM! Voi pysäyttää serverin.
     process.on('unhandledRejection', (reason, _promise) => {
-        logger.error("UnhandledRejection causes server crash:", reason);
-        // Pysäytetään serveri:
-        process.exit(1);
+        logger.error("UnhandledRejection: reason:", reason);
+        handleCriticalError();
     });
 };
 
-export { logger, initializeErrorHandling };
+export { logger, initializeErrorHandling, getShutdownErrorCounter };

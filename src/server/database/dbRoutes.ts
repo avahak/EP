@@ -19,7 +19,7 @@ const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
 /**
  * SQL-tietokannan testausta, palauttaa tietokannan kaavion ja sen perustamiskomennot.
  */
-router.get('/schema', async (_req, res) => {
+router.get('/schema', async (_req, res, next) => {
     console.log(new Date(), "databaseRoutes: /schema requested");
     try {
         const sqlFile1 = fs.readFileSync(`src/server/database/sql_tables.sql`, 'utf-8');
@@ -49,8 +49,7 @@ router.get('/schema', async (_req, res) => {
             schema4: sanitizedSchema4,
         });
     } catch (error) {
-        logger.error('Error executing query:', error);
-        res.status(500).send('Internal Server Error');
+        next(error);
     }
 });
 
@@ -109,24 +108,27 @@ const queryFunctions: Record<string, any> = {
  * NOTE Tämä voisi olla parempi jakaa erillisiksi reiteiksi. Kaikkien
  * tietokantafunktioiden laittaminen tämän reitin alle ei taida tuottaa etua.
  */
-router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res) => {
-    console.log("auth", req.auth);
-    const queryName = req.body.queryName;
-    const params = req.body.params || {};
-    params._current_kausi = KULUVA_KAUSI;
-
-    const queryFunction = queryFunctions[queryName];
-    if (!queryName || !queryFunction)
-        return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
+router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, next) => {
     try {
+        // console.log("auth", req.auth);
+        const queryName = req.body.queryName;
+        const params = req.body.params || {};
+        params._current_kausi = KULUVA_KAUSI;
+
+        logger.info("databaseRoutes: /specific_query", { queryName });
+
+        const queryFunction = queryFunctions[queryName];
+        if (!queryName || !queryFunction)
+            return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
+
         const rows = await queryFunction(params, req.auth);
         res.json({ rows });
         console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {
         logger.error('databaseRoutes: Error in /specific_query:', error);
         if (error instanceof AuthError)
-            return res.status(401).send(`Error: ${error}`);
-        res.status(500).send(`Error: ${error}`);
+            return res.status(401).send("Forbidden");
+        next(error);
     }
 });
 

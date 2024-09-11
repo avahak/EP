@@ -59,25 +59,29 @@ interface RequestWithAuth extends Request {
  * req.auth = null.
  */
 const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) => {
-    const authHeader = req.headers['authorization'];
-    let authPayload: AuthTokenPayload | null = null;
+    try {
+        const authHeader = req.headers['authorization'];
+        let authPayload: AuthTokenPayload | null = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        const payload = verifyJWT(token);
-        if (isAuthTokenPayload(payload)) {
-            authPayload = payload;
-            Object.freeze(authPayload);
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.slice(7);
+            const payload = verifyJWT(token);
+            if (isAuthTokenPayload(payload)) {
+                authPayload = payload;
+                Object.freeze(authPayload);
+            }
         }
-    }
 
-    // Lisää authPayload req objektiin niin, että sitä ei voi enää muuttaa:
-    Object.defineProperty(req, 'auth', {
-        value: authPayload,
-        writable: false,
-        configurable: false,
-        enumerable: true
-    });
+        // Lisää authPayload req objektiin niin, että sitä ei voi enää muuttaa:
+        Object.defineProperty(req, 'auth', {
+            value: authPayload,
+            writable: false,
+            configurable: false,
+            enumerable: true
+        });
+    } catch (error) {
+        logger.error("Error during injectAuth", error);
+    }
 
     next();
 };
@@ -89,13 +93,18 @@ const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) =>
  */
 const requireAuth = (requiredRole: string | null = null) => {
     return (req: RequestWithAuth, res: Response, next: NextFunction) => {
-        let isVerified = false;
-        if (isAuthTokenPayload(req.auth)) {
-            if (roleIsAtLeast(req.auth.role, requiredRole))
-                isVerified = true;
-        }
-        if (!isVerified) 
+        try {
+            let isVerified = false;
+            if (isAuthTokenPayload(req.auth)) {
+                if (roleIsAtLeast(req.auth.role, requiredRole))
+                    isVerified = true;
+            }
+            if (!isVerified) 
+                return res.status(401).send('Unauthorized request.');
+        } catch (error) {
+            logger.error("Error in requireAuth", error);
             return res.status(401).send('Unauthorized request.');
+        }
     
         next();
     };
@@ -114,7 +123,7 @@ router.post('/create_refresh_token', async (req: Request, res: Response) => {
         const iat = Math.floor(Date.now() / 1000);
         const exp = iat + 90*DAY_s;
         const payload: AuthTokenPayload = { name, team, role, iat, exp };
-        console.log("creating refresh token with payload:", payload);
+        // console.log("creating refresh token with payload:", payload);
         const token = encodeJWT(payload);
         res.json({ token });
     } catch (error) {
@@ -136,7 +145,7 @@ async function findUserInDatabase(name: string, team: string) {
  * Palauttaa myös uuden refresh tokenin ("Refresh Token Rotation").
  * Ks. https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation
  */
-router.post('/create_access_token', async (req: Request, res: Response) => {
+router.post('/create_access_token', async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string')
             return res.status(400).send("Missing token.");
@@ -161,8 +170,7 @@ router.post('/create_access_token', async (req: Request, res: Response) => {
         console.log("/create_access_token issued new tokens");
         res.json({ refresh_token: newRefreshToken, access_token: accessToken });
     } catch (error) {
-        logger.error('Error.', error);
-        res.status(500).send('Error.');
+        next(error);
     }
 });
 

@@ -198,7 +198,10 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     const [page, setPage] = React.useState(0);
     // const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
-    // const theme = useTheme();
+    React.useEffect(() => {
+        // console.log("ResultsTable useEffect");
+        setPage(0);
+    }, [props.rows]);
 
     /**
      * Kutsutaan kun käyttäjä pyytää järjestämään rivin uudelleen (valitsemalla otsakerivin).

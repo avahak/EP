@@ -17,11 +17,12 @@
  */
 
 import express, { Router } from 'express';
-import { base64JSONStringify, createRandomUniqueIdentifier } from '../shared/generalUtils.js';
+import { base64JSONStringifyNode, createRandomUniqueIdentifier } from '../shared/generalUtils.js';
 import { currentScore } from '../client/utils/matchTools.js';
 import { LiveMatchEntry } from '../shared/commonTypes.js';
 import { injectAuth, requireAuth } from './auth/auth.js';
 import { ScoresheetFields } from '../client/components/scoresheet/scoresheetTypes.js';
+import { logger } from './serverErrorHandler.js';
 
 const router: Router = express.Router();
 
@@ -40,9 +41,9 @@ const HEARTBEAT_INTERVAL = 20*SECOND_ms;
  */
 const MAINTENANCE_INTERVAL = 10*MINUTE_ms;
 /**
- * Maksimiaika live ottelun seuraamiseen ennen yhteyden siivoamista pois.
+ * Maksimiaika live ottelun seuraamiseen ilman uuden datan lähettämistä ennen tuhoamista.
  */
-const MAX_LIVE_CONNECTION_DURATION = 8*HOUR_ms;
+const MAX_LIVE_CONNECTION_INACTIVITY = 2*HOUR_ms;
 /**
  * Maksimiaika live ottelun ilmoittamiseen. 
  */
@@ -57,7 +58,7 @@ const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR_ms;
  * Tyyppi ottelun seuraamiseen käytettävälle yhteydelle.
  */
 type LiveConnection = {
-    startTime: number;
+    lastActivity: number;
     matchId: number | undefined;
     res: any;           // yhteys clientiin, tähän kirjoitetaan päivityksiä
 };
@@ -92,7 +93,8 @@ function sendLiveMatch(connectionId: string, liveMatch: LiveMatch) {
         return;
     const data = { type: "matchUpdate", data: liveMatch.data };
     try {
-        connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+        connection.lastActivity = Date.now();
+        connection.res.write(`data: ${base64JSONStringifyNode(data)}\n\n`);
     } catch (error) {
         console.error(`Failed to send livescore data`);
     }
@@ -107,7 +109,8 @@ function sendMatchList(connectionId: string, matchList: any[]) {
         return;
     const data = { type: "matchListUpdate", data: matchList };
     try {
-        connection.res.write(`data: ${base64JSONStringify(data)}\n\n`);
+        connection.lastActivity = Date.now();
+        connection.res.write(`data: ${base64JSONStringifyNode(data)}\n\n`);
     } catch (error) {
         console.error(`Failed to send livescore data`);
     }
@@ -168,7 +171,7 @@ function getLivescoreInfo() {
  * HUOM! TODO Tässäkin tulisi tehdä jonkinlaista validointia, muutoin 
  * väärinkäyttö mahdollinen.
  */
-router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
+router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) => {
     try {
         if (!req.body.result)
             return res.status(400).send(`Missing result.`);
@@ -194,11 +197,13 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
             liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
             liveMatches.set(matchId, liveMatch);
             isMatchListChanged = true;
+            logger.info("Starting match in liveScoreRoutes", { matchId });
         }
         
         // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
         if (liveMatch && liveMatch.data.isSubmitted) {
-            console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
+            logger.info("Ending match in liveScoreRoutes", { matchId });
+            // console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
             liveMatches.delete(matchId);
             isMatchListChanged = true;
         }
@@ -207,10 +212,10 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
             broadcastMatchList();
         broadcastLiveMatch(matchId);
 
-        console.log("Server received live match data, matchId:", matchId);
         return res.json({ ok: true });
     } catch (error) {
-        console.log(`Error during /submit_match: ${error}`);
+        logger.error(`Error during /submit_match: ${error}`);
+        next(error);
     }
 });
 
@@ -228,6 +233,12 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res) => {
  */
 router.get('/watch_match/:matchId?', async (req, res) => {
     try {
+        // Headerit SSE varten:
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
         let liveMatch: LiveMatch | undefined = undefined;
         let matchId = undefined;
         if (req.params.matchId) {
@@ -238,15 +249,9 @@ router.get('/watch_match/:matchId?', async (req, res) => {
                 liveMatch = liveMatches.get(matchId);
         }
 
-        // Headerit SSE varten:
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-
         const now = Date.now();
         const connectionId = createRandomUniqueIdentifier();
-        liveConnections.set(connectionId, { startTime: now, matchId: matchId, res: res});
+        liveConnections.set(connectionId, { lastActivity: now, matchId: matchId, res: res});
 
         sendMatchList(connectionId, createMatchList());
         if (liveMatch)
@@ -257,23 +262,28 @@ router.get('/watch_match/:matchId?', async (req, res) => {
             liveConnections.delete(connectionId);
         });
 
-        console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
+        // console.log(`liveScoreRoutes: /watch_match/${matchId} done`);
     } catch (error) {
-        console.log(`Error during /watch_match: ${error}`);
+        logger.error(`Error during /watch_match`, error);
+
+        res.setHeader('Content-Type', 'text/plain');
+        res.status(500).send('Internal Server Error');
+        res.end();
     }
 });
 
 /**
  * Palauttaa ottelun ilman SSE-yhteyttä.
  */
-router.get('/get_match/:matchId', async (req, res) => {
+router.get('/get_match/:matchId', async (req, res, next) => {
     try {
         const matchId = parseInt(req.params.matchId);
         if (!matchId || !liveMatches.has(matchId))
             return res.status(400).send("Invalid matchId.");
         return res.json({data: liveMatches.get(matchId)?.data});
     } catch (error) {
-        console.log(`Error during /get_match: ${error}`);
+        logger.error(`Error during /get_match`, error);
+        next(error);
     }
 });
 
@@ -292,10 +302,10 @@ setInterval(() => {
     for (let key of liveMatchesToDelete)
         liveMatches.delete(key);
 
-    // Poistetaan vanhat liveConnections:
+    // Poistetaan liveConnections jos niihin ei ole lähetetty mitään tuloksia pitkän aikaan:
     const liveConnectionsToDelete = [];
     for (const [connectionId, connection] of liveConnections) 
-        if (now - connection.startTime > MAX_LIVE_CONNECTION_DURATION)
+        if (now - connection.lastActivity > MAX_LIVE_CONNECTION_INACTIVITY)
             liveConnectionsToDelete.push(connectionId);
     for (let key of liveConnectionsToDelete)
         liveConnections.delete(key);
@@ -312,12 +322,11 @@ setInterval(() => {
 // Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
 setInterval(() => {
     for (let [_connectionId, connection] of liveConnections) {
-        if (connection) {
-            try {
+        try {
+            if (connection) 
                 connection.res.write(`data: hb\n\n`);
-            } catch (error) {
-                console.error(`Failed to send livescore data`);
-            }
+        } catch (error) {
+            // console.error(`Failed to send livescore data`);
         }
     }
 }, HEARTBEAT_INTERVAL);

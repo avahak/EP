@@ -58,7 +58,7 @@ function parseSqlFileContentOld(sqlFileContent: string): string[] {
  * Wrapperi mielivaltaiselle tietokantakyselylle.
  */
 async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|null=null) {
-    console.log("myQuery", query);
+    // console.log("myQuery", query);
     try {
         const connection = await pool.getConnection();
         try {

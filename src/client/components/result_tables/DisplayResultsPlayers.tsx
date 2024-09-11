@@ -244,6 +244,7 @@ const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) =
 
     // Haetaan data jos lohko muuttuu:
     useEffect(() => {
+        // console.log("DisplayResultsPlayers useEffect");
         if (lohko !== "") {
             fetchResultsOld();
             if (debug)

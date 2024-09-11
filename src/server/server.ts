@@ -42,10 +42,16 @@ import { liveScoreRouter, getLivescoreInfo } from './liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/dbRoutes.js';
 import generalRouter from './generalRoutes.js';
-import { logger, initializeErrorHandling } from './serverErrorHandler.js';
+import { logger, initializeErrorHandling, getShutdownErrorCounter } from './serverErrorHandler.js';
 import 'express-async-errors';
 import { buildTimestamp } from '../shared/build-info.js';
 import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUtils.js';
+import { freemem } from 'os';
+
+/**
+ * Aika ennen kun lähetetään `res.status(408).send('Request Timeout');`.
+ */
+const RESPONSE_TIMEOUT = 120*1000;  // 1000=one second
 
 const app = express();
 
@@ -72,6 +78,15 @@ app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
 
+// Timeout middleware
+app.use((_req, res, next) => {
+    res.setTimeout(RESPONSE_TIMEOUT, () => {
+        logger.info('Request has timed out.');
+        res.status(408).send('Request Timeout');
+    });
+    next();
+});
+
 // Ei välitetä lähdetiedostoja:
 app.use([BASE_URL + '/server/*', BASE_URL + '/client/*', BASE_URL + '/shared/*'], (_req, res) => {
     return res.status(403).send("Forbidden.");
@@ -96,20 +111,31 @@ app.use(BASE_URL + '/auth', authRouter);
 app.use(BASE_URL + '/api', generalRouter);
 
 // Tietoa serveristä:
-app.get(BASE_URL + '/info', (_req, res) => {
-    const serverTime = currentTimeInFinlandString();
-    res.setHeader('Content-Type', 'text/html');
-    res.send(`Serverin aika: ${serverTime}<br>
-        Koodi rakennettu: ${buildTimestamp}<br>
-        Serveri käynnistetty: ${serverStartTime}<br>
-        Live-ottelut: ${getLivescoreInfo()}<br>
-        `);
+app.get(BASE_URL + '/info', (_req, res, next) => {
+    try {
+        const serverTime = currentTimeInFinlandString();
+        const freeMemory = freemem()/(1024*1024);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(`Serverin aika: ${serverTime}<br>
+            Koodi rakennettu: ${buildTimestamp}<br>
+            Serveri käynnistetty: ${serverStartTime}<br>
+            Live-ottelut: ${getLivescoreInfo()}<br>
+            Free memory: ${freeMemory.toFixed(2)} MB<br>
+            shutdownErrorCounter: ${getShutdownErrorCounter()}<br>
+            `);
+    } catch (err) {
+        next(err);
+    }
 });
 
 // Päivämäärä serverin mukaan:
-app.get(BASE_URL + '/date', (_req, res) => {
-    const date = dateToYYYYMMDD(new Date());
-    res.json({ date });
+app.get(BASE_URL + '/date', (_req, res, next) => {
+    try {
+        const date = dateToYYYYMMDD(new Date());
+        res.json({ date });
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
@@ -121,9 +147,10 @@ app.get(wildcard, (_req, res) => {
 });
 
 // Alustetaan virheenkäsittelijät:
+// Huom! Tämä tulee olla kaikkien reittien jälkeen.
 initializeErrorHandling(app);
 
 // Käynnistetään express.js serveri:
 app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}.`);
+    logger.info(`Server started on port ${PORT}.`);
 });

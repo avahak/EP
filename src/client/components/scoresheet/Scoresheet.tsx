@@ -100,10 +100,10 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 severity: "error" 
             });
         } else {
-            if (onChangeCallback)
-                onChangeCallback({ ...data, isSubmitted: true });
             if (submitCallback) 
                 submitCallback({ ...data, isSubmitted: true });
+            if (onChangeCallback)
+                onChangeCallback({ ...data, isSubmitted: true });
         }
     };
 
