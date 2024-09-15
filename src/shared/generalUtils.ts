@@ -276,4 +276,4 @@ export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements,
     base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
     createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 
     removeSpecialChars, findStringDifference, compareJsonObjects, 
-    currentTimeInFinlandString,  };
+    currentTimeInFinlandString };

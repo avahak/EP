@@ -11,6 +11,9 @@ import { pool } from './dbConnections.js';
 import { logger } from '../serverErrorHandler.js';
 import { RowDataPacket } from 'mysql2';
 
+// @ts-ignore
+// const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
@@ -377,6 +380,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
             // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
+                // await delay(1000);  // TODO remove, only for testing
                 // Ei talleteta kahden tyhjän pelaajan peliä:
                 if (match.games[k][1] === -1 && match.games[k][2] === -1)
                     continue;
@@ -405,7 +409,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             await connection.query(query5, [match.date, match.newStatus, match.id]);
 
             await connection.commit();
+            logger.info("commit in submitMatchResult", { matchId: match.id });
         } catch (error) {
+            logger.info("rollback in submitMatchResult", { matchId: match.id });
             await connection.rollback();
             throw error;
         } finally {

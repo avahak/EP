@@ -118,15 +118,19 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         logger.info("databaseRoutes: /specific_query", { queryName });
 
         const queryFunction = queryFunctions[queryName];
-        if (!queryName || !queryFunction)
-            return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
+        if (!queryName || !queryFunction) {
+            if (!res.headersSent)
+                return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
+            return;
+        }
 
         const rows = await queryFunction(params, req.auth);
-        res.json({ rows });
-        console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
+        if (!res.headersSent)
+            res.json({ rows });
+        // console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {
-        logger.error('databaseRoutes: Error in /specific_query:', error);
-        if (error instanceof AuthError)
+        logger.error('databaseRoutes: /specific_query:', error);
+        if ((error instanceof AuthError) && (!res.headersSent))
             return res.status(401).send("Forbidden");
         next(error);
     }

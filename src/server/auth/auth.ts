@@ -93,20 +93,22 @@ const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) =>
  */
 const requireAuth = (requiredRole: string | null = null) => {
     return (req: RequestWithAuth, res: Response, next: NextFunction) => {
+        let isVerified = false;
         try {
-            let isVerified = false;
             if (isAuthTokenPayload(req.auth)) {
                 if (roleIsAtLeast(req.auth.role, requiredRole))
                     isVerified = true;
             }
-            if (!isVerified) 
-                return res.status(401).send('Unauthorized request.');
         } catch (error) {
             logger.error("Error in requireAuth", error);
-            return res.status(401).send('Unauthorized request.');
         }
-    
-        next();
+        if (!isVerified) {
+            if (!res.headersSent)
+                return res.status(401).send('Unauthorized request.');
+            return;
+        }
+        if (isVerified)
+            next();
     };
 };
 
@@ -115,7 +117,7 @@ const requireAuth = (requiredRole: string | null = null) => {
  * HUOM! Vain testaukseen, poista production versiossa. Silloin tämä tehdään 
  * vain PHP puolella.
  */
-router.post('/create_refresh_token', async (req: Request, res: Response) => {
+router.post('/create_refresh_token', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const name = req.body.name;
         const team = req.body.team;
@@ -125,10 +127,11 @@ router.post('/create_refresh_token', async (req: Request, res: Response) => {
         const payload: AuthTokenPayload = { name, team, role, iat, exp };
         // console.log("creating refresh token with payload:", payload);
         const token = encodeJWT(payload);
-        res.json({ token });
+        if (!res.headersSent)
+            res.json({ token });
     } catch (error) {
         logger.error('Error creating refresh token.', error);
-        res.status(500).send('Error creating refresh token.');
+        next();
     }
 });
 
@@ -147,18 +150,27 @@ async function findUserInDatabase(name: string, team: string) {
  */
 router.post('/create_access_token', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string')
-            return res.status(400).send("Missing token.");
+        if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string') {
+            if (!res.headersSent)
+                return res.status(400).send("Missing token.");
+            return;
+        }
         const oldRefreshToken = req.body.refresh_token;
         const oldRefreshTokenPayload = verifyJWT(oldRefreshToken);
-        if (!isAuthTokenPayload(oldRefreshTokenPayload))
-            return res.status(401).send("Unable to verify token.");
+        if (!isAuthTokenPayload(oldRefreshTokenPayload)) {
+            if (!res.headersSent)
+                return res.status(401).send("Unable to verify token.");
+            return;
+        }
 
         // Tarkistetaan käyttäjä tietokannasta. Jos ei löydy, poistetaan
         // remember token ja access token frontend puolella:
         const rows = await findUserInDatabase(oldRefreshTokenPayload.name, oldRefreshTokenPayload.team);
-        if (!Array.isArray(rows) || rows.length === 0)
-            return res.status(403).send("Forbidden.");
+        if (!Array.isArray(rows) || rows.length === 0) {
+            if (!res.headersSent)
+                return res.status(403).send("Forbidden.");
+            return;
+        }
 
         const now = Math.floor(Date.now() / 1000);
 
@@ -167,8 +179,9 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
 
         const newRefreshToken = encodeJWT(newRefreshTokenPayload);
         const accessToken = encodeJWT(accessTokenPayload);
-        console.log("/create_access_token issued new tokens");
-        res.json({ refresh_token: newRefreshToken, access_token: accessToken });
+        logger.info("/create_access_token issued new tokens");
+        if (!res.headersSent)
+            res.json({ refresh_token: newRefreshToken, access_token: accessToken });
     } catch (error) {
         next(error);
     }

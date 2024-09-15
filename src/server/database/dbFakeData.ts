@@ -20,7 +20,7 @@ const MAX_PLAYERS_IN_TEAM = 5;
  * Luodaan testauksessa käytettävää sisältöä ep_rafla tauluun.
  */
 function generate_raflat() {
-    let names = [['Tunnelin Tupa', 'TT'], ['Kohtaamispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
+    let names = [['Tunnelin Tupa', 'TT'], ['Kohtispaikka', 'KP'], ['Flux', 'FX'], ['Avoin Areena', 'AA'], ['Mirage', 'MG'], ['Tähtipaikka', 'TP'], ['Sumuspot', 'SS']];
     names = names.slice(0, Math.min(RAVINTOLAT, names.length));
 
     const raflat: any[] = [];
@@ -33,7 +33,7 @@ function generate_raflat() {
             kauposa: 'Itis',
             postosoite: `${faker.location.zipCode()} ${faker.location.city()}`,
             yhdhenk: faker.person.fullName(),
-            yhdpuh: faker.phone.number()
+            yhdpuh: "-" //faker.phone.number()
         };
         raflat.push(rafla);
     });
@@ -94,11 +94,11 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
                     lohko: lohko.index,
                     ravintola: rafla.index,
                     yhdhenk: faker.person.fullName(),
-                    yhdpuh: faker.phone.number(),
+                    yhdpuh: "-", //faker.phone.number(),
                     kapt: faker.person.fullName(),
-                    kpuh: faker.phone.number(),
+                    kpuh: "-", //faker.phone.number(),
                     varakapt: faker.person.fullName(),
-                    vkpuh: faker.phone.number()
+                    vkpuh: "-" //faker.phone.number()
                 };
                 joukkueet.push(joukkue);
                 

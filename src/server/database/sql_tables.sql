@@ -77,8 +77,8 @@ CREATE TABLE `ep_pelaaja` (
     `h_era` SMALLINT(6) NOT NULL DEFAULT 0,
     `e_era` SMALLINT(6) NOT NULL DEFAULT 0,
     `h_peli` TINYINT(4) NOT NULL DEFAULT 0,
-    `v_peli` TINYINT(4) NOT NULL DEFAULT 0,
     `e_peli` TINYINT(4) NOT NULL DEFAULT 0,
+    `v_peli` TINYINT(4) NOT NULL DEFAULT 0,
     `sukupuoli` VARCHAR(1) NOT NULL,
     FOREIGN KEY (`joukkue`) REFERENCES ep_joukkue(`id`),
     FOREIGN KEY (`jasen`) REFERENCES ep_jasen(`id`)

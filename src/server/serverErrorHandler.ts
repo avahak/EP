@@ -17,7 +17,6 @@ const MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN = 5;
 // Vastaava laskuri
 let shutdownErrorCounter = 0;
 
-// const BASE_URL = process.env.BASE_URL || "";
 const LOG_FILE_DIRECTORY = process.env.LOG_FILE_DIRECTORY || '.';
 
 // Luodaan hakemisto lokitiedostoille, jos ei vielä olemassa.
@@ -36,8 +35,8 @@ const winstonFileFormat = winston.format.combine(
     winston.format.errors({ stack: true }),
     winston.format.timestamp({ format: 'DD-MM-YYYYTHH:mm:ss' }),
     winston.format.printf(info => {
+        // Järjestetään kenttiä:
         const { timestamp, level, message, ...restInfo } = info;
-        // Tämä vain siirtää timestamp alkuun:
         return JSON.stringify({ timestamp, level, message, ...restInfo });
     }),
 );
@@ -79,7 +78,7 @@ function getShutdownErrorCounter(): number {
  */
 function handleCriticalError() {
     shutdownErrorCounter += 1;
-    // Pysäytetään serveri jos :
+    // Pysäytetään serveri jos liian monta vakavaa virhettä:
     if (shutdownErrorCounter >= MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN) {
         logger.error("Server shutdown: too many unhandled errors.");
         process.exit(1);
@@ -90,19 +89,12 @@ function handleCriticalError() {
  * Määrittelee globaalit virheenkäsittelijät.
  */
 function initializeErrorHandling(app: Express) {
-    // Vain testausta varten: 
-    // app.get(BASE_URL + '/throw_sync_error', (_req, _res) => {
-    //     throw Error('Sync error');
-    // });
-    // app.get(BASE_URL + '/throw_async_error', async (_req, _res) => {
-    //     throw Error('Async error');
-    // });
-
-    // Globaali virheenkäsittely:
+    // Globaali virheenkäsittely (synkronisten reittien käsittelemättömät poikkeukset).
     app.use((err: any, _req: Request, res: Response, _next: NextFunction): any => {
         logger.error("Global error handler:", err);
         try {
-            res.status(500).send('Global error handler: something went wrong.');
+            if (!res.headersSent)
+                res.status(500).send('Global error handler: something went wrong.');
         } catch (error) {
             // TODO remove
             logger.error("This should never happen:", error);

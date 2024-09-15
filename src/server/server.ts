@@ -49,7 +49,7 @@ import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUti
 import { freemem } from 'os';
 
 /**
- * Aika ennen kun lähetetään `res.status(408).send('Request Timeout');`.
+ * Aika ennen kun lähetetään timeout.
  */
 const RESPONSE_TIMEOUT = 120*1000;  // 1000=one second
 
@@ -61,8 +61,6 @@ const BASE_URL = process.env.BASE_URL || "";
 const serverStartTime = currentTimeInFinlandString();
 
 // Käytetään Helmet kirjastoa parantamaan tietoturvaa, asettaa esim. HTTP headereita:
-// app.use(helmet());
-// console.log(helmet.contentSecurityPolicy.getDefaultDirectives());
 app.use(
     helmet({
         contentSecurityPolicy: {
@@ -81,8 +79,11 @@ app.use(express.json());
 // Timeout middleware
 app.use((_req, res, next) => {
     res.setTimeout(RESPONSE_TIMEOUT, () => {
-        logger.info('Request has timed out.');
-        res.status(408).send('Request Timeout');
+        logger.info(`Request has timed out, headersSent=${res.headersSent}`);
+        if (!res.headersSent) {
+            res.status(500).send('Server response timeout');
+        } else
+            res.end();
     });
     next();
 });
@@ -114,13 +115,17 @@ app.use(BASE_URL + '/api', generalRouter);
 app.get(BASE_URL + '/info', (_req, res, next) => {
     try {
         const serverTime = currentTimeInFinlandString();
-        const freeMemory = freemem()/(1024*1024);
+        const formatMemory = (b: number) => `${(b/(1024*1024)).toFixed(0)} MB`;
+        const freeMemory = formatMemory(freemem());
+        const usedMemory = process.memoryUsage();
+        const usedMemoryRSS = formatMemory(usedMemory.rss);
+        const usedMemoryHeap = formatMemory(usedMemory.heapUsed);
         res.setHeader('Content-Type', 'text/html');
         res.send(`Serverin aika: ${serverTime}<br>
             Koodi rakennettu: ${buildTimestamp}<br>
             Serveri käynnistetty: ${serverStartTime}<br>
             Live-ottelut: ${getLivescoreInfo()}<br>
-            Free memory: ${freeMemory.toFixed(2)} MB<br>
+            Muisti: rss: ${usedMemoryRSS}, heap: ${usedMemoryHeap}, free: ${freeMemory}<br>
             shutdownErrorCounter: ${getShutdownErrorCounter()}<br>
             `);
     } catch (err) {
