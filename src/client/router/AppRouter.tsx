@@ -55,10 +55,10 @@ const Wrap: React.FC<{ children: ReactNode, pageName?: string, restricted?: bool
  */
 const AppRouter = () => {
     return (<>
+        <BrowserRouter basename='/node/'>
         <AuthenticationProvider>
         <PageNameProvider>
         <SnackbarProvider>
-        <BrowserRouter basename='/node/'>
             <Routes>
                 {/* Sivuja tai komponentteja */}
                 <Route path="/report" element={<Wrap pageName="Tulosten ilmoitus" restricted><ResultSubmission /></Wrap>} />
@@ -82,10 +82,10 @@ const AppRouter = () => {
                 {/* Juuri */}
                 <Route path="/" element={<Wrap pageName="Etusivu"><App /></Wrap>} />
             </Routes>
-        </BrowserRouter>
         </SnackbarProvider>
         </PageNameProvider>
         </AuthenticationProvider>
+        </BrowserRouter>
     </>);
 }
 

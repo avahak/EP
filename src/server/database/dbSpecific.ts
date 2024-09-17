@@ -393,7 +393,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 else 
                     throw Error("Error during ep_peli INSERT.");
 
-                console.log("ep_peli insertId", insertedRow.insertId);
+                // console.log("ep_peli insertId", insertedRow.insertId);
 
                 // Lisätään uusi rivi tauluun ep_erat:
                 const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
@@ -411,8 +411,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             await connection.commit();
             logger.info("commit in submitMatchResult", { matchId: match.id });
         } catch (error) {
-            logger.info("rollback in submitMatchResult", { matchId: match.id });
             await connection.rollback();
+            logger.info("rollback in submitMatchResult", { matchId: match.id });
             throw error;
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia

@@ -4,8 +4,8 @@
  * HUOM! Vain testausta varten, ei käytössä production versiossa.
  */
 
-import { Fragment, useContext } from "react";
-import { serverFetch, useInitialServerFetch } from "../../utils/apiUtils";
+import { Fragment, useContext, useEffect, useState } from "react";
+import { serverFetch } from "../../utils/apiUtils";
 import { Box, Button, Link, Paper, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { useNavigate } from "react-router-dom";
@@ -62,7 +62,7 @@ const TeamCard: React.FC<{ team: string, users: string[], onSelectUser: (team: s
  */
 const createTeamMap = (data: any) => {
     const teamMap: Map<string, string[]> = new Map();
-    for (const row of data.rows) {
+    for (const row of data) {
         const team = row.Joukkue;
         const name = row.Nimi;
         if (!teamMap.get(team))
@@ -80,18 +80,28 @@ const createTeamMap = (data: any) => {
  */
 const SimulateLogin: React.FC = () => {
     const authenticationState = useContext(AuthenticationContext);
+    const [usersResult, setUsersResult] = useState<Map<string, string[]>|null>(null);  // Lista käyttäjistä
     const navigate = useNavigate();
 
-    /**
-     * Lista käyttäjistä, haetaan sivun lataamisen yhteydessä.
-     */
-    const usersResult = useInitialServerFetch({ 
-        route: "/api/db/specific_query", 
-        method: "POST",
-        params: { queryName: "get_users" },
-        dataProcessor: createTeamMap,
-        authenticationState: authenticationState,
-    });
+    const fetchUsers = async () => {
+        try {
+            const response = await serverFetch("/api/db/specific_query", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ queryName: "get_users" }),
+            }, authenticationState);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            const jsonData = await response.json();
+            const teamMap = createTeamMap(jsonData.rows);
+            console.log("fetchUsers: ", teamMap);
+            setUsersResult(teamMap);
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
 
     /**
      * Kutsutaan kun käyttäjä valitaan. Simuloi sisäänkirjautumista tai rekisteröitymistä.
@@ -122,8 +132,12 @@ const SimulateLogin: React.FC = () => {
         fetchToken();
     };
 
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
     console.log("users", usersResult);
-    const teams: string[] = usersResult.status.ok ? Array.from(usersResult.data?.keys()) : [];
+    const teams: string[] = usersResult ? Array.from(usersResult.keys()) : [];
 
     return (
         <>
@@ -131,14 +145,14 @@ const SimulateLogin: React.FC = () => {
             Rekisteröityneet käyttäjät:
         </Typography>
 
-        {usersResult.status.ok ?
+        {usersResult ?
         <>
         <Box display="flex" flexWrap="wrap">
             {teams?.map((team: string, index: number) => (
                 <Fragment key={`team-${index}`}>
                     <TeamCard 
                         team={team} 
-                        users={usersResult.data.get(team)} 
+                        users={usersResult.get(team) as string[]} 
                         onSelectUser={handleSelectUser}
                     />
                 </Fragment>

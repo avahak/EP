@@ -32,7 +32,7 @@ const FileUpload: React.FC = () => {
         
         try {
             const apiUrl = `${getBackendUrl()}/api/upload`;
-            const token = (await authenticationState.getAccessToken()) ?? "";
+            const token = (await authenticationState.renewAccessToken()) ?? "";
             const response = await axios.post(apiUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',

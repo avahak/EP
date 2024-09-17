@@ -21,7 +21,7 @@ type AuthenticationState = {
     team: string | null;
     role: string | null;
     setFromRefreshToken: (token: string | null) => void;
-    getAccessToken: () => Promise<string | null>;
+    renewAccessToken: () => Promise<string | null>;
     isTokenChecked: boolean;
 };
 
@@ -36,7 +36,7 @@ const dummyAuthenticationState: AuthenticationState = {
     team: null,
     role: null,
     setFromRefreshToken: () => {},
-    getAccessToken: () => { return new Promise((resolve) => { resolve(null) }) },
+    renewAccessToken: () => { return new Promise((resolve) => { resolve(null) }) },
     isTokenChecked: false,
 };
 
@@ -117,28 +117,21 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
      * Kun access token saatu palvelimelta, se talletetaan local storageen seuraavaa
      * käyttöä varten.
      */
-    const getAccessToken = async () => {
+    const renewAccessToken = async () => {
+        console.log("renewAccessToken()");
+        // console.log("renewAccessToken() refreshToken", refreshToken);
+        window.localStorage.removeItem("accessToken");
         try {
             if (!isAuthenticated || !refreshToken)
                 return null;
-            const now = Math.floor(Date.now() / 1000);
-            const oldAccessToken = window.localStorage.getItem("accessToken");
-            const payload = getAuthTokenPayload(oldAccessToken);
 
-            // Jos token olemassa ja vähintään 10sec jäljellä, käytetään sitä:
-            if (payload && (payload.exp > now+10)) {
-                console.log("getAccessToken: local storage used");
-                return oldAccessToken;
-            }
-
-            // Access token ei ollut talletettuna local storagessa tai ei kelpaa, 
-            // joten haetaan uusi:
-
+            // Haetaan uusi access token:
             const fetchResponse = await fetch(`${getBackendUrl()}/auth/create_access_token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh_token: refreshToken }),
             });
+            // console.log("renewAccessToken() fetchResponse", fetchResponse);
             if (fetchResponse.status === 403) {
                 // Käyttäjää ei löytynyt tietokannasta. Näin tapahtuu kun käyttäjä on estetty.
                 // Poistetaan kirjautuminen:
@@ -149,6 +142,8 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 return null;
             const jsonResponse = await fetchResponse.json();
 
+            // console.log("renewAccessToken() jsonResponse", jsonResponse);
+
             // Tarkistetaan että refresh token ei ole muuttunut 
             // palvelinpyynnön käsittelyn aikana:
             if (!payloadsMatchIgnoringTimestamps(refreshToken, jsonResponse.refresh_token))
@@ -156,16 +151,17 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
             
             setFromRefreshToken(jsonResponse.refresh_token);
             window.localStorage.setItem("accessToken", jsonResponse.access_token);
-            console.log("getAccessToken: create_access_token used");
+            console.log("renewAccessToken: create_access_token used");
             return jsonResponse.access_token;
         } catch (error) {
-            return null;
+            console.log("Problem renewing access token");
         }
+        return null;
     }
 
     return (
         <AuthenticationContext.Provider
-            value={{ isAuthenticated, refreshToken, name, team, role, setFromRefreshToken, getAccessToken, isTokenChecked }}
+            value={{ isAuthenticated, refreshToken, name, team, role, setFromRefreshToken, renewAccessToken, isTokenChecked }}
         >
             {children}
         </AuthenticationContext.Provider>

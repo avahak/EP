@@ -33,7 +33,7 @@ function generate_raflat() {
             kauposa: 'Itis',
             postosoite: `${faker.location.zipCode()} ${faker.location.city()}`,
             yhdhenk: faker.person.fullName(),
-            yhdpuh: "-" //faker.phone.number()
+            yhdpuh: faker.phone.number()
         };
         raflat.push(rafla);
     });
@@ -94,11 +94,11 @@ function generate_joukkueet(raflat: any[], lohkot: any[]) {
                     lohko: lohko.index,
                     ravintola: rafla.index,
                     yhdhenk: faker.person.fullName(),
-                    yhdpuh: "-", //faker.phone.number(),
+                    yhdpuh: faker.phone.number(),
                     kapt: faker.person.fullName(),
-                    kpuh: "-", //faker.phone.number(),
+                    kpuh: faker.phone.number(),
                     varakapt: faker.person.fullName(),
-                    vkpuh: "-" //faker.phone.number()
+                    vkpuh: faker.phone.number()
                 };
                 joukkueet.push(joukkue);
                 

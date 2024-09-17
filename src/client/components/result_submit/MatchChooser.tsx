@@ -11,6 +11,8 @@ import { serverFetch } from "../../utils/apiUtils";
 import { Box, Button, Checkbox, FormControlLabel, Grid, Paper, Radio, RadioGroup, Typography } from "@mui/material";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { roleIsAtLeast } from "../../../shared/commonTypes";
+import { SnackbarContext } from "../../contexts/SnackbarContext";
+import { Link } from "react-router-dom";
 
 /**
  * Kategoriat otteluille
@@ -88,6 +90,7 @@ const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator 
  */
 const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) => void }> = ({ submitCallback }) => {
     const authenticationState = useContext(AuthenticationContext);
+    const setSnackbarState = useContext(SnackbarContext);
     const [matches, setMatches] = useState<any[]>([]);
     const [serverDate, setServerDate] = useState<string>(dateToYYYYMMDD(new Date()));
     // Lomakkeen kenttien tila:
@@ -150,11 +153,22 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 body: JSON.stringify({ queryName: roleIsAtLeast(authenticationState.role, "mod") ? "get_matches_to_report_moderator" : "get_matches_to_report" }),
             }, authenticationState);
             if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                throw new Error(`Status: ${response.status}, viesti: ${await response.text()}`);
             const jsonData = await response.json();
             console.log("fetchMatches data: ", jsonData.rows);
             setMatches(jsonData.rows);
-        } catch(error) {
+        } catch (error) {
+            setSnackbarState({
+                isOpen: true,
+                message: `Otteluiden haku epäonnistui: ${(error as Error).message}. Kirjaudu sisään uudelleen.`,
+                severity: "error",
+                autoHideDuration: 12000,
+                action: (
+                    <Link to="/simulate_login">
+                        <Button color="primary" variant="contained">Login linkki</Button>
+                    </Link>
+                ),
+            });
             console.error('Error:', error);
         }
     };

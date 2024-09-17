@@ -79,7 +79,7 @@ app.use(express.json());
 // Timeout middleware
 app.use((_req, res, next) => {
     res.setTimeout(RESPONSE_TIMEOUT, () => {
-        logger.info(`Request has timed out, headersSent=${res.headersSent}`);
+        logger.warn(`Request has timed out, headersSent=${res.headersSent}`);
         if (!res.headersSent) {
             res.status(500).send('Server response timeout');
         } else

@@ -12,6 +12,7 @@ type SnackbarState = {
     message?: string;
     severity?: "success" | "error";     // Vaikuttaa viestin taustaväriin
     autoHideDuration?: number;
+    action?: React.ReactNode;
 };
 
 // Tämä ei tee mitään, käytössä vain oletusarvona.
@@ -35,10 +36,11 @@ const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ children })
         <SnackbarContext.Provider value={ setSnackbarState }>
             {children}
             <Snackbar
+                // ContentProps={{sx: {flexWrap: 'nowrap'}}}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
                 open={snackbarState.isOpen}
                 transitionDuration={500}
-                autoHideDuration={snackbarState.autoHideDuration ?? 4000}
+                autoHideDuration={snackbarState.autoHideDuration ?? 5000}
                 onClose={() => setSnackbarState({...snackbarState, isOpen: false })}
                 TransitionComponent={Slide}
             >
@@ -47,6 +49,7 @@ const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ children })
                     severity={snackbarState.severity ?? "info"}
                     variant="filled"
                     sx={{ width: '100%' }}
+                    action={snackbarState.action}
                 >
                     {snackbarState.message ?? ""}
                 </Alert>

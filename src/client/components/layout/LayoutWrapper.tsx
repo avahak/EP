@@ -65,7 +65,7 @@ const AuthenticationBlock: React.FC = () => {
                 </Button>
             }
             {authenticationState.isAuthenticated &&
-                <Typography textAlign="center" sx={{pl: 3, cursor: 'pointer'}} /*onClick={navigateUser}*/ role="button">
+                <Typography textAlign="center" sx={{pl: 3, cursor: 'pointer'}} onClick={navigateUser} role="button">
                     {authenticationState.name}
                     <br />
                     {authenticationState.team}

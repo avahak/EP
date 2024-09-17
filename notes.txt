@@ -36,3 +36,25 @@ https://www.youtube.com/watch?v=O6WfZRyatcY&ab_channel=Murtaza%27sWorkshop-Robot
   out by enforcing symmetric matching.
 
 - Use // @ts-ignore to suppress typescript warnings
+
+- Implement process to prevent multiple create_access_token calls:
+  (NOTE! needs more bookkeeping so that same promise is not used if auth state changes)
+  class AuthenticationState {
+      private tokenRenewalPromise: Promise<string | null> | null = null;
+
+      async renewAccessToken(): Promise<string | null> {
+          if (!this.tokenRenewalPromise) {
+              this.tokenRenewalPromise = this.doRenewAccessToken();
+              this.tokenRenewalPromise.finally(() => {
+                  this.tokenRenewalPromise = null; // Reset after it completes
+              });
+          }
+          return this.tokenRenewalPromise;
+      }
+
+      private async doRenewAccessToken(): Promise<string | null> {
+          // Your actual token renewal logic here
+          // Example: return fetchTokenFromServer();
+          return "newAccessToken"; // Replace with actual implementation
+      }
+  }

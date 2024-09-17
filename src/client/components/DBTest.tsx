@@ -40,6 +40,17 @@ const DBTest: React.FC = () => {
         }
     };
 
+    // Suorittaa api-kutsun tietokannan uudelleenluomiseksi (tuhoaa datan):
+    const fetchReplicate = async () => {
+        try {
+            const response = await serverFetch(`/api/db/replicate`, {}, authenticationState);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+        } catch(error) {
+            console.error('Error:', error);
+        }
+    };
+
     useEffect(() => {
         fetchSchema();
     }, []);
@@ -50,6 +61,10 @@ const DBTest: React.FC = () => {
             Poista tietokanta ja luo se uudelleen (kaikki data poistetaan!)
             Luo myös taulut allaolevan kaavion mukaisesti ja generoi testidataa tauluihin.
             (Ei käytössä Azuressa.)
+            <br />
+            <button onClick={() => fetchReplicate()}>Kopioi tietokanta</button>
+            <br />
+            <hr />
             <br />
             <button onClick={() => fetchRecreate(1)}>Luo tietokanta ja taulut</button>
             <br />

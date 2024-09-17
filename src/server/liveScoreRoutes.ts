@@ -35,7 +35,7 @@ const HOUR_ms = 60*MINUTE_ms;
 /**
  * Aikaväli, jolla lähetetään "heartbeat" yhteyksille pitämään ne elossa.
  */
-const HEARTBEAT_INTERVAL = 30*SECOND_ms;
+const HEARTBEAT_INTERVAL = 25*SECOND_ms;
 /**
  * Aikaväli, jolla ajetaan siivoustoimenpiteitä.
  */

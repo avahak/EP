@@ -2,108 +2,56 @@
  * Apufunktioita palvelimelle tehtävien API-kutsujen tekemiseen.
  */
 
-import { useCallback, useEffect, useState } from 'react';
 import { AuthenticationState } from '../contexts/AuthenticationContext';
 
-type Method = "GET" | "POST";
-
 /**
- * Tyyppi funktion useInitialServerFetch palauttalle vastaukselle.
+ * Apufunktio API-kutsujen tekemiseen palvelimelle. Käyttää annettua access tokenia.
  */
-type InitialServerFetchResponse = {
-    status: {
-        ok: boolean;
-        message?: any;
-    };
-    data: any;
-};
-
-type UseInitialServerFetchProps = {
-    route: string;
-    method?: Method;
-    params?: any;
-    dataProcessor?: (data: any) => any;     // Jälkikäsittelee haettua dataa
-    authenticationState: AuthenticationState | null;
-};
-
-/**
- * Hakee dataa palvelimelta vain sivun lataamisen yhteydessä. Tämän on tarkoitus
- * tehdä API-kutsun luomisen palvelimelle helpommaksi kun se tehdään vain kerran 
- * sivun alustamisen yhteydessä.
- * 
- * TODO! Tämä ei välttämättä toimisi etusivulla kun authenticationState ei ole alustettu,
- * pitäisi testata.
- */
-const useInitialServerFetch = ({ route, method, params, dataProcessor, authenticationState }: UseInitialServerFetchProps) => {
-    const [response, setResponse] = useState<InitialServerFetchResponse>({
-        status: { ok: false, message: "Ladataan.." },
-        data: null
-    });
-
-    const fetchData = useCallback(async () => {
-        try {
-            // Haetaan uusi access token jos tarpeen:
-            let accessToken = "";
-            if (authenticationState && authenticationState.isAuthenticated) {
-                accessToken = (await authenticationState.getAccessToken()) ?? "";
-                if (!accessToken)
-                    throw new Error("No access token.");
-            } 
-            let apiUrl = `${getBackendUrl()}${route}`;
-            let fetchResponse;
-            if (method == "GET") {
-                if (!!params) {
-                    const searchParams = new URLSearchParams(params);
-                    apiUrl = `${apiUrl}?${searchParams.toString()}`;
-                }
-                fetchResponse = await fetch(apiUrl, {
-                    method: "GET",
-                    headers: { 'Authorization': `Bearer ${accessToken}` },
-                });
-            } else {
-                fetchResponse = await fetch(apiUrl, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-                    body: !!params ? JSON.stringify({ ...params }) : "",
-                });
-            }
-
-            if (!fetchResponse.ok) 
-                throw new Error(`HTTP error! Status: ${fetchResponse.status}`);
-
-            const jsonData = await fetchResponse.json();
-            const processedData = dataProcessor ? dataProcessor(jsonData) : jsonData;
-            setResponse({ status: { ok: true }, data: processedData });
-        } catch (error) {
-            console.error("Error fetching data", error);
-            setResponse({ status: { ok: false, message: "Error fetching data" }, data: null });
-        }
-    }, [authenticationState]);
-    // [route, method, JSON.stringify(params)]);
-    // HUOM! Tässä JSON.stringify(params) on tehoton mutta toimiva tapa selvittää 
-    // onko muutoksia tapahtunut.
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData, authenticationState]);
-
-    return response;
-};
-
-
-/**
- * Apufunktio API-kutsujen tekemiseen palvelimelle. Hoitaa uuden access tokenin 
- * hakemisen jos se on tarpeen.
- */
-const serverFetch = async (route: string, options: any = {}, authenticationState: AuthenticationState | null) => {
-    let accessToken = "";
-    if (authenticationState && authenticationState.isAuthenticated) {
-        accessToken = (await authenticationState.getAccessToken()) ?? "";
-        if (!accessToken)
-            throw new Error("No access token.");
-    } 
+const serverFetchWithAccessToken = async (route: string, options: any = {}, accessToken: string) => {
     const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${accessToken}` };
     return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
+}
+
+/**
+ * Apufunktio API-kutsujen tekemiseen palvelimelle. 
+ * Hoitaa uuden access tokenin hakemisen jos se on tarpeen.
+ */
+const serverFetch = async (route: string, options: any = {}, authenticationState: AuthenticationState|null) => {
+    let accessTokenRenewed = false;
+
+    // If no authentication is provided, proceed with empty access token
+    if (!authenticationState || !authenticationState.isAuthenticated)
+        return serverFetchWithAccessToken(route, options, "");
+
+    let accessToken: string|null = window.localStorage.getItem('accessToken');
+    // console.log("accessToken from localstorage:", accessToken);
+
+    if (!accessToken) {
+        // No access token in local storage, try to renew it
+        accessToken = await authenticationState.renewAccessToken();
+        accessTokenRenewed = true;
+        if (!accessToken)
+            accessToken = "";
+        // console.log("accessToken was empty so try to renew it:", accessToken);
+    }
+    
+    let response = await serverFetchWithAccessToken(route, options, accessToken);
+
+    // console.log("response", response);
+    // console.log("response.status", response.status);
+    // console.log("accessTokenRenewed", accessTokenRenewed);
+    // console.log("response.headers.get('X-Token-Expired')", response.headers.get('X-Token-Expired'));
+
+    if (!accessTokenRenewed && response.status === 401 && response.headers.get('X-Token-Expired') === 'true') {
+        // Access token was expired, and we didn't try to renew it yet - try to renew it
+        accessToken = await authenticationState.renewAccessToken();
+        accessTokenRenewed = true;
+        // console.log("401 with X-Token-Expired so try to renew access token", accessToken);
+        if (accessToken)
+            response = await serverFetchWithAccessToken(route, options, accessToken);
+    }
+    
+    return response;
 };
 
 /**
@@ -131,4 +79,4 @@ function thumbnailToImageName(thumbnailName: string) {
     }
 }
 
-export { getBackendUrl, thumbnailToImageName, useInitialServerFetch, serverFetch };
+export { getBackendUrl, thumbnailToImageName, serverFetch };

@@ -58,30 +58,40 @@ interface RequestWithAuth extends Request {
  * vahvistetaan oikeaksi, se talletetaan req.auth kenttään. Muutoin asetetaan
  * req.auth = null.
  */
-const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) => {
+const injectAuth = (req: RequestWithAuth, res: Response, next: NextFunction) => {
+    let authPayload: AuthTokenPayload|null = null;
     try {
         const authHeader = req.headers['authorization'];
-        let authPayload: AuthTokenPayload | null = null;
 
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const token = authHeader.slice(7);
-            const payload = verifyJWT(token);
-            if (isAuthTokenPayload(payload)) {
-                authPayload = payload;
+            const verifyResult = verifyJWT(token);
+            if (verifyResult.message == "Expired") {
+                // Access token on vanhentunut - hylätään pyyntö jo tässä vaiheessa
+                if (!res.headersSent) {
+                    // Lähetetään custom viesti, jotta React puolella tiedetään, että
+                    // access token on vanhentunut.
+                    res.setHeader('X-Token-Expired', 'true');  // custom header
+                    res.setHeader('Access-Control-Expose-Headers', 'X-Token-Expired');
+                    return res.status(401).send("Expired access token");
+                }
+                return;
+            }
+            if (verifyResult.payload) {
+                authPayload = verifyResult.payload;
                 Object.freeze(authPayload);
             }
         }
-
-        // Lisää authPayload req objektiin niin, että sitä ei voi enää muuttaa:
-        Object.defineProperty(req, 'auth', {
-            value: authPayload,
-            writable: false,
-            configurable: false,
-            enumerable: true
-        });
     } catch (error) {
         logger.error("Error during injectAuth", error);
     }
+    // Lisää authPayload req objektiin niin, että sitä ei voi enää muuttaa:
+    Object.defineProperty(req, 'auth', {
+        value: authPayload,
+        writable: false,
+        configurable: false,
+        enumerable: true
+    });
 
     next();
 };
@@ -91,7 +101,7 @@ const injectAuth = (req: RequestWithAuth, _res: Response, next: NextFunction) =>
  * tiettyä käyttäjän roolia pyynnön etenemiseksi.
  * Huom! Tätä ennen on käytettävä injectAuth middlewarea req.auth asettamiseksi.
  */
-const requireAuth = (requiredRole: string | null = null) => {
+const requireAuth = (requiredRole: string|null = null) => {
     return (req: RequestWithAuth, res: Response, next: NextFunction) => {
         let isVerified = false;
         try {
@@ -151,13 +161,15 @@ async function findUserInDatabase(name: string, team: string) {
 router.post('/create_access_token', async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string') {
+            logger.info("/create_access_token missing token");
             if (!res.headersSent)
                 return res.status(400).send("Missing token.");
             return;
         }
         const oldRefreshToken = req.body.refresh_token;
-        const oldRefreshTokenPayload = verifyJWT(oldRefreshToken);
+        const oldRefreshTokenPayload = verifyJWT(oldRefreshToken).payload;
         if (!isAuthTokenPayload(oldRefreshTokenPayload)) {
+            logger.info("/create_access_token invalid token");
             if (!res.headersSent)
                 return res.status(401).send("Unable to verify token.");
             return;
@@ -166,7 +178,8 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         // Tarkistetaan käyttäjä tietokannasta. Jos ei löydy, poistetaan
         // remember token ja access token frontend puolella:
         const rows = await findUserInDatabase(oldRefreshTokenPayload.name, oldRefreshTokenPayload.team);
-        if (!Array.isArray(rows) || rows.length === 0) {
+        if (!Array.isArray(rows) || rows.length !== 1) {
+            logger.warn("/create_access_token no user in database");
             if (!res.headersSent)
                 return res.status(403).send("Forbidden.");
             return;
@@ -174,8 +187,8 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
 
         const now = Math.floor(Date.now() / 1000);
 
-        const newRefreshTokenPayload = { ...oldRefreshTokenPayload, iat: now, exp: now + REFRESH_TOKEN_DURATION };
-        const accessTokenPayload = { ...oldRefreshTokenPayload, iat: now, exp: now + ACCESS_TOKEN_DURATION };
+        const newRefreshTokenPayload = { ...oldRefreshTokenPayload, iat: now, exp: now+REFRESH_TOKEN_DURATION };
+        const accessTokenPayload = { ...oldRefreshTokenPayload, iat: now, exp: now+ACCESS_TOKEN_DURATION };
 
         const newRefreshToken = encodeJWT(newRefreshTokenPayload);
         const accessToken = encodeJWT(accessTokenPayload);

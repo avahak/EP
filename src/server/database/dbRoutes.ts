@@ -10,6 +10,7 @@ import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { AuthError } from '../../shared/commonTypes.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
+import { loadSQLFiles, replicateDB } from './dbReplicate.js';
 
 const router: Router = express.Router();
 
@@ -79,6 +80,31 @@ router.get('/recreate/:stage', async (req, res) => {
     }
 });
 
+router.get('/replicate', async (_req, res) => {
+    if (process.env.ENVIRONMENT != 'LOCALHOST')
+        return res.status(403).send("Database creation forbidden in this environment.");
+    if (!process.env.DB_NAME)
+        return res.status(400).send("Missing environment variable DB_NAME.");
+    if (process.env.ENVIRONMENT != 'LOCALHOST')
+        return res.status(403).send("Database creation forbidden in this environment.");
+    if (!process.env.DB_NAME)
+        return res.status(400).send("Missing environment variable DB_NAME.");
+
+    const sqlFiles = loadSQLFiles('C:/Users/mavak/Desktop/ep_sql_backup_13_09_2024');
+    replicateDB(sqlFiles, pool);
+    
+
+    // try {
+    //     await recreateDatabase(pool, poolNoDatabase, process.env.DB_NAME, stage);
+    //     console.log(`databaseRoutes: /recreate/${stage} done`);
+    //     res.send("success!");
+    // } catch (error) {
+    //     logger.error(`databaseRoutes: Error in /recreate/${stage}:`, error);
+    //     res.status(500).send('Internal Server Error.');
+    // }
+    res.send('Ok');
+});
+
 /**
  * Yhdistää /specific_query API-kutsussa annetun parametrin dbSpecific.ts 
  * tiedostossa olevaan funktioon, joka muodostaa SQL-kyselyn ja suorittaa sen. 
@@ -115,7 +141,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const params = req.body.params || {};
         params._current_kausi = KULUVA_KAUSI;
 
-        logger.info("databaseRoutes: /specific_query", { queryName });
+        logger.info("databaseRoutes: /specific_query", { queryName, ip: req.ip });
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {
