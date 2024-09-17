@@ -270,10 +270,15 @@ function compareJsonObjects(obj1: any, obj2: any, path: string[] = []): string[]
     return differences;
 }
 
+/**
+ * Viive ms millisekuntia.
+ */
+const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy, crudeHash,
     base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
     createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 
     removeSpecialChars, findStringDifference, compareJsonObjects, 
-    currentTimeInFinlandString };
+    currentTimeInFinlandString, delay };

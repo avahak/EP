@@ -6,6 +6,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { getBackendUrl } from '../utils/apiUtils';
 import { getAuthTokenPayload } from '../../shared/commonTypes';
+import { delay } from '../../shared/generalUtils';
 
 /**
  * Autentikaation tila, name ja team vastaavat ep_userpw.Nimi, ep_userpw.Joukkue.
@@ -74,10 +75,15 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
      * Alustetaan autentikaatiotila local storage JWT refresh tokenin mukaan:
      */
     useEffect(() => {
-        console.log("AuthenticationProvider getting refresh token from local storage");
-        const localStorageToken = window.localStorage.getItem("refreshToken");
-        setFromRefreshToken(localStorageToken);
-        setIsTokenChecked(true);
+        setFromRefreshToken(null);
+        const initializeAuth = async () => {
+            console.log("AuthenticationProvider is initializing.");
+            await delay(200);
+            const localStorageToken = window.localStorage.getItem("refreshToken");
+            setFromRefreshToken(localStorageToken);
+            setIsTokenChecked(true);
+        }
+        initializeAuth();
     }, []);
 
     /**
