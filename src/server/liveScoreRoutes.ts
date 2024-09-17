@@ -244,6 +244,7 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache, no-store, no-transform');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Accel-Buffering', 'no');
 
         let liveMatch: LiveMatch|undefined = undefined;
         let matchId = undefined;

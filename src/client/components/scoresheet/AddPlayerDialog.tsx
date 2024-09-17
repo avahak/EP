@@ -69,10 +69,19 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
 
     /**
      * Kutsutaan kun "lisää pelaaja" nappia painetaan.
+     * Tarkistaa, että nimeä ei vielä ole.
      */
     const handleAddPlayer = async () => {
         if (newPlayerName.trim() === '')
             return;
+        for (const otherPlayer of team.allPlayers) {
+            if (!otherPlayer)
+                continue;
+            if (newPlayerName.trim().toUpperCase() === otherPlayer.name.trim().toUpperCase()) {
+                setSnackbarState({ isOpen: true, message: "Pelaajan lisäys epäonnistui: samanniminen pelaaja on jo.", severity: "error" });
+                return;
+            }
+        }
         const playerId = await fetchAddPlayer(team.id, newPlayerName, newPlayerSex);
         if (playerId !== -1) {
             onAddPlayer({ id: playerId, name: newPlayerName });

@@ -437,10 +437,17 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | n
         throw Error('Missing player info.');
     const name = removeSpecialChars(params.name.trim()).slice(0, 15);
     if (!name)
-        throw Error('Invalid name.');
+        throw Error('Invalid player name.');
+
+    // Tämä testataan myös React-puolella, mutta varmuuden vuoksi tarkistetaan ettei nimeä vielä ole
+    const query1 = `SELECT * FROM ep_pelaaja WHERE UPPER(TRIM(nimi))=UPPER(TRIM(?)) AND joukkue=?`;
+    const namesakes = await myQuery(pool, query1, [name, params.teamId]);
+    if (!Array.isArray(namesakes) || namesakes.length > 0)
+        throw Error('Player name already exists.');
+
     const sex = (params.sex === 'M' || params.sex === 'N') ? params.sex : '-';
-    const query = `INSERT INTO ep_pelaaja (nimi, joukkue, sukupuoli) VALUES (?, ?, ?)`;
-    return myQuery(pool, query, [name, params.teamId, sex]);
+    const query2 = `INSERT INTO ep_pelaaja (nimi, joukkue, sukupuoli) VALUES (?, ?, ?)`;
+    return myQuery(pool, query2, [name, params.teamId, sex]);
 }
 
 /**
