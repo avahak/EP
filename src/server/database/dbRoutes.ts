@@ -8,7 +8,6 @@ import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayer
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
-import { AuthError } from '../../shared/commonTypes.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
 import { loadSQLFiles, replicateDB } from './dbReplicate.js';
 
@@ -141,12 +140,12 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const params = req.body.params || {};
         params._current_kausi = KULUVA_KAUSI;
 
-        logger.info("databaseRoutes: /specific_query", { queryName, ip: req.ip });
+        logger.info("/specific_query", { queryName, ip: req.ip });
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {
             if (!res.headersSent)
-                return res.status(400).send(`Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}`);
+                return res.status(400).send({ error: `Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}` });
             return;
         }
 
@@ -155,9 +154,6 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
             res.json({ rows });
         // console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {
-        logger.error('databaseRoutes: /specific_query:', error);
-        if ((error instanceof AuthError) && (!res.headersSent))
-            return res.status(401).send("Forbidden");
         next(error);
     }
 });

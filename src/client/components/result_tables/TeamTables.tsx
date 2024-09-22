@@ -2,13 +2,13 @@ import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
 import { ResultTable } from "../general_tables/ResultTable";
 
-const rowsPerPageOptions = { default: 15, max: 20 };
+const rowsPerPageOptions = { default: 100, max: 200 };
 
 /**
  * Joukkueiden sarjatilanne taulukko.
  * TODO Poista "Pelit V-H" ja "Erät V-H" sarakkeet kapealla näytöllä?
  */
-const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableName }) => {
+const TeamsTable: React.FC<{ rows: any[], tableName: string, isHighlighted: ((row: any) => boolean) }> = ({ rows, tableName, isHighlighted }) => {
     const table = [];
     for (const row of rows) {
         const newRow = { 
@@ -23,6 +23,7 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
             h_era: row.h_era,
             e_era: row.v_era - row.h_era,
             pisteet: row.voitto,
+            highlight: isHighlighted(row),
         };
         table.push(newRow);
     }
@@ -60,8 +61,8 @@ const TeamsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableN
             rowsPerPageOptions={rowsPerPageOptions} 
             rows={table} 
             stripingId="sija_dense" 
-            minWidth="500px" 
-            maxWidth="800px">
+            isHighlighted={(row: any) => row.highlight === true}
+        >
         </ResultTable>
     );
 };

@@ -6,11 +6,12 @@ import { serverFetch } from "../../utils/apiUtils";
 import { Box, Container, Typography } from "@mui/material";
 import { TeamsTable } from "./TeamTables";
 import { compareJsonObjects } from "../../../shared/generalUtils";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { GroupSelector } from "./GroupSelector";
+import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 
 const DisplayResultsTeams: React.FC<{ debug?: Boolean }> = ({debug = false}) => {
-
+    const authenticationState = useContext(AuthenticationContext);
     const [lohko, setLohko] = useState<any>("");
     const [resultsOld, setResultsOld] = useState<any>("");
     const [resultsNew, setResultsNew] = useState<any>("");
@@ -66,6 +67,13 @@ const DisplayResultsTeams: React.FC<{ debug?: Boolean }> = ({debug = false}) => 
         }
     }, [lohko]);
 
+    /**
+     * Palauttaa true joss rivin tiedot liittyvät kirjautuneeseen käyttäjään.
+     */
+    const isHighlighted = (row: any) => {
+        return (row.lyhenne === authenticationState.team);
+    }
+
     console.log("lohko", lohko);
     console.log("resultsOld", resultsOld);
     if (debug)
@@ -118,13 +126,13 @@ const DisplayResultsTeams: React.FC<{ debug?: Boolean }> = ({debug = false}) => 
         </Typography>
 
         {resultsOld ?
-        <TeamsTable rows={resultsOld} tableName={debug ? "Sarjatilanne varsinaisten taulujen mukaan" : "Sarjatilanne"} />
+        <TeamsTable rows={resultsOld} tableName={debug ? "Sarjatilanne varsinaisten taulujen mukaan" : "Sarjatilanne"} isHighlighted={isHighlighted} />
         : 
         "Ladataan taulua.."
         }
 
         {debug && (resultsNew ?
-        <TeamsTable rows={resultsNew} tableName="Sarjatilanne _tulokset taulujen mukaan" />
+        <TeamsTable rows={resultsNew} tableName="Sarjatilanne _tulokset taulujen mukaan" isHighlighted={isHighlighted} />
         : 
         "Ladataan taulua.."
         )}

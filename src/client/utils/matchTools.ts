@@ -367,7 +367,7 @@ const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
         }, 
         date: matchInfo.date,
         scores: parseScores(rawScores, playingHome, playingAway),
-        isSubmitted: matchInfo.status != "T",
+        isSubmitted: matchInfo.status !== "T",
     } as ScoresheetFields;
 };
 

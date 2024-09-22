@@ -8,6 +8,7 @@
     },
     "scripts": {
         "dev": "vite",
+        "devhost": "vite --host",
         "buildtimestamp": "node -e \"const fs = require('fs'); const path = require('path'); const timestamp = new Date().toLocaleString('en-FI', { timeZone: 'Europe/Helsinki', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); const content = `export const buildTimestamp = '${timestamp}';\\n`; fs.writeFileSync(path.join('src', 'shared', 'build-info.ts'), content, 'utf8');\"",
         "build": "npm run buildtimestamp && tsc -p tsconfig.server.json && tsc && vite build && tsc -p tsconfig.server.json",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

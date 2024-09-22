@@ -5,6 +5,7 @@
 import fs from 'fs';
 import { Express, NextFunction, Request, Response } from 'express';
 import winston from 'winston';
+import { CustomError, ErrorLevel } from '../shared/commonTypes';
 
 const MB = 1024*1024;
 
@@ -89,15 +90,40 @@ function handleCriticalError() {
  * Määrittelee globaalit virheenkäsittelijät.
  */
 function initializeErrorHandling(app: Express) {
-    // Globaali virheenkäsittely (synkronisten reittien käsittelemättömät poikkeukset).
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction): any => {
-        logger.error("Global error handler:", err);
+    // Globaali virheenkäsittely "GEH" (synkronisten reittien käsittelemättömät poikkeukset).
+    app.use((err: any, req: Request, res: Response, _next: NextFunction): any => {
         try {
-            if (!res.headersSent)
-                res.status(500).send('Global error handler: something went wrong.');
+            const level: ErrorLevel = err.level || "error";
+            if (level === "error") {
+                // Kirjoitetaan enemmän tietoa kun on kyseessä "error"
+                logger.error("GEH", {
+                    message: err.message,
+                    stack: err.stack,
+                    statusCode: err.statusCode,
+                    ip: req.ip,
+                    route: req.originalUrl,
+                    method: req.method,
+                    ...(err.debugInfo && { debugInfo: err.debugInfo })
+                });
+            } else {
+                logger[level]("GEH", {
+                    message: err.message,
+                    statusCode: err.statusCode,
+                    ip: req.ip,
+                    route: req.originalUrl,
+                    method: req.method,
+                    ...(err.debugInfo && { debugInfo: err.debugInfo })
+                });
+            }
+            if (err instanceof CustomError) {
+                if (!res.headersSent)
+                    res.status(err.statusCode).send({ error: err.clientMessage });
+            } else {
+                if (!res.headersSent)
+                    res.status(500).send({ error: "Jokin meni pieleen." });
+            }
         } catch (error) {
-            // TODO remove
-            logger.error("This should never happen:", error);
+            logger.error("Unexpected error in global error handler", error);
         }
     });
 

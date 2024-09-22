@@ -199,18 +199,21 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
             liveMatch.data = result;
         } else {
             // Luodaan uusi liveMatch
-            liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
-            liveMatches.set(matchId, liveMatch);
-            isMatchListChanged = true;
-            logger.info("Starting match in liveScoreRoutes", { matchId });
+            if (!result.isSubmitted) {
+                liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
+                liveMatches.set(matchId, liveMatch);
+                isMatchListChanged = true;
+                logger.info("Starting match in liveScoreRoutes", { matchId });
+            }
         }
         
         // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
         if (liveMatch && liveMatch.data.isSubmitted) {
             logger.info("Ending match in liveScoreRoutes", { matchId });
             // console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
-            liveMatches.delete(matchId);
-            isMatchListChanged = true;
+            const isDeleted = liveMatches.delete(matchId);
+            if (isDeleted)
+                isMatchListChanged = true;
         }
 
         if (isMatchListChanged)

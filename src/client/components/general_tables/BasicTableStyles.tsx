@@ -62,6 +62,22 @@ const BasicNameTypography = styled(Typography)({
     paddingTop: 0,
     paddingBottom: 0,
     margin: 0,
+    flexGrow: 1
 });
 
-export { BasicTable, BasicTableCell, BasicTableCellLow, BasicTableHeadCell, BasicTypography, BasicNameTypography };
+const BasicGameOnLeftTypography = styled(Typography)(({ theme }) => ({
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "clip",
+    paddingTop: 0,
+    paddingBottom: 0,
+    margin: 0,
+    marginRight: theme.spacing(1),
+    flexShrink: 0,
+    color: theme.palette.text.secondary,
+    fontSize: theme.typography.caption.fontSize
+}));
+
+export { BasicTable, BasicTableCell, BasicTableCellLow, BasicTableHeadCell, 
+    BasicTypography, BasicNameTypography, BasicGameOnLeftTypography };

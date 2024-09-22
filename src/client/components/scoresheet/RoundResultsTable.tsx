@@ -7,7 +7,7 @@ import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead
 import GameDialog from "./GameDialog";
 import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
-import { BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../general_tables/BasicTableStyles";
+import { BasicGameOnLeftTypography, BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../general_tables/BasicTableStyles";
 import EditIcon from '@mui/icons-material/Edit';
 import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
 import './RoundResultsTable.css';
@@ -59,13 +59,13 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
     <BasicTable sx={{tableLayout: "fixed"}}>
     <TableHead sx={{borderBottom: "2px solid black"}}>
     <TableRow>
-        <BasicTableHeadCell width="12%">
+        {/* <BasicTableHeadCell width="12%">
             <BasicTypography variant="body2">
                 Peli
             </BasicTypography>
-        </BasicTableHeadCell>
+        </BasicTableHeadCell> */}
 
-        <BasicTableHeadCell width="25%">
+        <BasicTableHeadCell width="30%">
             <BasicTypography variant="body2">
                 Pelaaja
             </BasicTypography>
@@ -93,7 +93,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
             </BasicTypography>
         </BasicTableHeadCell>
 
-        <BasicTableHeadCell width="12%">
+        <BasicTableHeadCell width="15%">
             <BasicTypography variant="body2"> 
                 Tilanne<br />K - V
             </BasicTypography>
@@ -114,20 +114,24 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
         {Array.from({ length: 2 }, (_, playerIndex) => (
             <TableRow key={`rounds-row-${gameIndex}-${playerIndex}`} sx={{borderBottom: playerIndex == 1 ? "2px solid black" : "", borderTop: playerIndex == 0 ? "2px solid black" : ""}}>
             {/* Peli */}
-            {playerIndex == 0 &&
+            {/* {playerIndex == 0 &&
                 <BasicTableCellLow className={rowBaseClassName(gameIndex)} rowSpan={2}>
                     <Typography variant="body1" textAlign="center">
-                        {/* {`${gameIndex+1}. ${gameIndex%2 == 0 ? "K" : "V"}`} */}
                         {`${gameIndexToPlayerIndexes(gameIndex)[0]+1} - ${gameIndexToPlayerIndexes(gameIndex)[1]+1}`}
                     </Typography>
                 </BasicTableCellLow>
-            }
+            } */}
 
             {/* Pelaaja */}
             <BasicTableCellLow className={rowBaseClassName(gameIndex)} key={`player-${gameIndex}-${playerIndex}`}>
-                <BasicNameTypography>
-                    {getSelectedPlayerName(formFields, gameIndex, playerIndex) || "-"}
-                </BasicNameTypography>
+                <Box display="flex" alignItems="center">
+                    <BasicGameOnLeftTypography>
+                        {`${playerIndex === 0 ? 'K' : 'V'}${gameIndexToPlayerIndexes(gameIndex)[playerIndex]+1}`}
+                    </BasicGameOnLeftTypography>
+                    <BasicNameTypography>
+                        {getSelectedPlayerName(formFields, gameIndex, playerIndex) || "-"}
+                    </BasicNameTypography>
+                </Box>
             </BasicTableCellLow>
 
             {/* Erätulokset */}

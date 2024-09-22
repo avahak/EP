@@ -32,7 +32,7 @@ const customColumnStyleHeader = {
     borderBottom: "3px solid black",
     overflow: "hidden",
     whiteSpace: "wrap",
-    fontWeight: "bold"
+    fontWeight: "bold",
 };
 
 /** 
@@ -42,7 +42,7 @@ const customColumnStyleOdd = {
     backgroundColor: "#ffffff",
     padding: "2px 4px",
     margin: "0px 0",
-    border: "1px solid black",
+    border: "1px solid gray",
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
@@ -56,6 +56,23 @@ const customColumnStyleEven = {
     backgroundColor: "#ddeeff"
 };
 
+/** 
+ * Tyyli taulun korostetulle riville
+ */
+const customColumnStyleHighlight = {
+    backgroundColor: "#66bbff",
+    padding: "2px 4px",
+    margin: "0px 0",
+    border: "1px solid gray",
+    // borderTop: "1px solid blue",
+    // borderBottom: "1px solid blue",
+    // borderLeft: "1px solid gray",
+    // borderRight: "1px solid gray",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+};
+
 /**
  * HeadCell määrittelee esitettävän sarakkeen muodon.
  */
@@ -63,7 +80,7 @@ type HeadCell = {
     id: string;
     label: string;
     numeric: boolean;
-    disablePadding?: boolean;
+    padding?: "none"|"normal"|"checkbox";
     defaultOrder?: Order;
     width?: any;
     numericToFixed?: number;
@@ -80,11 +97,10 @@ type TableHeadProps = {
 type ResultTableProps = {
     tableName: string;
     headCells: HeadCell[];
-    minWidth: string;
-    maxWidth: string;
-    stripingId: string;     // määrää rivin värin, pitää olla integer
+    stripingId: string;     // kenttä joka määrää rivin värin, kentän arvot pitää olla integer
     rows: any[];
     rowsPerPageOptions: { default: number, max: number };
+    isHighlighted: (row: any) => boolean;
 };
 
 /**
@@ -113,13 +129,16 @@ function getDefaultOrder(headCell: HeadCell): Order {
 }
 
 /**
- * Palauttaa rivin tyylinä customColumnStyleEven tai customColumnStyleOdd.
+ * Palauttaa rivin tyylinä customColumnStyleEven tai customColumnStyleOdd 
+ * tai customColumnStyleHighlight.
  * TODO! Mieti stripingId toiminta uudelleen, tämä ei ole kovin hyvä.
  */
-function getColumnStyle(rows: any[], orderBy: string, rowIndex: number, stripingId: string | undefined) {
+function getColumnStyle(rows: any[], orderBy: string, rowIndex: number, stripingId: string|undefined, isHighlighted: (row: any) => boolean) {
     const row = rows[rowIndex];
     const stripeIndex = (stripingId && `${orderBy}_dense` === stripingId) ? parseInt(row[stripingId]) : rowIndex;
-    return stripeIndex % 2 == 0 ? customColumnStyleEven : customColumnStyleOdd;
+    if (isHighlighted(row))
+        return customColumnStyleHighlight;
+    return stripeIndex%2 === 0 ? customColumnStyleEven : customColumnStyleOdd;
 }
 
 /**
@@ -138,17 +157,18 @@ function SortableTableHead(props: TableHeadProps) {
                 {headCells.map((headCell, headCellIndex) => (
                     <TableCell 
                         width={headCell.width ?? "10%"}
-                        style={customColumnStyleHeader}
+                        sx={customColumnStyleHeader}
                         key={headCellIndex}
                         // align={headCell.numeric ? 'right' : 'left'}
                         align={'center'}
-                        padding={headCell.disablePadding ? 'none' : 'normal'}
+                        padding={headCell.padding ?? 'normal'}
                         sortDirection={orderBy === headCell.id ? order : false}
                     >
                         <TableSortLabel
                             active={orderBy === headCell.id}
                             direction={orderBy === headCell.id ? order : getDefaultOrder(headCell)}
                             onClick={createSortHandler(headCell.id, getDefaultOrder(headCell))}
+                            hideSortIcon={true}
                         >
                         {headCell.label}
                         {orderBy === headCell.id ? (
@@ -170,10 +190,9 @@ function SortableTableHead(props: TableHeadProps) {
  */
 const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (props) => {
     let tableName: string = props.tableName ?? "Table";
-    let minWidth: string = props.minWidth ?? "200px";
-    let maxWidth: string = props.maxWidth ?? "750px";
     let rowsPerPageOptions = props.rowsPerPageOptions ?? { default: 10, max: 20 };
     let rowsPerPage = props.rows.length > rowsPerPageOptions.max ? rowsPerPageOptions.default : Math.max(props.rows.length, 1);
+    let isHighlighted = props.isHighlighted ?? ((_row: any) => false);
     let headCells: HeadCell[] = [];
     let rows: any[] = props.rows;
     if (props.headCells) {
@@ -184,7 +203,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
         const keys = extractKeys(rows);
         keys.forEach(([key, type]) => {
             const headCell: HeadCell = { 
-                disablePadding: true,
+                padding: 'none',
                 id: key,
                 label: key,
                 numeric: type == "number" ? true : false
@@ -196,7 +215,6 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     const [order, setOrder] = React.useState<Order>(headCells[0].numeric ? 'asc' : 'asc');
     const [orderBy, setOrderBy] = React.useState<string>(headCells[0].id);
     const [page, setPage] = React.useState(0);
-    // const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
     React.useEffect(() => {
         // console.log("ResultsTable useEffect");
@@ -220,11 +238,6 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
         setPage(newPage);
     };
 
-    // const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    //     setRowsPerPage(parseInt(event.target.value));
-    //     setPage(0);
-    // };
-
     // Tyhjien rivien lukumäärä (!=0 vain viimeisellä sivulla).
     const emptyRows =
         page > 0 ? Math.max(0, (1+page)*rowsPerPage - rows.length) : 0;
@@ -239,12 +252,11 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
     );
 
     return (
-        <Box sx={{ display: 'flex', overflowX: 'scroll' }}>
-        <Paper sx={{ minWidth: minWidth, width: maxWidth, px: 1, mx: 'auto' }} elevation={10}>
-            <Typography sx={{width: '100%', textAlign: 'center', fontSize: '1.5rem'}}>{tableName}</Typography>
-            <TableContainer>
-            <Table
-                sx={{ tableLayout: "fixed" }}
+        <Box> 
+        <Paper sx={{ width: "100%", overflow: 'hidden', p: 0 }} elevation={0}>
+            <Typography variant="h5" sx={{width: "100%", textAlign: 'center'}}>{tableName}</Typography>
+            <TableContainer sx={{ maxHeight: "600px" }}>
+            <Table stickyHeader
                 aria-labelledby={tableName}
             >
                 <SortableTableHead
@@ -262,7 +274,7 @@ const ResultTable: React.FC<Partial<ResultTableProps> & { rows: any[] }> = (prop
                         {headCells.map((headCell, colIndex) => (
                         <TableCell 
                             key={colIndex}
-                            style={getColumnStyle(visibleRows, orderBy, rowIndex, props.stripingId)} 
+                            style={getColumnStyle(visibleRows, orderBy, rowIndex, props.stripingId, isHighlighted)} 
                             align={headCell.numeric ? "center" : "left"}
                         >
                             {getEntryValue(headCell, row)}

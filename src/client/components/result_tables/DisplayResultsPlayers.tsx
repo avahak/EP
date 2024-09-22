@@ -8,8 +8,9 @@ import { compareJsonObjects, deepCopy, extractKeys } from "../../../shared/gener
 import { serverFetch } from "../../utils/apiUtils";
 import { Box, Container, Link, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { GroupSelector } from "./GroupSelector";
+import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 
 type TabPanelProps = {
     children?: React.ReactNode;
@@ -74,7 +75,7 @@ function CustomTabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ py: 3, px: 0 }}>
                 {children}
             </Box>
             )}
@@ -83,6 +84,7 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
+    const authenticationState = useContext(AuthenticationContext);
     const [activeTab, setActiveTab] = useState<number>(0);
 
     /**
@@ -91,6 +93,13 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
+
+    /**
+     * Palauttaa true joss rivin tiedot liittyvät kirjautuneeseen käyttäjään.
+     */
+    const isHighlighted = (row: any) => {
+        return (row.nimi === authenticationState.name) && (row.lyhenne === authenticationState.team);
+    }
 
     return (
         <Box>
@@ -122,7 +131,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <TotalWinsTable rows={results} tableName={"Pistepörssi"} />
+            <TotalWinsTable rows={results} isHighlighted={isHighlighted} tableName={"Pistepörssi"} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={1}>
@@ -131,7 +140,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit.
             </Typography>
-            <GoldenBreakWinsTable rows={results} />
+            <GoldenBreakWinsTable rows={results} isHighlighted={isHighlighted} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={2}>
@@ -140,7 +149,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP.
             </Typography>
-            <RunoutWinsTable rows={results} />
+            <RunoutWinsTable rows={results} isHighlighted={isHighlighted} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={3}>
@@ -149,7 +158,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit.
             </Typography>
-            <CombinationWinsTable rows={results} />
+            <CombinationWinsTable rows={results} isHighlighted={isHighlighted} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={4}>
@@ -158,7 +167,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat.
             </Typography>
-            <CaromWinsTable rows={results} />
+            <CaromWinsTable rows={results} isHighlighted={isHighlighted} />
         </CustomTabPanel>
         
         <CustomTabPanel value={activeTab} index={5}>
@@ -167,7 +176,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot.
             </Typography>
-            <ThreeFoulWinsTable rows={results} />
+            <ThreeFoulWinsTable rows={results} isHighlighted={isHighlighted} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={6}>
@@ -176,7 +185,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <DesignationWinsTable designation={"home"} rows={results} tableName={"Kotiotteluiden Pistepörssi"} />
+            <DesignationWinsTable designation={"home"} rows={results} tableName={"Kotiotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
         </CustomTabPanel>
 
         <CustomTabPanel value={activeTab} index={7}>
@@ -185,7 +194,7 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
                 <br />
                 Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
             </Typography>
-            <DesignationWinsTable designation={"away"} rows={results} tableName={"Vierasotteluiden Pistepörssi"} />
+            <DesignationWinsTable designation={"away"} rows={results} tableName={"Vierasotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
         </CustomTabPanel>
     </Box>
     );

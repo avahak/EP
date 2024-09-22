@@ -96,7 +96,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             setDisplayErrors(true);
             setSnackbarState({ 
                 isOpen: true, 
-                message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", 
+                message: "Lomakkeen lähetys epäonnistui. Tarkista tiedot.", 
                 severity: "error" 
             });
         } else {

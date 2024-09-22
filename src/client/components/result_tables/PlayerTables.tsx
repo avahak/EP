@@ -9,7 +9,7 @@ import { Order } from "../../../shared/generalUtils";
 import { addMultiSortRankColumn, numberColumnComparator } from "../../utils/dataSort";
 import { ResultTable } from "../general_tables/ResultTable";
 
-const rowsPerPageOptions = { default: 15, max: 20 };
+const rowsPerPageOptions = { default: 200, max: 300 };
 
 /** 
  * Muotoilee prosentit ja tarkistaa nollalla jakamisen.
@@ -32,7 +32,7 @@ function gamePercentageformatter(row: any) {
 /**
  * Taulukko, jossa mukana yleisiä tuloksia kaikista peleistä ("kaikki" taulukko).
  */
-const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, tableName }) => {
+const TotalWinsTable: React.FC<{ rows: any[], tableName: string, isHighlighted: ((row: any) => boolean) }> = ({ rows, tableName, isHighlighted }) => {
     const table = [];
     for (const row of rows) {
         const newRow = { 
@@ -48,6 +48,7 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
             h_pelit: row.h_peli,
             e_pelit: row.v_peli - row.h_peli,
             p_pelit: (row.v_peli + row.h_peli != 0) ? (100*row.v_peli/(row.v_peli + row.h_peli)) : 0,
+            highlight: isHighlighted(row),
         };
         table.push(newRow);
     }
@@ -89,8 +90,8 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
             rows={table} 
             rowsPerPageOptions={rowsPerPageOptions}
             stripingId="sija_dense" 
-            minWidth="700px" 
-            maxWidth="1000px">
+            isHighlighted={(row: any) => row.highlight === true}
+        >
         </ResultTable>
     );
 };
@@ -99,7 +100,7 @@ const TotalWinsTable: React.FC<{ rows: any[], tableName: string }> = ({ rows, ta
  * Taulukko, jossa mukana yleisiä tuloksia koti- ja vieraspeleistä 
  * ("koti", "vieras" taulukot).
  */
-const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away", tableName: string }> = ({ rows, designation, tableName }) => {
+const DesignationWinsTable: React.FC<{ rows: any[], designation: "home"|"away", tableName: string, isHighlighted: ((row: any) => boolean) }> = ({ rows, designation, tableName, isHighlighted }) => {
     const affix = designation == "home" ? "_koti" : "_vieras";
     const table = [];
     for (const row of rows) {
@@ -120,6 +121,7 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
             h_pelit: h_peli,
             e_pelit: v_peli - h_peli,
             p_pelit: (v_peli + h_peli != 0) ? (100*v_peli/(v_peli + h_peli)) : 0,
+            highlight: isHighlighted(row),
         };
         table.push(newRow);
     }
@@ -161,8 +163,8 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
             rows={table} 
             rowsPerPageOptions={rowsPerPageOptions}
             stripingId="sija_dense" 
-            minWidth="700px" 
-            maxWidth="1000px">
+            isHighlighted={(row: any) => row.highlight === true}
+        >
         </ResultTable>
     );
 };
@@ -172,7 +174,7 @@ const DesignationWinsTable: React.FC<{ rows: any[], designation: "home" | "away"
  * sijoitukset.
  * @param dbIndex Indeksi, joka tietokannassa vastaa voiton tapaa, 1-6.
  */
-const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: string, homeLabel: string, awayLabel: string }> = ({ rows, dbIndex, tableName, homeLabel, awayLabel }) => {
+const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: string, homeLabel: string, awayLabel: string, isHighlighted: ((row: any) => boolean) }> = ({ rows, dbIndex, tableName, homeLabel, awayLabel, isHighlighted }) => {
     const table = [];
     for (const row of rows) {
         const newRow = { 
@@ -181,7 +183,8 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
             erat: row.v_era + row.h_era,
             koti: row[`K${dbIndex}`],
             vieras: row[`V${dbIndex}`],
-            yhteensa: row[`K${dbIndex}`] + row[`V${dbIndex}`]
+            yhteensa: row[`K${dbIndex}`] + row[`V${dbIndex}`],
+            highlight: isHighlighted(row),
         };
         table.push(newRow);
     }
@@ -215,27 +218,27 @@ const PlayerWinsTable: React.FC<{ rows: any[], dbIndex: 1|2|3|4|5|6, tableName: 
             rows={table} 
             rowsPerPageOptions={rowsPerPageOptions}
             stripingId="sija_dense" 
-            minWidth="300px" 
-            maxWidth="750px">
+            isHighlighted={(row: any) => row.highlight === true}
+        >
         </ResultTable>
     );
 };
 
 // Luodaan taulut kullekin tavalle voittaa, dbIndex: 2-6:
 
-const RunoutWinsTable: React.FC<{ rows: any[] }> = ({ rows }) => 
-    PlayerWinsTable({ rows: rows, dbIndex: 2, tableName: "Parttien Pistepörssi", homeLabel: "Koti AP", awayLabel: "Vieras AP" });
+const RunoutWinsTable: React.FC<{ rows: any[], isHighlighted: ((row: any) => boolean) }> = ({ rows, isHighlighted }) => 
+    PlayerWinsTable({ rows: rows, dbIndex: 2, tableName: "Parttien Pistepörssi", homeLabel: "Koti AP", awayLabel: "Vieras AP", isHighlighted });
 
-const GoldenBreakWinsTable: React.FC<{ rows: any[] }> = ({ rows }) => 
-    PlayerWinsTable({ rows: rows, dbIndex: 3, tableName: "Ysi Pistepörssi", homeLabel: "Koti ysit", awayLabel: "Vieras ysit" });
+const GoldenBreakWinsTable: React.FC<{ rows: any[], isHighlighted: ((row: any) => boolean) }> = ({ rows, isHighlighted }) => 
+    PlayerWinsTable({ rows: rows, dbIndex: 3, tableName: "Ysi Pistepörssi", homeLabel: "Koti ysit", awayLabel: "Vieras ysit", isHighlighted });
 
-const CombinationWinsTable: React.FC<{ rows: any[] }> = ({ rows }) => 
-    PlayerWinsTable({ rows: rows, dbIndex: 4, tableName: "Kyytien Pistepörssi", homeLabel: "Koti kyydit", awayLabel: "Vieras kyydit" });
+const CombinationWinsTable: React.FC<{ rows: any[], isHighlighted: ((row: any) => boolean) }> = ({ rows, isHighlighted }) => 
+    PlayerWinsTable({ rows: rows, dbIndex: 4, tableName: "Kyytien Pistepörssi", homeLabel: "Koti kyydit", awayLabel: "Vieras kyydit", isHighlighted });
 
-const CaromWinsTable: React.FC<{ rows: any[] }> = ({ rows }) => 
-    PlayerWinsTable({ rows: rows, dbIndex: 5, tableName: "Karavoittojen Pistepörssi", homeLabel: "Koti karat", awayLabel: "Vieras karat" });
+const CaromWinsTable: React.FC<{ rows: any[], isHighlighted: ((row: any) => boolean) }> = ({ rows, isHighlighted }) => 
+    PlayerWinsTable({ rows: rows, dbIndex: 5, tableName: "Karavoittojen Pistepörssi", homeLabel: "Koti karat", awayLabel: "Vieras karat", isHighlighted });
 
-const ThreeFoulWinsTable: React.FC<{ rows: any[] }> = ({ rows }) => 
-    PlayerWinsTable({ rows: rows, dbIndex: 6, tableName: "Virheillä voittojen Pistepörssi", homeLabel: "Koti voitot", awayLabel: "Vieras voitot" });
+const ThreeFoulWinsTable: React.FC<{ rows: any[], isHighlighted: ((row: any) => boolean) }> = ({ rows, isHighlighted }) => 
+    PlayerWinsTable({ rows: rows, dbIndex: 6, tableName: "Virheillä voittojen Pistepörssi", homeLabel: "Koti voitot", awayLabel: "Vieras voitot", isHighlighted });
 
 export { TotalWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, CombinationWinsTable, CaromWinsTable, ThreeFoulWinsTable };

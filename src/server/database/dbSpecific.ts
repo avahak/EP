@@ -6,13 +6,30 @@
 import { myQuery } from './dbGeneral.js';
 import { dateToYYYYMMDD, removeSpecialChars } from '../../shared/generalUtils.js';
 import { enforceValidSymbolsInRounds, isValidParsedMatch } from '../../shared/parseMatch.js';
-import { AuthError, AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
+import { AuthError, AuthTokenPayload, CustomError, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
 import { logger } from '../serverErrorHandler.js';
 import { RowDataPacket } from 'mysql2';
 
-// @ts-ignore
-// const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Aika ennen kuin ottelun lähettämisen lukko vanhenee itsestään.
+ */
+const MAX_LOCK_DURATION_SECONDS = 3*60;
+
+/**
+ * Kuvaus, joka yhdistää ottelun id sen lähetyksen aloitusajan niille
+ * otteluille, joiden pöytäkirjaa ollaan parhaillaan lähettämässä.
+ * Tämän tarkoitus on estää saman ottelun lähetäminen useaan kertaan
+ * yhtäaikaisesti.
+ */
+const matchSubmissionLocks = new Map<number, number>();
+
+/**
+ * Palauttaa lukitut ottelut merkkijonona.
+ */
+function getMatchSubmissionLocksString(): string {
+    return JSON.stringify(Array.from(matchSubmissionLocks.entries()))
+}
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -315,33 +332,47 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     console.log("match", JSON.stringify(match));
 
     if (!match.ok || !isValidParsedMatch(match) || match.newStatus === 'T')
-        throw Error("Invalid match.");
+        throw new CustomError(400, "info", "Invalid match", "Ottelun tiedot ovat virheellisiä.", { matchId: match.id });
     // Vain admin voi muuttaa jo hyväksytyn ottelun tulosta:
     if (match.status === 'H' && !roleIsAtLeast(auth.role, "admin"))
-        throw Error("Invalid match.");
+        throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
 
     // Tarkistetaan, että ottelun tiedot ovat samat kuin tietokannassa:
     const dbRows = await getMatchInfo({ matchId: match.id }, null);
     if (!Array.isArray(dbRows) || dbRows.length !== 1)
-        throw Error("Invalid match.");
+        throw new CustomError(400, "error", "No match in database", "Tietokannasta ei saatu tietoa ottelusta.", { matchId: match.id });
     const dbMatch = dbRows[0] as RowDataPacket;
     if (dbMatch.home !== match.homeTeamName || dbMatch.away !== match.awayTeamName || dbMatch.status !== match.status)
-        throw Error("Invalid match.");
+        throw new CustomError(400, "error", "Difference from database", "Lähetetyt tiedot poikkeavat tietokannasta. Voi olla että ottelu on jo lähetetty.", { matchId: match.id });
 
     // Tavalliset käyttäjät voivat ilmoittaa ainoastaan otteluita, 
     // missä toinen joukkueista on heidän:
     if (!roleIsAtLeast(auth.role, "mod")) {
         if (match.status === 'T')
             if (auth.team !== match.homeTeamName || match.newStatus !== 'K')
-                throw new AuthError();
+                throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
         if (match.status === 'K')
             if (auth.team !== match.awayTeamName || (match.newStatus !== 'V' && match.newStatus !== 'M'))
-                throw new AuthError();
+                throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
         if (match.status !== 'T' && match.status !== 'K')
-            throw new AuthError();
+            throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
     }
 
+    const now = Date.now()/1000;
+    // Tarkistetaan onko lukko ottelulle olemassa
+    const lockTime = matchSubmissionLocks.get(match.id);
+    if (lockTime) {
+        if (now-lockTime < MAX_LOCK_DURATION_SECONDS)
+            throw new CustomError(500, "warn", "Locked match", "Ottelun ilmoitusta käsitellään.", { matchId: match.id });
+        // Jos lukko on vanhentunut, poistetaan se
+        matchSubmissionLocks.delete(match.id);
+        logger.warn("Expiration in matchSubmissionLocks", { matchId: match.id });
+    }
+    // Muodostetaan uusi lukko
+    matchSubmissionLocks.set(match.id, now);
+
     // Pakotetaan erätulossymbolit hyväksyttäviksi arvoiksi (K1-K6, V0-V6):
+    // TODO Tämä pitäisi tehdä ennen isValidParsedMatch testiä.
     const rounds = enforceValidSymbolsInRounds(match.rounds);
 
     try {
@@ -380,7 +411,14 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
             // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
-                // await delay(1000);  // TODO remove, only for testing
+                // if (1 == 1)
+                //     throw new AuthError();
+                // await delay(3000);  // TODO remove, only for testing
+                // if (Math.random() < 0.1)
+                //     throw new CustomError(500, "info", "Debug error", "Debug error message.");
+                // if (Math.random() < 0.1)
+                //     throw new Error("Regular debug error");
+
                 // Ei talleteta kahden tyhjän pelaajan peliä:
                 if (match.games[k][1] === -1 && match.games[k][2] === -1)
                     continue;
@@ -391,7 +429,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
-                    throw Error("Error during ep_peli INSERT.");
+                    throw new CustomError(500, "error", "Error with ep_peli insert", "Pelin lisääminen epäonnistui.", { matchId: match.id, insertData: match.games[k] });
 
                 // console.log("ep_peli insertId", insertedRow.insertId);
 
@@ -412,7 +450,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             logger.info("commit in submitMatchResult", { matchId: match.id });
         } catch (error) {
             await connection.rollback();
-            logger.info("rollback in submitMatchResult", { matchId: match.id });
+            logger.warn("rollback in submitMatchResult", { matchId: match.id });
             throw error;
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
@@ -421,6 +459,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     } catch (error) {
         logger.error("Error during submitMatchResult:", error);
         throw error;
+    } finally {
+        // Poistetaan lukko
+        matchSubmissionLocks.delete(match.id);
     }
 }
 
@@ -480,4 +521,4 @@ async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload |
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
     getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
     getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
-    getUsers, getGroups };
+    getUsers, getGroups, getMatchSubmissionLocksString };

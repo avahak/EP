@@ -78,8 +78,9 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setFromRefreshToken(null);
         const initializeAuth = async () => {
             console.log("AuthenticationProvider is initializing.");
-            await delay(200);
+            await delay(100);
             const localStorageToken = window.localStorage.getItem("refreshToken");
+            // const localStorageToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSnV1c28iLCJ0ZWFtIjoiQ0gxIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzI2NTY5MTcxLCJleHAiOjE3MzQzNDUxNzF9.fn9AZVa0ZOrOQ2bLarFsoia0BzfAI2-t8topTaRFtzI";
             setFromRefreshToken(localStorageToken);
             setIsTokenChecked(true);
         }

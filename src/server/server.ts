@@ -47,6 +47,7 @@ import 'express-async-errors';
 import { buildTimestamp } from '../shared/build-info.js';
 import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUtils.js';
 import { freemem } from 'os';
+import { getMatchSubmissionLocksString } from './database/dbSpecific.js';
 
 /**
  * Aika ennen kun lähetetään timeout.
@@ -123,10 +124,11 @@ app.get(BASE_URL + '/info', (_req, res, next) => {
         res.setHeader('Content-Type', 'text/html');
         res.send(`Serverin aika: ${serverTime}<br>
             Koodi rakennettu: ${buildTimestamp}<br>
-            Serveri käynnistetty: ${serverStartTime}<br>
+            Serveri käynnistetty: ${serverStartTime} (${(Date.now()/1000).toFixed(0)})<br>
             Live-ottelut: ${getLivescoreInfo()}<br>
             Muisti: rss: ${usedMemoryRSS}, heap: ${usedMemoryHeap}, free: ${freeMemory}<br>
             shutdownErrorCounter: ${getShutdownErrorCounter()}<br>
+            matchSubmissionLocks: ${getMatchSubmissionLocksString()}<br>
             `);
     } catch (err) {
         next(err);

@@ -71,8 +71,10 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
                 },
                 body: JSON.stringify({ queryName: "submit_match_result", params: { result: parsedResult } }),
             }, authenticationState);
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Tuntematon virhe`);
+            }
 
             // Haetaan data uudelleen esitettäväksi:
             const matchData = await fetchMatchData(result.id);
@@ -81,12 +83,13 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
             setPageState("display");
             console.log("matchData", matchData);
             setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
-        } catch(error) {
+        } catch (error: any) {
             // Jokin meni pieleen - palataan edelliseen sivun tilaan 
             // ja näytetään virheilmoitus käyttäjälle:
             console.error('Error:', error);
+            const message = error.message || "Tuntematon Virhe";
             setPageState(oldPageState);
-            setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys epäonnistui, tarkista tiedot.", severity: "error" });
+            setSnackbarState({ isOpen: true, autoHideDuration: 10000, message: `Lomakkeen lähetys epäonnistui. Viesti: ${message}`, severity: "error" });
         }
     };
 
