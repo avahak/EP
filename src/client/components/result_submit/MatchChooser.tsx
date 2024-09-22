@@ -152,15 +152,18 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 },
                 body: JSON.stringify({ queryName: roleIsAtLeast(authenticationState.role, "mod") ? "get_matches_to_report_moderator" : "get_matches_to_report" }),
             }, authenticationState);
-            if (!response.ok) 
-                throw new Error(`Status: ${response.status}, viesti: ${await response.text()}`);
+            if (!response.ok) {
+                const jsonError = await response.json();
+                throw new Error(jsonError.error || "Tuntematon virhe.");
+            }
             const jsonData = await response.json();
             console.log("fetchMatches data: ", jsonData.rows);
             setMatches(jsonData.rows);
-        } catch (error) {
+        } catch (error: any) {
+            const message = error.message || "Tuntematon virhe.";
             setSnackbarState({
                 isOpen: true,
-                message: `Otteluiden haku epäonnistui: ${(error as Error).message}. Kirjaudu sisään uudelleen.`,
+                message: `Otteluiden haku epäonnistui: ${message} Uudelleenkirjautuminen voi auttaa.`,
                 severity: "error",
                 autoHideDuration: 12000,
                 action: (

@@ -223,7 +223,6 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
         if (!res.headersSent)
             return res.json({ ok: true });
     } catch (error) {
-        logger.error(`Error during /submit_match: ${error}`);
         next(error);
     }
 });
@@ -305,7 +304,6 @@ router.get('/get_match/:matchId', async (req, res, next) => {
         if (!res.headersSent)
             return res.json({data: liveMatches.get(matchId)?.data});
     } catch (error) {
-        logger.error(`Error during /get_match`, error);
         next(error);
     }
 });

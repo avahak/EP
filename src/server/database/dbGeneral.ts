@@ -67,14 +67,14 @@ async function myQuery(pool: mysql.Pool, query: string, substitutions: any[]|nul
                 await connection.query(query, substitutions);
             return rows;
         } catch (error) {
-            logger.error("myQuery error:", error);
+            logger.error("myQuery", error);
             return [];
         } finally {
             connection.destroy();       // TEHOTONTA! Käytetään vain Azure SQL ongelmien takia
             // connection.release();
         }
     } catch (err) {
-        logger.error("myQuery error:", err);
+        logger.error("myQuery", err);
         return [];
     }
 }

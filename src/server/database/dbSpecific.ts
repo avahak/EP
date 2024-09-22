@@ -4,7 +4,7 @@
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToYYYYMMDD, removeSpecialChars } from '../../shared/generalUtils.js';
+import { dateToYYYYMMDD, delay, removeSpecialChars } from '../../shared/generalUtils.js';
 import { enforceValidSymbolsInRounds, isValidParsedMatch } from '../../shared/parseMatch.js';
 import { AuthError, AuthTokenPayload, CustomError, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
@@ -82,6 +82,8 @@ async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload
  */
 async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth)
+        throw new AuthError();
+    if (1 == 1)
         throw new AuthError();
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K'
     // ja toinen joukkueista on käyttäjän joukkue:
@@ -329,7 +331,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         throw new AuthError();
 
     const match = params.result;
-    console.log("match", JSON.stringify(match));
+    // console.log("match", JSON.stringify(match));
 
     if (!match.ok || !isValidParsedMatch(match) || match.newStatus === 'T')
         throw new CustomError(400, "info", "Invalid match", "Ottelun tiedot ovat virheellisiä.", { matchId: match.id });
@@ -358,6 +360,10 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
     }
 
+    // Pakotetaan erätulossymbolit hyväksyttäviksi arvoiksi (K1-K6, V0-V6):
+    // TODO Tämä pitäisi tehdä ennen isValidParsedMatch testiä.
+    const rounds = enforceValidSymbolsInRounds(match.rounds);
+
     const now = Date.now()/1000;
     // Tarkistetaan onko lukko ottelulle olemassa
     const lockTime = matchSubmissionLocks.get(match.id);
@@ -370,10 +376,6 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
     }
     // Muodostetaan uusi lukko
     matchSubmissionLocks.set(match.id, now);
-
-    // Pakotetaan erätulossymbolit hyväksyttäviksi arvoiksi (K1-K6, V0-V6):
-    // TODO Tämä pitäisi tehdä ennen isValidParsedMatch testiä.
-    const rounds = enforceValidSymbolsInRounds(match.rounds);
 
     try {
         const connection = await pool.getConnection();
@@ -411,9 +413,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
             // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
+                await delay(60);  // TODO remove, only for testing!
                 // if (1 == 1)
                 //     throw new AuthError();
-                // await delay(3000);  // TODO remove, only for testing
                 // if (Math.random() < 0.1)
                 //     throw new CustomError(500, "info", "Debug error", "Debug error message.");
                 // if (Math.random() < 0.1)
@@ -429,9 +431,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
-                    throw new CustomError(500, "error", "Error with ep_peli insert", "Pelin lisääminen epäonnistui.", { matchId: match.id, insertData: match.games[k] });
+                    throw new CustomError(500, "error", "Error with ep_peli INSERT", "Pelin lisääminen epäonnistui.", { matchId: match.id, insertData: match.games[k] });
 
-                // console.log("ep_peli insertId", insertedRow.insertId);
+                console.log("ep_peli insertId", match.id, insertedRow.insertId);
 
                 // Lisätään uusi rivi tauluun ep_erat:
                 const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
