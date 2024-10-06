@@ -5,7 +5,6 @@
 import { Express, NextFunction, Request, Response } from 'express';
 import { CustomError, ErrorLevel } from '../shared/commonTypes';
 import { logger } from './logger';
-import { sqliteClose } from './sqliteWrapper';
 
 /**
  * Maksimimäärä kiinnisaamattomia poikkeuksia ennen serverin pysäyttämistä.
@@ -103,7 +102,7 @@ const shutdown = async () => {
     }, 1000);
 
     try {
-        sqliteClose(); 
+        // Sulje resurssit tässä (SQLite close esim. jos sitä käytettäisiin)
         // Käytä tässä await Promise.all([cleanup1,cleanup2])..
         clearTimeout(timeout);
         process.exit(0);

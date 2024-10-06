@@ -6,29 +6,13 @@
  * Tietokanta ja rutiinit tulisi kirjoittaa niin, että yhtäaikaiset lähetykset eivät ole
  * ongelma, mutta nyt näin ei ole. Ratkaisua tulee pitää siis väliaikaisena.
  * 
- * Käyttää talletukseen SQLiteä.
+ * HUOM. Tässä tulisi käyttää SQLite tietokantaa, jotta lukkoja voisi jakaa
+ * prosessien välillä. Atomisesti lukituksen voi silloin tehdä käyttäen
+ * `INSERT INTO ${TABLE_NAME} (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING;`;
+ * ja lukemalla muutettujen rivien määrä.
  */
 
 import { logger } from "../logger";
-import { sqliteDB, sqliteDelete, sqliteExec, sqliteGet, sqliteGetAll } from "../sqliteWrapper";
-
-/**
- * Taulu yhdistämään ottelun id sen lähetyksen aloitusaikaan niille
- * otteluille, joiden pöytäkirjaa ollaan parhaillaan lähettämässä.
- * Tämän tarkoitus on estää saman ottelun lähetäminen useaan kertaan
- * yhtäaikaisesti.
- * 
- * Vastaa tässä käytössä kuvausta `matchSubmissionLocks: Map<number, number>`.
- */
-const TABLE_NAME = "match_locks";
-
-sqliteExec(`
-    -- DROP TABLE IF EXISTS ${TABLE_NAME};
-    CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
-        key INTEGER PRIMARY KEY,
-        value INTEGER
-    );
-    `);
 
 const MINUTE_ms = 60*1000;
 
@@ -38,32 +22,41 @@ const MINUTE_ms = 60*1000;
 const MAX_LOCK_DURATION_ms = 3*MINUTE_ms;
 
 /**
+ * Kuvaus, joka yhdistää ottelun id sen lähetyksen aloitusajan niille
+ * otteluille, joiden pöytäkirjaa ollaan parhaillaan lähettämässä.
+ * Tämän tarkoitus on estää saman ottelun lähetäminen useaan kertaan
+ * yhtäaikaisesti.
+ */
+const matchLocks = new Map<number, number>();
+
+/**
  * Poistaa lukon jos se on vanhentunut.
  */
 function handleExpiration(matchId: number): void {
     const now = Date.now();
-    const value = sqliteGet(TABLE_NAME, `${matchId}`);
-    if (!value)
+    const time = matchLocks.get(matchId);
+    if (!time)
         return;
-    const time = Number(value);
     if (Number.isNaN(time) || (now-time > MAX_LOCK_DURATION_ms)) {
         logger.warn("Expiration in getMatchLock", { matchId });
-        sqliteDelete(TABLE_NAME, `${matchId}`);
+        matchLocks.delete(matchId);
     }
 }
 
 /**
  * Lukitsee ottelun mikäli lukkoa ei ole jo olemassa. 
  * Palauttaa true joss lukkoa ei vielä ollut ja lukitseminen onnistui.
- * HUOM! Toimii atomisesti!
  */
 function tryLockMatch(matchId: number): boolean {
     const now = Date.now();
     handleExpiration(matchId);
     try {
-        const stmt = `INSERT INTO ${TABLE_NAME} (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING;`;
-        const result = sqliteDB.prepare(stmt).run(matchId, now);
-        return result.changes > 0;
+        const lock = matchLocks.get(matchId);
+        if (!lock) {
+            matchLocks.set(matchId, now);
+            return true;
+        }
+        return false;
     } catch (error) {
         logger.error("Error in tryLock", error);
         return false;
@@ -74,37 +67,14 @@ function tryLockMatch(matchId: number): boolean {
  * Apufunktio SQLite arvon poistamiseen.
  */
 function releaseMatchLock(matchId: number): void {
-    sqliteDelete(TABLE_NAME, `${matchId}`);
-}
-
-/**
- * Apufunktio kaikkien otteluiden hakemiseen käyttäen SQLite.
- */
-function getAllMatchLocks(): Map<number, number> {
-    try {
-        const locks = new Map<number, number>();
-        const pairs = sqliteGetAll(TABLE_NAME);
-        for (const [key, value] of pairs) {
-            const matchId = Number(key);
-            const time = Number(value);
-            if (!key || !value || Number.isNaN(matchId) || Number.isNaN(time))
-                logger.error(`Invalid lock`, { matchId, time });
-            locks.set(matchId, time);
-        }
-        return locks;
-    } catch (error) {
-        logger.error("Error in getAllMatchLocks", error);
-        throw error;
-    }
+    matchLocks.delete(matchId);
 }
 
 /**
  * Palauttaa lukitut ottelut merkkijonona.
  */
 function getMatchSubmissionLocksString(): string {
-    const locks = getAllMatchLocks();
-    return JSON.stringify(Array.from(locks));
+    return JSON.stringify(Array.from(matchLocks));
 }
 
-export { tryLockMatch, releaseMatchLock, getAllMatchLocks, 
-    getMatchSubmissionLocksString}
+export { tryLockMatch, releaseMatchLock, getMatchSubmissionLocksString };

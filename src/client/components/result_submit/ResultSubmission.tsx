@@ -16,7 +16,7 @@ import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScoresheet } from "../../../shared/scoresheetTypes";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { AuthError, roleIsAtLeast } from "../../../shared/commonTypes";
-import { createRandomUniqueIdentifier, delay, useDebounce } from "../../../shared/generalUtils";
+import { createRandomUniqueIdentifier, useDebounce } from "../../../shared/generalUtils";
 
 /**
  * Sivun tila
@@ -97,7 +97,7 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
     const fetchSendLiveResult = async ({ oldValues, newValues }: { oldValues: ScoresheetFields|null, newValues: ScoresheetFields }): Promise<void> => {
         console.log("fetchSendLiveResult()");
         try {
-            await delay(100+400*Math.random());
+            // await delay(100+400*Math.random());
             const response = await serverFetch("/api/live/submit_match", {
                 method: 'POST',
                 headers: {
@@ -107,7 +107,7 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
             }, authenticationState);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
-            await delay(100+400*Math.random());
+            // await delay(100+400*Math.random());
         } catch(error) {
             console.error('Error:', error);
         }

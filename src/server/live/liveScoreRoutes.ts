@@ -44,7 +44,6 @@ import { injectAuth, requireAuth } from '../auth/auth.js';
 import { integrateLiveMatchChanges } from '../../shared/liveMatchTools.js';
 import { LiveConnection, LiveMatch } from './liveTypes.js';
 import { logger } from '../logger.js';
-import { sqliteDeleteMatch, sqliteGetAllMatches, sqliteGetMatch, sqliteGetMatchIds, sqliteSetMatch } from './sqliteLiveMatches.js';
 
 const router: Router = express.Router();
 
@@ -81,6 +80,11 @@ const MAX_LIVE_MATCH_INACTIVITY = 4*HOUR_ms;
  * Avain on merkityksetön satunnainen merkkijono.
  */
 const liveConnections: Map<string, LiveConnection> = new Map();
+
+/**
+ * Live ottelut, kuvaus (ep_ottelu.id) -> LiveMatch.
+ */
+const liveMatches: Map<number, LiveMatch> = new Map();
 
 /**
  * Kirjoittaa yhteyteen ottelun tilan.
@@ -123,7 +127,7 @@ function sendMatchList(connectionId: string, matchList: any[]) {
  * tulee paljon enemmän, tulee käyttää lisätietorakennetta toimen tehostamiseen.
  */
 function broadcastLiveMatch(matchId: number) {
-    const liveMatch = sqliteGetMatch(matchId);
+    const liveMatch = liveMatches.get(matchId);
     if (!liveMatch)
         return;
 
@@ -139,7 +143,6 @@ function broadcastLiveMatch(matchId: number) {
  */
 function createMatchList() {
     const matchList: LiveMatchEntry[] = [];
-    const liveMatches = sqliteGetAllMatches();
     for (const [matchId, liveMatch] of liveMatches) {
         const startTimeAsDate = new Date(liveMatch.startTime);
         matchList.push({ matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
@@ -161,7 +164,7 @@ function broadcastMatchList() {
  * Palauttaa tekstimuotoisen tiedon otteluiden ja seuraajien määrästä.
  */
 function getLivescoreInfo() {
-    const matchIds = sqliteGetMatchIds();
+    const matchIds = Array.from(liveMatches.keys());
     return `${matchIds.length} ottelua (${matchIds}), ${liveConnections.size} yhteyttä`;
 }
 
@@ -172,14 +175,14 @@ function getLivescoreInfo() {
 function endLiveMatch(matchId: number) {
     try {
         logger.info("endLiveMatch", { matchId });
-        const liveMatch = sqliteGetMatch(matchId);
+        const liveMatch = liveMatches.get(matchId);
         if (liveMatch) {
             logger.info("endLiveMatch", { matchId });
             liveMatch.lastUpdate = Date.now();
             liveMatch.data.isSubmitted = true;
-            sqliteSetMatch(matchId, liveMatch);
+            liveMatches.set(matchId, liveMatch);
             broadcastLiveMatch(matchId);
-            sqliteDeleteMatch(matchId);
+            liveMatches.delete(matchId);
             broadcastMatchList();
         }
     } catch (error) {
@@ -207,7 +210,7 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
         const matchId = result.id;
         const now = Date.now();
 
-        let liveMatch: LiveMatch|null = sqliteGetMatch(matchId);
+        let liveMatch: LiveMatch|undefined = liveMatches.get(matchId);
         let isMatchListChanged = false;
         if (liveMatch) {
             // console.log("received update from", author);
@@ -230,14 +233,12 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
             if (liveMatch.score[0] != score[0] || liveMatch.score[1] != score[1])
                 isMatchListChanged = true;
             liveMatch.score = score;
-
-            sqliteSetMatch(matchId, liveMatch);
         } else {
             // Luodaan uusi liveMatch
             if (!result.isSubmitted) {
                 const score = currentScore(result);
                 liveMatch = { startTime: now, lastUpdate: now, lastAuthor: author, version: 0, data: result, score: score };
-                sqliteSetMatch(matchId, liveMatch);
+                liveMatches.set(matchId, liveMatch);
                 isMatchListChanged = true;
                 logger.info("Starting match in liveScoreRoutes", { matchId, author });
             }
@@ -258,15 +259,6 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
 });
 
 /**
- * Palauttaa listan liveMatches otteluista.
- * Ei käytössä, tämän korvaa /watch_match reitti.
- */
-// router.get('/get_match_list', async (_req, res) => {
-//     const matchList = createMatchList();
-//     res.json({ data: matchList });
-// });
-
-/**
  * Alustetaan uusi SSE-yhteys live-seurantaa varten.
  */
 router.get('/watch_match/:matchId?', async (req, res) => {
@@ -278,14 +270,14 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('X-Accel-Buffering', 'no');
 
-        let liveMatch: LiveMatch|null = null;
+        let liveMatch: LiveMatch|undefined = undefined;
         let matchId = undefined;
         if (req.params.matchId) {
             matchId = parseInt(req.params.matchId);
             if (isNaN(matchId))
                 matchId = undefined;
             else
-                liveMatch = sqliteGetMatch(matchId);
+                liveMatch = liveMatches.get(matchId);
         }
 
         logger.info("/watch_match", { matchId });
@@ -327,7 +319,7 @@ router.get('/get_match/:matchId', async (req, res, next) => {
     try {
         logger.info("/get_match", { matchId: req.params.matchId });
         const matchId = Number(req.params.matchId);
-        let liveMatch = Number.isNaN(matchId) ? null : sqliteGetMatch(matchId);
+        let liveMatch = Number.isNaN(matchId) ? null : liveMatches.get(matchId);
         if (!liveMatch) {
             if (!res.headersSent)
                 return res.status(400).send("Invalid matchId or no match found.");
@@ -350,14 +342,13 @@ function runMaintenance() {
 
         // Poistetaan liian vanhat ja epäaktiiviset ottelut:
         const liveMatchesToDelete = [];
-        const liveMatches = sqliteGetAllMatches();
         for (const [matchId, liveMatch] of liveMatches) {
             if ((now - liveMatch.lastUpdate > MAX_LIVE_MATCH_INACTIVITY) 
                 || (now - liveMatch.startTime > MAX_LIVE_MATCH_DURATION))
                 liveMatchesToDelete.push(matchId);
         }
         for (let key of liveMatchesToDelete)
-            sqliteDeleteMatch(key);
+            liveMatches.delete(key);
 
         // Poistetaan liveConnections jos niihin ei ole lähetetty mitään tuloksia pitkän aikaan:
         const liveConnectionsToDelete = [];
