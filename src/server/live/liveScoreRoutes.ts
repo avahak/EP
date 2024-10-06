@@ -8,21 +8,43 @@
  * niitä vastaaviin yhteyksiin kirjoitetaan uusia tuloksia. Pitkään
  * kestäneitä otteluita ja yhteyksiä siivotaan periodisesti pois.
  * 
- * TODO! Tarkista että koodi on thread-safe!
+ * Serveri pitää kirjaa otteluista LiveMatch-muodossa. Jokainen muutos kasvattaa
+ * versionumeroa yhdellä ja client (Scoresheet.tsx) käyttää sitä
+ * varmistaakseen, ettei se palaa vahingossa aikaisempaan versioon.
+ * - Kun käyttäjä tekee muutoksia pöytäkirjaan, se lähettää serverille kaksi versiota 
+ *   pöytäkirjasta: edellisen serveriltä saadun (c1) ja käyttäjän muokatun version (c2). 
+ *   Serveri muodostaa uuden version pöytäkirjasta tekemällä senhetkiseen versioon
+ *   samat muutokset kuin c2:ssa on c1 nähden käyttäen funktiota integrateLiveMatchChanges.
+ *   Tämän jälkeen serveri lähettää uuden pöytäkirjan kaikille sen seuraajille.
+ * - Kun client saa serverin lähettämän pöytäkirjan (s2), se vertaa sitä serverin 
+ *   edelliseen lähettämään versioon (s1) ja tekee käyttäjän näkemään pöytäkirjaan
+ *   samat muutokset kuin s2:ssa on s1 nähden käyttäen funktiota integrateLiveMatchChanges.
  * 
  * HUOM! Tietorakenteet ja menettely voidaan toteuttaa usealla eri tavalla.
  * Nyt käytössä oleva koodi on tehty mahdollisimman yksinkertaiseksi. Jos koodin
  * tehokkuus tai tietoliikenteen määrä tulee ongelmaksi, niitä voi parantaa usealla 
  * tavalla.
+ * 
+ * HUOM! Ottelut säilytetään levyllä käyttäen SQLite tietokantaa, katso sqliteWrapper.ts.
+ */
+/**
+ * Correctness proof idea:
+ * Claim 1: Every local change the user makes gets incorporated into all versions 
+ * starting from some time on the server and stays until it is overridden by another 
+ * user change on the server.
+ * Claim 2: The client’s form matches the newest version it has received from the server, 
+ * except possibly in the fields where the user has made local changes.
  */
 
-import express, { Response, Router } from 'express';
-import { base64JSONStringifyNode, createRandomUniqueIdentifier } from '../shared/generalUtils.js';
-import { currentScore } from '../client/utils/matchTools.js';
-import { LiveMatchEntry } from '../shared/commonTypes.js';
-import { injectAuth, requireAuth } from './auth/auth.js';
-import { ScoresheetFields } from '../client/components/scoresheet/scoresheetTypes.js';
-import { logger } from './serverErrorHandler.js';
+import express, { Router } from 'express';
+import { base64JSONStringifyNode, createRandomUniqueIdentifier } from '../../shared/generalUtils.js';
+import { currentScore } from '../../client/utils/matchTools.js';
+import { CustomError, LiveMatchEntry } from '../../shared/commonTypes.js';
+import { injectAuth, requireAuth } from '../auth/auth.js';
+import { integrateLiveMatchChanges } from '../../shared/liveMatchTools.js';
+import { LiveConnection, LiveMatch } from './liveTypes.js';
+import { logger } from '../logger.js';
+import { sqliteDeleteMatch, sqliteGetAllMatches, sqliteGetMatch, sqliteGetMatchIds, sqliteSetMatch } from './sqliteLiveMatches.js';
 
 const router: Router = express.Router();
 
@@ -43,7 +65,7 @@ const MAINTENANCE_INTERVAL = 15*MINUTE_ms;
 /**
  * Maksimiaika live ottelun seuraamiseen ilman uuden datan lähettämistä ennen tuhoamista.
  */
-const MAX_LIVE_CONNECTION_INACTIVITY = 2*HOUR_ms;
+const MAX_LIVE_CONNECTION_INACTIVITY = 4*HOUR_ms;
 /**
  * Maksimiaika live ottelun ilmoittamiseen. 
  */
@@ -52,16 +74,7 @@ const MAX_LIVE_MATCH_DURATION = 8*HOUR_ms;
  * Maksimiaika live tulosten ilmoittamisessa oleville päivittämisväleille.
  * Jos mitään muutoksia ei tule tässä ajassa, ottelu siivotaan pois.
  */
-const MAX_LIVE_MATCH_INACTIVITY = 2*HOUR_ms;
-
-/**
- * Tyyppi ottelun seuraamiseen käytettävälle yhteydelle.
- */
-type LiveConnection = {
-    lastActivity: number;
-    matchId: number | undefined;
-    res: Response;           // yhteys clientiin, tähän kirjoitetaan päivityksiä
-};
+const MAX_LIVE_MATCH_INACTIVITY = 4*HOUR_ms;
 
 /**
  * Kuvaus, jonka avulla aktiiviset live yhteydet pidetään muistissa.
@@ -70,28 +83,13 @@ type LiveConnection = {
 const liveConnections: Map<string, LiveConnection> = new Map();
 
 /**
- * Nämä tiedot talletetaan kustakin seurattavasta live ottelusta.
- */
-type LiveMatch = {
-    startTime: number;
-    lastActivity: number;
-    score: number[];
-    data: ScoresheetFields;
-};
-
-/**
- * Live ottelut, kuvaus (ep_ottelu.id) -> LiveMatch.
- */
-const liveMatches: Map<number, LiveMatch> = new Map();
-
-/**
  * Kirjoittaa yhteyteen ottelun tilan.
  */
 function sendLiveMatch(connectionId: string, liveMatch: LiveMatch) {
     const connection = liveConnections.get(connectionId);
     if (!connection || !connection.res.writable || connection.res.writableEnded)
         return;
-    const data = { type: "matchUpdate", data: liveMatch.data };
+    const data = { type: "matchUpdate", timestamp: liveMatch.lastUpdate, author: liveMatch.lastAuthor, version: liveMatch.version, data: liveMatch.data };
     try {
         connection.lastActivity = Date.now();
         connection.res.write(`data: ${base64JSONStringifyNode(data)}\n\n`);
@@ -125,7 +123,7 @@ function sendMatchList(connectionId: string, matchList: any[]) {
  * tulee paljon enemmän, tulee käyttää lisätietorakennetta toimen tehostamiseen.
  */
 function broadcastLiveMatch(matchId: number) {
-    const liveMatch = liveMatches.get(matchId);
+    const liveMatch = sqliteGetMatch(matchId);
     if (!liveMatch)
         return;
 
@@ -141,6 +139,7 @@ function broadcastLiveMatch(matchId: number) {
  */
 function createMatchList() {
     const matchList: LiveMatchEntry[] = [];
+    const liveMatches = sqliteGetAllMatches();
     for (const [matchId, liveMatch] of liveMatches) {
         const startTimeAsDate = new Date(liveMatch.startTime);
         matchList.push({ matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
@@ -162,7 +161,30 @@ function broadcastMatchList() {
  * Palauttaa tekstimuotoisen tiedon otteluiden ja seuraajien määrästä.
  */
 function getLivescoreInfo() {
-    return `${liveMatches.size} ottelua, ${liveConnections.size} yhteyttä`;
+    const matchIds = sqliteGetMatchIds();
+    return `${matchIds.length} ottelua (${matchIds}), ${liveConnections.size} yhteyttä`;
+}
+
+/**
+ * Tämä kutsutaan kun ottelupöytäkirja talletetaan tietokantaan hyväksytysti.
+ * Poistaa ottelun liveMatches listalta.
+ */
+function endLiveMatch(matchId: number) {
+    try {
+        logger.info("endLiveMatch", { matchId });
+        const liveMatch = sqliteGetMatch(matchId);
+        if (liveMatch) {
+            logger.info("endLiveMatch", { matchId });
+            liveMatch.lastUpdate = Date.now();
+            liveMatch.data.isSubmitted = true;
+            sqliteSetMatch(matchId, liveMatch);
+            broadcastLiveMatch(matchId);
+            sqliteDeleteMatch(matchId);
+            broadcastMatchList();
+        }
+    } catch (error) {
+        logger.error("Error at endLiveMatch()", { matchId });
+    }
 }
 
 /**
@@ -172,49 +194,57 @@ function getLivescoreInfo() {
  */
 router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) => {
     try {
-        if (!req.body.result) {
-            if (!res.headersSent)
-                return res.status(400).send(`Missing result.`);
-            return;
-        }
+        const author = req.body.author;
         const result = req.body.result;
-        if (result.status !== "T") {
-            if (!res.headersSent)
-                return res.status(400).send(`Invalid result.`);
-            return;
-        }
-        const score = currentScore(result);
+        const oldResult = req.body.oldResult;
+        if (!author) 
+            throw new CustomError(400, "error", "Missing author", "Missing author.");
+        if (!result)
+            throw new CustomError(400, "error", "Missing result", "Missing result.");
+        if (result.status !== "T") 
+            throw new CustomError(400, "error", "Invalid result", "Invalid result.");
 
         const matchId = result.id;
         const now = Date.now();
 
-        let liveMatch: LiveMatch|undefined = liveMatches.get(matchId);
+        let liveMatch: LiveMatch|null = sqliteGetMatch(matchId);
         let isMatchListChanged = false;
         if (liveMatch) {
+            // console.log("received update from", author);
+            // console.log("liveMatch.data", liveMatch.data.scores[0]);
+            // console.log("oldResult", oldResult.scores[0]);
+            // console.log("newResult", result.scores[0]);
+
+            // Päivitä olemassaolevaa liveMatch:
+            liveMatch.lastUpdate = now;
+            liveMatch.lastAuthor = author;
+            liveMatch.version += 1;
+
+            // liveMatch.data = combineLiveMatchPlayers(liveMatch.data, result);
+            if (oldResult)
+                liveMatch.data = integrateLiveMatchChanges(liveMatch.data, oldResult, result);
+            else 
+                liveMatch.data = integrateLiveMatchChanges(liveMatch.data, liveMatch.data, result);
+
+            const score = currentScore(liveMatch.data);
             if (liveMatch.score[0] != score[0] || liveMatch.score[1] != score[1])
                 isMatchListChanged = true;
-            // Päivitä olemassaolevaa liveMatch:
-            liveMatch.lastActivity = now;
             liveMatch.score = score;
-            liveMatch.data = result;
+
+            sqliteSetMatch(matchId, liveMatch);
         } else {
             // Luodaan uusi liveMatch
             if (!result.isSubmitted) {
-                liveMatch = { startTime: now, lastActivity: now, data: result, score: score };
-                liveMatches.set(matchId, liveMatch);
+                const score = currentScore(result);
+                liveMatch = { startTime: now, lastUpdate: now, lastAuthor: author, version: 0, data: result, score: score };
+                sqliteSetMatch(matchId, liveMatch);
                 isMatchListChanged = true;
-                logger.info("Starting match in liveScoreRoutes", { matchId });
+                logger.info("Starting match in liveScoreRoutes", { matchId, author });
             }
         }
-        
-        // Jos ottelupöytäkirja on lähetetty, poistetaan seuranta:
-        if (liveMatch && liveMatch.data.isSubmitted) {
-            logger.info("Ending match in liveScoreRoutes", { matchId });
-            // console.log("Poistetaan taulukosta liveMatches lähetettynä:", matchId);
-            const isDeleted = liveMatches.delete(matchId);
-            if (isDeleted)
-                isMatchListChanged = true;
-        }
+
+        // TODO REMOVE!
+        // await delay(100+400*Math.random());
 
         if (isMatchListChanged)
             broadcastMatchList();
@@ -248,21 +278,21 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('X-Accel-Buffering', 'no');
 
-        let liveMatch: LiveMatch|undefined = undefined;
+        let liveMatch: LiveMatch|null = null;
         let matchId = undefined;
         if (req.params.matchId) {
             matchId = parseInt(req.params.matchId);
             if (isNaN(matchId))
                 matchId = undefined;
             else
-                liveMatch = liveMatches.get(matchId);
+                liveMatch = sqliteGetMatch(matchId);
         }
 
         logger.info("/watch_match", { matchId });
 
         const now = Date.now();
         const connectionId = createRandomUniqueIdentifier();
-        liveConnections.set(connectionId, { lastActivity: now, matchId: matchId, res: res});
+        liveConnections.set(connectionId, { lastActivity: now, matchId: matchId, res: res });
 
         // Käsitellään kirjoittamiseen liittyvät ongelmat, esimerkiksi kun kirjoitetaan res.end() jälkeen
         res.on('error', (error) => {
@@ -295,35 +325,39 @@ router.get('/watch_match/:matchId?', async (req, res) => {
  */
 router.get('/get_match/:matchId', async (req, res, next) => {
     try {
-        const matchId = parseInt(req.params.matchId);
-        if (!matchId || !liveMatches.has(matchId)) {
+        logger.info("/get_match", { matchId: req.params.matchId });
+        const matchId = Number(req.params.matchId);
+        let liveMatch = Number.isNaN(matchId) ? null : sqliteGetMatch(matchId);
+        if (!liveMatch) {
             if (!res.headersSent)
-                return res.status(400).send("Invalid matchId.");
+                return res.status(400).send("Invalid matchId or no match found.");
             return;
         }
         if (!res.headersSent)
-            return res.json({data: liveMatches.get(matchId)?.data});
+            return res.json({data: liveMatch.data});
     } catch (error) {
         next(error);
     }
 });
 
-// Asetetaan periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet 
-// ja live-ottelut.
-setInterval(() => {
-    logger.info("liveScoreRoutes maintenance");
+/**
+ * Periodisesti toistuva tehtävä: poistetaan vanhentuneet yhteydet ja live-ottelut.
+ */
+function runMaintenance() {
     try {
+        logger.info("liveScoreRoutes maintenance");
         const now = Date.now();
 
-        // Poistetaan liian vanhat ja epäaktiiviset liveMatches:
+        // Poistetaan liian vanhat ja epäaktiiviset ottelut:
         const liveMatchesToDelete = [];
+        const liveMatches = sqliteGetAllMatches();
         for (const [matchId, liveMatch] of liveMatches) {
-            if ((now - liveMatch.lastActivity > MAX_LIVE_MATCH_INACTIVITY) 
+            if ((now - liveMatch.lastUpdate > MAX_LIVE_MATCH_INACTIVITY) 
                 || (now - liveMatch.startTime > MAX_LIVE_MATCH_DURATION))
                 liveMatchesToDelete.push(matchId);
         }
         for (let key of liveMatchesToDelete)
-            liveMatches.delete(key);
+            sqliteDeleteMatch(key);
 
         // Poistetaan liveConnections jos niihin ei ole lähetetty mitään tuloksia pitkän aikaan:
         const liveConnectionsToDelete = [];
@@ -338,22 +372,32 @@ setInterval(() => {
             broadcastMatchList();
     } catch (error) {
         logger.error("Error during liveScoreRoutes maintenance", error);
+    } finally {
+        // Sovitaan seuraava maintenance
+        setTimeout(runMaintenance, MAINTENANCE_INTERVAL);
     }
-}, MAINTENANCE_INTERVAL);
+}
 
-// Asetetaan periodisesti toistuva tehtävä: lähetetään jokaiselle
-// yhteydelle "heartbeat" pitämään yhteys elossa.
-// Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
-setInterval(() => {
+/**
+ * Periodisesti toistuva tehtävä: lähetetään jokaiselle
+ * yhteydelle "heartbeat" pitämään yhteys elossa.
+ * Syy tarpeellisuuteen: https://bugzilla.mozilla.org/show_bug.cgi?id=444328
+ */
+function runHeartbeat() {
     for (let [_connectionId, connection] of liveConnections) {
         try {
             if (connection && connection.res.writable && !connection.res.writableEnded)
                 connection.res.write(`data: hb\n\n`);
         } catch (error) {
-            // console.error(`Failed to send livescore data`);
+            // console.error(`Failed to send heartbeat`);
         }
     }
-}, HEARTBEAT_INTERVAL);
+    setTimeout(runHeartbeat, HEARTBEAT_INTERVAL);
+}
+
+// Aloitetaan periodisten tehtävien ajaminen
+setTimeout(runMaintenance, MAINTENANCE_INTERVAL);
+setTimeout(runHeartbeat, HEARTBEAT_INTERVAL);
 
 // DEBUGGING, REMOVE! Used to test SSE crashes.
 // setInterval(() => {
@@ -364,4 +408,4 @@ setInterval(() => {
 //     }
 // }, 43*SECOND_ms);
 
-export { router as liveScoreRouter, getLivescoreInfo };
+export { router as liveScoreRouter, getLivescoreInfo, endLiveMatch };

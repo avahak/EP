@@ -25,11 +25,11 @@
  */
 
 import express, { Router, Request, Response, NextFunction } from "express";
-import { logger } from '../serverErrorHandler.js';
 import { encodeJWT, verifyJWT } from "./jwt.js";
 import { AuthTokenPayload, isAuthTokenPayload, roleIsAtLeast } from "../../shared/commonTypes.js";
 import { myQuery } from "../database/dbGeneral.js";
 import { pool } from "../database/dbConnections.js";
+import { logger } from "../logger.js";
 
 const HOUR_s = 3600;
 const DAY_s = 24*HOUR_s;

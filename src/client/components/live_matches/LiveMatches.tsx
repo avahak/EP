@@ -1,5 +1,5 @@
 import { Box, Container, Grid, Typography } from "@mui/material"
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getBackendUrl } from "../../utils/apiUtils";
 import { base64JSONparse } from "../../../shared/generalUtils";
 import { LiveMatchEntry } from "../../../shared/commonTypes";
@@ -20,7 +20,7 @@ const LiveMatches: React.FC = () => {
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
     // const retryCountRef = useRef<number>(0); // To track retry attempts
     // const hasHeartbeatRef = useRef<boolean>(false);
-    const isMountedRef = useRef(false);
+    // const isMountedRef = useRef(false);
 
     // Kun serveri lähettää viestin, päivitetään seurattavaa ottelua (type="matchUpdate")
     // tai listaa otteluista (type="matchListUpdate"). 
@@ -63,7 +63,7 @@ const LiveMatches: React.FC = () => {
     useEffect(() => {
         console.log("LiveMatches useEffect!");
         // hasHeartbeatRef.current = true;
-        isMountedRef.current = true;
+        // isMountedRef.current = true;
         const eventSource = new EventSource(`${getBackendUrl()}/api/live/watch_match/${matchId}`);
         eventSource.onmessage = handleOnMessage;
         eventSource.onerror = handleOnError;
@@ -79,7 +79,7 @@ const LiveMatches: React.FC = () => {
 
         // Suljetaan eventSource lopuksi:
         return () => {
-            isMountedRef.current = false;
+            // isMountedRef.current = false;
             closeEventSource();
             setMatchData(null);
             setLiveMatchList([]);

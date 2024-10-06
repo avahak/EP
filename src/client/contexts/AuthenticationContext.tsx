@@ -75,7 +75,7 @@ const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ child
      * Alustetaan autentikaatiotila local storage JWT refresh tokenin mukaan:
      */
     useEffect(() => {
-        setFromRefreshToken(null);
+        // setFromRefreshToken(null);
         const initializeAuth = async () => {
             console.log("AuthenticationProvider is initializing.");
             await delay(100);

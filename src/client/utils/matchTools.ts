@@ -8,7 +8,7 @@
  * omaksi kokonaisuudeksi.
  */
 
-import { ScoresheetFields, ScoresheetPlayer, createEmptyScores } from "../components/scoresheet/scoresheetTypes";
+import { ScoresheetFields, ScoresheetPlayer, createEmptyScores } from "../../shared/scoresheetTypes";
 import { serverFetch } from "./apiUtils";
 
 // Odotetut tulokset kun yksi tai molemmat pelaajat ovat tyhjiä:
@@ -283,23 +283,23 @@ const fetchMatchInfo = async (matchId: number) => {
 /**
  * Hakee live-ottelun jos sellainen on olemassa.
  */
-const fetchLiveMatch = async (matchId: number): Promise<ScoresheetFields|null> => {
-    try {
-        const response = await serverFetch(`/api/live/get_match/${matchId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }, null);
-        if (!response.ok) 
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        const jsonData = await response.json();
-        return jsonData.data;
-    } catch(error) {
-        console.info('No matching live match found.');
-    }
-    return null;
-};
+// const fetchLiveMatch = async (matchId: number): Promise<ScoresheetFields|null> => {
+//     try {
+//         const response = await serverFetch(`/api/live/get_match/${matchId}`, {
+//             method: 'GET',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             }
+//         }, null);
+//         if (!response.ok) 
+//             throw new Error(`HTTP error! Status: ${response.status}`);
+//         const jsonData = await response.json();
+//         return jsonData.data;
+//     } catch(error) {
+//         console.info('No matching live match found.');
+//     }
+//     return null;
+// };
 
 /**
  * Hakee tietokannasta koko ottelun ScoresheetFields muodossa.
@@ -311,9 +311,7 @@ const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
     const playersHome = await fetchPlayers(matchInfo.homeId);
     const playersAway = await fetchPlayers(matchInfo.awayId);
     const rawScores = await fetchScores(matchInfo.id);
-    const liveMatch = await fetchLiveMatch(matchId);
     
-    console.log("liveMatch", liveMatch);
     console.log("matchInfo", matchInfo);
     console.log("playersHome fetch: ", playersHome);
     console.log("playersAway fetch: ", playersAway);
@@ -343,11 +341,6 @@ const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
 
     console.log("playingHome", playingHome);
     console.log("playingAway", playingAway);
-
-    if (liveMatch) {
-        console.log("Using livematch data.");
-        return liveMatch;
-    }
 
     return {
         id: matchId,

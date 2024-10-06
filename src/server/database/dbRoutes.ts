@@ -6,10 +6,10 @@ import express, { Router } from 'express';
 import fs from 'fs';
 import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator, getGroups } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
-import { logger } from '../serverErrorHandler.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
 import { loadSQLFiles, replicateDB } from './dbReplicate.js';
+import { logger } from '../logger.js';
 
 const router: Router = express.Router();
 
@@ -140,7 +140,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const params = req.body.params || {};
         params._current_kausi = KULUVA_KAUSI;
 
-        logger.info("/specific_query", { queryName, ip: req.ip });
+        logger.info("/specific_query", { queryName });
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {

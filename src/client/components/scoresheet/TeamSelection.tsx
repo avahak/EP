@@ -1,6 +1,6 @@
 import { Box, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Typography } from "@mui/material";
 import React from "react";
-import { ScoresheetMode, ScoresheetTeam } from "./scoresheetTypes";
+import { ScoresheetMode, ScoresheetTeam } from "../../../shared/scoresheetTypes";
 
 /**
  * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
@@ -19,7 +19,7 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
         if (id == -1)
             return 'noPlayer';
         if (!id)
-            return '';
+            return '';      // TODO FIX shouldn't this be '-'? Check this.
         return `${id}`;
     }
 

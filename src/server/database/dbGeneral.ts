@@ -5,7 +5,7 @@
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 import { generateAndInsertToDatabase } from './dbFakeData.js';
-import { logger } from '../serverErrorHandler.js';
+import { logger } from '../logger.js';
 
 /**
  * Tämä on yksinkertainen .sql tiedostojen lukija, joka erottelee tekstin 

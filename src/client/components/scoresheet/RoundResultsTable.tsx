@@ -4,12 +4,12 @@
  */
 
 import { Box, IconButton, Paper, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
-import GameDialog from "./GameDialog";
+import GameDialog, { GameDialogState } from "./GameDialog";
 import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
 import { BasicGameOnLeftTypography, BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../general_tables/BasicTableStyles";
 import EditIcon from '@mui/icons-material/Edit';
-import { ScoresheetFields, ScoresheetMode } from "./scoresheetTypes";
+import { ScoresheetFields, ScoresheetMode } from "../../../shared/scoresheetTypes";
 import './RoundResultsTable.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
@@ -27,13 +27,13 @@ type RoundResultsTableProps = {
  * taulukkona.
  */
 const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErrors, formFields, onGameDialogSubmit, gameRunningStats }) => {
-    const [gameDialogState, setGameDialogState] = useState<{ isOpen: boolean, gameIndex?: number, roundIndex?: number }>({ isOpen: false });
+    const [gameDialogState, setGameDialogState] = useState<GameDialogState>({ isOpen: false, gameIndex: 0 });
 
     /**
      * Kutsutaan, kun GameDialog suljetaan tuloksia kirjaamatta.
      */
     const handleGameDialogClose = () => {
-        setGameDialogState({ isOpen: false });
+        setGameDialogState({ isOpen: false, gameIndex: 0 });
     };
 
     /**
@@ -169,7 +169,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
                 rowSpan={2} 
                 className={rowBaseClassName(gameIndex)} 
                 key={`edit-${gameIndex}`}
-                onClick={() => setGameDialogState({isOpen: true, gameIndex, roundIndex: 0})}
+                onClick={() => setGameDialogState({isOpen: true, gameIndex})}
             >
                 <Box display="flex" justifyContent="center" sx={{p: 0}}>
                 <IconButton 

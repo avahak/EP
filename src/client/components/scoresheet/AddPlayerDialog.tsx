@@ -14,7 +14,7 @@ import Button from '@mui/material/Button';
 import { serverFetch } from '../../utils/apiUtils';
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { SnackbarContext } from '../../contexts/SnackbarContext';
-import { ScoresheetPlayer, ScoresheetTeam } from './scoresheetTypes';
+import { ScoresheetPlayer, ScoresheetTeam } from '../../../shared/scoresheetTypes';
 import { AuthenticationContext } from '../../contexts/AuthenticationContext';
 
 type AddPlayerDialogProps = {

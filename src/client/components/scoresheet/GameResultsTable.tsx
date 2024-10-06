@@ -6,7 +6,7 @@
 
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Theme, Typography, styled } from "@mui/material";
 import { GameRunningStatRow, playerIndexesToGameIndex } from "../../utils/matchTools";
-import { ScoresheetTeam } from "./scoresheetTypes";
+import { ScoresheetTeam } from "../../../shared/scoresheetTypes";
 import "./GameResultsTable.css";
 
 const StyledTable = styled(Table)(({ }) => ({

@@ -4,6 +4,7 @@
  */
 
 import { isObject, isEqual } from 'lodash';
+import { useEffect, useRef } from 'react';
 
 /**
  * Palauttaa Suomen ajan merkkijonona.
@@ -41,8 +42,8 @@ const dateFromYYYYMMDD = (dateString: string) => {
  * Muodostaa kopion sarjallistuvasta oliosta.
  * Tämän voi toteuttaa tehokkaammin tarvittaessa, tässä käytetään vain JSON trikkiä.
  */
-function deepCopy(object: any) {
-    return JSON.parse(JSON.stringify(object));
+function deepCopy<T>(object: T): T {
+    return JSON.parse(JSON.stringify(object)) as T;
 }
 
 /**
@@ -174,8 +175,14 @@ function base64JSONparseNode(s64: string): any {
  * Palauttaa uniikin merkkijonon.
  * HUOM! Käytä tämän sijasta esim. crypto.randomUUID() jos käyttötarkoitus on tärkeä.
  */
-function createRandomUniqueIdentifier() {
-    return Date.now().toString() + Math.random().toString().slice(2);
+function createRandomUniqueIdentifier(length: number=12): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result: string[] = [];
+    for (let k = 0; k < length; k++) {
+        const index = Math.floor(Math.random()*characters.length);
+        result.push(characters.charAt(index));
+    }
+    return result.join('');
 }
 
 /**
@@ -275,10 +282,59 @@ function compareJsonObjects(obj1: any, obj2: any, path: string[] = []): string[]
  */
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Custom hook, joka debounceaa annetun callback-funktion,
+ * viivyttäen sen suorittamista, kunnes tietty aika on kulunut
+ * viimeisestä kutsusta. Funktion kutsu voidaan peruuttaa tarvittaessa viiveen aikana.
+ */
+function useDebounce<T extends (...args: any[]) => void>(cb: T, delay: number) {
+    const timer = useRef<NodeJS.Timeout>();
+    const lastCall = useRef<number>(0);
+  
+    const debouncedFunction = (...args: Parameters<T>) => {
+        const now = performance.now();
+        clearTimeout(timer.current);
+
+        if (now > lastCall.current+delay) {
+            // Kutsutaan heti
+            lastCall.current = now;
+            cb(...args);
+            return;
+        }
+        timer.current = setTimeout(() => {
+            cb(...args);
+            timer.current = undefined;
+        }, delay);
+    };
+
+    /**
+     * Peruuta debounced-funktion odottava suoritus.
+     * Palauttaa true, jos peruutus tapahtui, false jos suoritus ei ollut odotettavissa.
+     */
+    debouncedFunction.cancel = () => {
+        if (timer.current) {
+            clearTimeout(timer.current);
+            timer.current = undefined;
+            return true;
+        }
+        return false;
+    };
+
+    // Loppusiivous
+    useEffect(() => {
+        return () => {
+            clearTimeout(timer.current);
+            timer.current = undefined;
+        };
+    }, []);
+  
+    return debouncedFunction as (T & { cancel: () => boolean; });
+}
+
 export type { Order };
 export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy, crudeHash,
     base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
     createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 
     removeSpecialChars, findStringDifference, compareJsonObjects, 
-    currentTimeInFinlandString, delay };
+    currentTimeInFinlandString, delay, useDebounce };

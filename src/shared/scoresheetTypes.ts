@@ -17,7 +17,7 @@ type ScoresheetTeam = {
     id: number;
     teamName: string;
     teamRole: "home" | "away";
-    allPlayers: (ScoresheetPlayer | null)[];
+    allPlayers: ScoresheetPlayer[];
     selectedPlayers: (ScoresheetPlayer | null)[];
 };
 
@@ -58,5 +58,20 @@ function createEmptyScores() {
     return emptyScores;
 }
 
+/**
+ * Luo tyhjän ScoresheetFields.
+ */
+function createEmptyScoresheet() {
+    return {
+        id: -1,
+        status: 'T',
+        teamHome: {...createEmptyTeam(), teamRole: "home"},
+        teamAway: {...createEmptyTeam(), teamRole: "away"},
+        date: '',
+        scores: createEmptyScores(),
+        isSubmitted: false,
+    } as ScoresheetFields;
+}
+
 export type { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode };
-export { createEmptyTeam, createEmptyScores };
+export { createEmptyTeam, createEmptyScores, createEmptyScoresheet };

@@ -9,17 +9,16 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, useMediaQuery } from '@mui/material';
 import { checkGameResults, computeGameScore, gameIndexToPlayerIndexes } from '../../utils/matchTools';
 import { BasicNameTypography, BasicTable, BasicTableCell, BasicTableHeadCell, BasicTypography } from '../general_tables/BasicTableStyles';
 import { deepCopy } from '../../../shared/generalUtils';
-import { ScoresheetFields } from './scoresheetTypes';
+import { ScoresheetFields } from '../../../shared/scoresheetTypes';
 import './GameDialog.css';
 
 type GameDialogState = {
     isOpen: boolean;
-    gameIndex?: number;
-    roundIndex?: number;
+    gameIndex: number;
 };
 
 type GameDialogProps = {
@@ -34,70 +33,88 @@ type GameDialogProps = {
  * Komponentti on dialog ikkuna, jossa erätulokset voi kirjata nappeja painamalla.
  */
 const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onSubmit }) => {
-    const [results, setResults] = useState<string[][]>([[" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "]])
-    const [errorMessage, setErrorMessage] = useState<string>("");
+    const isMinimumM = useMediaQuery('(min-width: 768px)');
     const [currentRound, setCurrentRound] = useState<number>(0);
+    const [errorMessage, setErrorMessage] = useState<string>("");
+    const [isFinished, setIsFinished] = useState<boolean>(false);
 
-    const [homePlayerIndex, awayPlayerIndex] = gameIndexToPlayerIndexes(state.gameIndex!);
+    const [homePlayerIndex, awayPlayerIndex] = gameIndexToPlayerIndexes(state.gameIndex);
+    const results = formFields.scores[state.gameIndex];
     const playerHome = formFields.teamHome.selectedPlayers[homePlayerIndex]?.name ?? `Koti ${homePlayerIndex+1}`;
     const playerAway = formFields.teamAway.selectedPlayers[awayPlayerIndex]?.name ?? `Vieras ${awayPlayerIndex+1}`
 
     const gameScore = computeGameScore(results);
     const invalidResult = checkGameResults(results, formFields.teamHome.selectedPlayers[homePlayerIndex]?.id ?? -1, formFields.teamAway.selectedPlayers[awayPlayerIndex]?.id ?? -1);
 
-    let isFinished = (currentRound >= 5);
-    if (gameScore[0] >= 3 || gameScore[1] >= 3) {
-        // Tarkistetaan, että loput eristä on tyhjiä:
-        isFinished = true;
-        for (let k = currentRound; k < 5; k++)
-            if ((results[0][k] != " ") || (results[1][k] != " "))
-                isFinished = false;
-    }
-    if (invalidResult && isFinished) {
-        setErrorMessage(invalidResult);
-        setCurrentRound(0);
-    }
-
     /**
-     * Asettaa yhden erän tuloksen.
+     * Asettaa kursorin ensimmäisen tyhjän erän kohdalle.
      */
-    const setRoundResult = (round: number, playerIndex: number, result: string) => {
-        if (round < 0 || round >= 5)
-            return;
-        const newResults = deepCopy(results);
-        newResults[playerIndex][round] = result;
-        newResults[1-playerIndex][round] = " ";
-        setResults(newResults);
-        // Sen sijaan, että odotettaisiin "kirjaa"-painikkeen klikkausta, välitetään uudet tulokset heti:
-        onSubmit(state.gameIndex!, newResults);
-        if (result !== " ")
-            setCurrentRound(round+1);
-        setErrorMessage("");
-    }
-
-    useEffect(() => {
-        // setCurrentRound(state.roundIndex ?? 0);
-        let newResults = formFields.scores[state.gameIndex ?? 0];
+    const setCurrentRoundAuto = () => {
+        let newResults = formFields.scores[state.gameIndex];
         let firstEmptyIndex = 0;
         for (let k = 0; k < 5; k++)
             if ((newResults[0][k] === " ") && (newResults[1][k] === " ")) {
                 firstEmptyIndex = k;
                 break;
             }
-        // console.log("firstEmptyIndex: ", firstEmptyIndex);
         setCurrentRound(firstEmptyIndex);
-        setResults(newResults);
-        setErrorMessage("");
+    };
+
+    /**
+     * Päivittää isFinished ja errorMessage tilat.
+     */
+    const update = () => {
+        const showErrors = (gameScore[0] >= 3 || gameScore[1] >= 3);
+        setIsFinished(showErrors && (invalidResult == ""));
+        if (!showErrors && errorMessage != "")
+            setErrorMessage("");
+        if (showErrors && invalidResult != errorMessage)
+            setErrorMessage(invalidResult);
+    };
+    // console.log("currentRound", currentRound);
+    // console.log("results", results);
+    // console.log("gameScore", gameScore);
+    // console.log("homePlayerIndex", homePlayerIndex);
+    // console.log("awayPlayerIndex", awayPlayerIndex);
+    // console.log("invalidResult", invalidResult);
+    // console.log("isFinished", isFinished);
+    // console.log("errorMessage", errorMessage);
+
+    /**
+     * Asettaa yhden erän tuloksen.
+     */
+    const setRoundResult = (playerIndex: number, result: string) => {
+        if (currentRound < 0 || currentRound >= 5)
+            return;
+        const newResults = deepCopy(results);
+        newResults[playerIndex][currentRound] = result;
+        newResults[1-playerIndex][currentRound] = " ";
+        // Sen sijaan, että odotettaisiin "kirjaa"-painikkeen klikkausta, välitetään uudet tulokset heti:
+        onSubmit(state.gameIndex, newResults);
+        if (result !== " ")
+            setCurrentRound(round => Math.min(round+1, 4));
+        update();
+    }
+
+    useEffect(() => {
+        console.log("useEffect1");
+        setCurrentRoundAuto();
+        update();
     }, [state]);
 
-    console.log("GameDialog: formFields", formFields);
-    console.log("GameDialog: results", results);
-    console.log("GameDialog: state", state);
+    useEffect(() => {
+        console.log("useEffect2");
+        update();
+    }, [formFields]);
+
+    // console.log("GameDialog: formFields", formFields);
+    // console.log("GameDialog: results", results);
+    // console.log("GameDialog: state", state);
 
     return (
         <>
         <Dialog open={state.isOpen} onClose={onClose}>
-            <DialogTitle>{`${formFields.teamHome.teamName} - ${formFields.teamAway.teamName}, peli ${state.gameIndex!+1}`}</DialogTitle>
+            <DialogTitle>{`${formFields.teamHome.teamName} - ${formFields.teamAway.teamName}, peli ${state.gameIndex+1}`}</DialogTitle>
             <DialogContent>
                 {false && 
                 <Box sx={{mt: 2}}>
@@ -115,9 +132,9 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                 {!isFinished && <>
                 <Box display="flex" justifyContent="space-between">
                     <Typography variant="body1">
-                        {`Syötä pelin ${state.gameIndex!+1} erän ${currentRound+1} tulos.`}
+                        {`Syötä pelin ${state.gameIndex+1} erän ${currentRound+1} tulos.`}
                     </Typography>
-                    <Button variant="contained" size="small" onClick={() => setRoundResult(currentRound, 0, " ")}>
+                    <Button variant="contained" size="small" onClick={() => setRoundResult(0, " ")}>
                         {`Tyhjää erä ${currentRound+1}`}
                     </Button>
                 </Box>
@@ -140,14 +157,14 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                                 </Typography>
                             </Box> */}
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "A")}>A</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "C")}>C</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "V")}>V</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "A")}>A</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "C")}>C</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "V")}>V</Button>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "K")}>K</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "9")}>9</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 0, "1")}>1</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "K")}>K</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "9")}>9</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(0, "1")}>1</Button>
                             </Box>
                         </Box>
                     </Box>
@@ -168,7 +185,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                             {[0, 1, 2, 3, 4].map((index) => 
                                 <BasicTableHeadCell width="15%" key={index} className={(index == currentRound && !isFinished) ? "active" : ""} onClick={() => setCurrentRound(index)}>
                                     <BasicTypography variant="body2">
-                                        {`Erä ${index+1}`}
+                                        {isMinimumM ? `Erä ${index+1}` : `E${index+1}`}
                                     </BasicTypography>
                                 </BasicTableHeadCell>
                             )}
@@ -206,7 +223,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                     </TableBody>
                 </BasicTable>
                 </TableContainer>
-                {(errorMessage) &&
+                {errorMessage &&
                 <Box sx={{mt: 2}}>
                     <Typography variant="body1" color="error">
                         Virhe! {`${errorMessage}`}
@@ -233,14 +250,14 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                                 </Typography>
                             </Box> */}
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "K")}>K</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "9")}>9</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "1")}>1</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "K")}>K</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "9")}>9</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "1")}>1</Button>
                             </Box>
                             <Box display="flex" gap="15px" justifyContent="center">
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "A")}>A</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "C")}>C</Button>
-                                <Button variant="contained" onClick={() => setRoundResult(currentRound, 1, "V")}>V</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "A")}>A</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "C")}>C</Button>
+                                <Button variant="contained" onClick={() => setRoundResult(1, "V")}>V</Button>
                             </Box>
                         </Box>
                     </Box>
@@ -301,14 +318,14 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
             </DialogContent>
             <DialogActions>
                 {(isFinished && !errorMessage) && 
-                <Button variant="contained" color="primary" onClick={() => { setCurrentRound(0); }}>
+                <Button variant="contained" color="primary" onClick={() => { setCurrentRoundAuto(); setIsFinished(false); }}>
                     Muokkaa
                 </Button>
                 }
                 <Button variant="contained" color="primary" onClick={onClose}>
                     Sulje
                 </Button>
-                {/* <Button variant="contained" color="primary" onClick={() => onSubmit(state.gameIndex!, results)}>
+                {/* <Button variant="contained" color="primary" onClick={() => onSubmit(state.gameIndex, results)}>
                     Kirjaa peli
                 </Button> */}
             </DialogActions>
@@ -317,4 +334,5 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     );
 };
 
+export type { GameDialogState };
 export default GameDialog;

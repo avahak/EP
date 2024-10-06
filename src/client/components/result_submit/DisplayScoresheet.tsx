@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { Container, Typography } from "@mui/material";
 import { fetchMatchData } from "../../utils/matchTools";
-import { ScoresheetFields } from "../scoresheet/scoresheetTypes";
+import { ScoresheetFields } from "../../../shared/scoresheetTypes";
 import { ResultSubmission } from "./ResultSubmission";
 import { useParams } from 'react-router-dom';
 

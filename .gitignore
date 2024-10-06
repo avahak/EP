@@ -1,5 +1,7 @@
-.env
-.env_azure
+*.env
+*.env_azure
+
+*.db
 
 # Logs
 logs

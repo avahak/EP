@@ -95,10 +95,12 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
     };
 
     /**
-     * Palauttaa true joss rivin tiedot liittyvät kirjautuneeseen käyttäjään.
+     * Palauttaa true joss rivin tiedot liittyvät kirjautuneen käyttäjän joukkueeseseen.
+     * HUOM. tietokannan tietojen perusteella nimeä ei voida yhdistää koska kentät
+     * ep_pelaaja.nimi ja userpw.Nimi eivät välttämättä vastaa toisiaan.
      */
     const isHighlighted = (row: any) => {
-        return (row.nimi === authenticationState.name) && (row.lyhenne === authenticationState.team);
+        return (row.lyhenne === authenticationState.team);
     }
 
     return (

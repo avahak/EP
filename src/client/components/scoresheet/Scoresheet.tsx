@@ -6,26 +6,43 @@
  * ja niitä voi muokata GameDialog komponentilla. Näiden alla on pelien tulokset
  * GameResultsTable komponentissa. 
  * 
+ * Live-otteluiden yhtäaikainen editointi on selitetty tiedoston liveScoreRoutes.ts 
+ * kommenteissa. Tässä komponentissa eventSource saadaan propsina ja siihen 
+ * liitetään onmessage funktio handleSSEMessage, joka hoitaa tilan päivityksen.
+ * Muutokset lähetetään serverille kutsumalla onChangeCallback.
+ * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
 import { useForm, SubmitHandler } from "react-hook-form";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
-import { dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings } from '../../../shared/generalUtils';
+import { base64JSONparse, dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
 import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
-import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "./scoresheetTypes";
+import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "../../../shared/scoresheetTypes";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { LegendBox } from "./LegendBox";
+import { integrateLiveMatchChanges } from "../../../shared/liveMatchTools";
+
+/**
+ * Tyyppi SSE metadatalle.
+ */
+type LiveMatchState = {
+    // Uusimman serveriltä saadun pöytäkirjan versio
+    version: number;
+    // Viimeinen pöytäkirjan tila, joka saatu serveriltä
+    state: ScoresheetFields|null;
+};
 
 /**
  * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
  * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys, "display_modifiable"=esitys adminille joka voi vielä muokata.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, rejectCallback?: () => void, onChangeCallback?: (data: ScoresheetFields) => void}> = ({initialValues, mode, submitCallback, rejectCallback, onChangeCallback}) => {
+const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, onAlreadySubmitted?: () => void, rejectCallback?: () => void, onChangeCallback?: ((getMostRecentScoresheetData: () => { oldValues: ScoresheetFields|null, newValues: ScoresheetFields }) => void) & { cancel: () => boolean; }, eventSource?: EventSource, uuid?: string}> = ({initialValues, mode, submitCallback, onAlreadySubmitted, rejectCallback, onChangeCallback, eventSource, uuid}) => {
+    const setSnackbarState = useContext(SnackbarContext);
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
@@ -33,24 +50,33 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     // uusi pelaaja lisätään modaalin avulla:
     const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: ScoresheetTeam, slot: number}>({team: createEmptyTeam(), slot: 0});
     // Lomakkeen kenttien tila:
-    const { setValue, handleSubmit, watch, reset } = useForm<ScoresheetFields>({
+    const { setValue, handleSubmit, watch, reset, getValues } = useForm<ScoresheetFields>({
         defaultValues: initialValues
     });
     // Käytetään onChageCallback varten tarkistamaan onko muutoksia tapahtunut:
-    const [dataString, setDataString] = useState("");
+    const dataString = useRef("");
     // Kun lomake yritetään lähettää epäonnistuneesti, aletaan näyttää virheilmoituksia:
     const [displayErrors, setDisplayErrors] = useState<boolean>(false);
+    // Metatieto viimeisestä serverin lähettämästä SSE-datasta.
+    const liveMatchState = useRef<LiveMatchState>({ version: -1, state: null });
 
     const formFields = watch();
-
-    const setSnackbarState = useContext(SnackbarContext);
 
     // Jos initialValues muuttuu, muutetaan lomakkeen tila siihen, tätä
     // käytetään vain "display"-tilassa.
     useEffect(() => {
         reset(initialValues);
-        console.log("Scoresheet useEffect called");
+        console.log("Scoresheet useEffect on [initialValues] called");
     }, [initialValues]);
+
+    // Peruutetaan ottelun lähetys livenä mikäli komponentti poistetaan DOM:sta.
+    useEffect(() => {
+        console.log("Scoresheet useEffect on [] called")
+        return () => {
+            if (onChangeCallback)
+                onChangeCallback.cancel();
+        }
+    }, []);
 
     // Lasketaan väliaikatulokset ja virheilmoitukset:
     const gameRunningStats = computeGameRunningStats(formFields);
@@ -102,8 +128,6 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         } else {
             if (submitCallback) 
                 submitCallback({ ...data, isSubmitted: true });
-            if (onChangeCallback)
-                onChangeCallback({ ...data, isSubmitted: true });
         }
     };
 
@@ -175,7 +199,80 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         console.log("handleSetDate", value);
         if (value)
             setValue("date", value);
-    }
+    };
+
+    /**
+     * Muuttaa lomakkeen tiedot merkkijonoksi.
+     */
+    const createDataString = (data: any) => {
+        return JSON.stringify(data);
+    };
+
+    /**
+     * Funktio, jota kutsutaan kun eventSource saa vastaan serverin lähettämän viestin
+     */
+    const handleSSEMessage = (event: MessageEvent) => {
+        // handleSSEMessage asetetaan useEffect:ssä, joten formFields ei ole ajan tasalla
+        const currentFormFields = getValues();
+
+        // console.log("currentFormFields at start of handleSSEMessage", currentFormFields);
+        const eventData = event.data;
+        if (eventData === "hb") {
+            console.log(`Received: heartbeat.`);
+            return;
+        }
+        const parsedData = base64JSONparse(eventData);
+        const { type, data } = parsedData;
+
+        if (type === "matchUpdate") {
+            if (data.id !== currentFormFields.id) {
+                console.error("SSE matchUpdate: id mismatch - this should never happen!");
+                return;
+            }
+            const author = parsedData.author;
+            let version = Number(parsedData.version);
+            if (isNaN(version))
+                version = -1;
+            console.log("matchUpdate from", author, author == uuid ? "(me)" : "(other)", "versions", version, liveMatchState.current.version);
+
+            if (version === 0) {
+                // Serveri lähettää ensimmäisen version
+                // Tämä voi tapahtua myös jos serveri kaatuu
+                liveMatchState.current.version = version;
+                liveMatchState.current.state = data;
+                dataString.current = createDataString(data);
+                reset(data);
+            } else if (version > liveMatchState.current.version) {
+                // Tarkistetaan mitä muutoksia data:ssa on edelliseen serverin lähettämään 
+                // verrattuna ja integroidaan muutokset currentFormFields kopioon, palauttaa tuloksen.
+                let newState = data;
+                if (liveMatchState.current.state)
+                    newState = integrateLiveMatchChanges(currentFormFields, liveMatchState.current.state, data);
+
+                liveMatchState.current.version = version;
+                liveMatchState.current.state = data;
+                dataString.current = createDataString(newState);
+                reset(newState);
+            }
+            if (data.isSubmitted && onAlreadySubmitted)
+                onAlreadySubmitted();
+        }
+
+        // console.log(`Received: type: ${type}, data: ${JSON.stringify(data)}`);
+    };
+
+    console.log("uuid", uuid);
+
+    // Asetetaan eventSource.onmessage jos eventSource on määritelty.
+    useEffect(() => {
+        console.log("Scoresheet useEffect, setting up eventSource", eventSource);
+        if (!eventSource)
+            return;
+        eventSource.onmessage = handleSSEMessage;
+        return () => {
+            eventSource.onmessage = null;
+        };
+    }, [uuid, eventSource instanceof EventSource ? eventSource.url : null]);
 
     // Erätuloksia voi muuttaa ainoastaan jos kaikki pelaajat on valittu.
     // Tarkistetaan tässä onko kaikki pelaajat valittu:
@@ -190,10 +287,12 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
 
     // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on:
     if (playersAllSelected && onChangeCallback) {
-        const newDataString = JSON.stringify(formFields);  // Tehoton tapa tarkistaa mutta helppo tehdä näin
-        if (onChangeCallback && (newDataString !== dataString)) {
-            onChangeCallback(formFields);
-            setDataString(newDataString);
+        const newDataString = createDataString(formFields);
+        if (onChangeCallback && (newDataString !== dataString.current)) {
+            dataString.current = newDataString;
+            onChangeCallback(() => {
+                return { oldValues: liveMatchState.current.state, newValues: getValues() };
+            });
         };
     };
 

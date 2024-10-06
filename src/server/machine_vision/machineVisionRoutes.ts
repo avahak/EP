@@ -6,7 +6,7 @@
 import express, { Router, Request, Response } from "express";
 import { Homography } from './homography.js';
 import { HoughTransform } from './hough.js';
-import { logger } from '../serverErrorHandler.js';
+import { logger } from "../logger.js";
 
 const router: Router = express.Router();
 

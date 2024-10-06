@@ -5,7 +5,7 @@
  * koska nämä eivät muodosta yhtenäistä kokonaisuutta ja on päällekkäisyyttä.
  */
 
-import { ScoresheetFields } from "../client/components/scoresheet/scoresheetTypes";
+import { ScoresheetFields } from "./scoresheetTypes";
 import { checkGameResults, playerIndexesToGameIndex } from "../client/utils/matchTools";
 
 /**

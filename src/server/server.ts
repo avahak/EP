@@ -38,16 +38,17 @@ import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import { authRouter } from './auth/auth.js';
-import { liveScoreRouter, getLivescoreInfo } from './liveScoreRoutes.js';
+import { liveScoreRouter, getLivescoreInfo } from './live/liveScoreRoutes.js';
 import machineVisionRouter from './machine_vision/machineVisionRoutes.js';
 import databaseRouter from './database/dbRoutes.js';
 import generalRouter from './generalRoutes.js';
-import { logger, initializeErrorHandling, getShutdownErrorCounter } from './serverErrorHandler.js';
+import { initializeErrorHandling, getShutdownErrorCounter } from './serverErrorHandler.js';
 import 'express-async-errors';
-import { buildTimestamp } from '../shared/build-info.js';
+import { buildTimestamp } from '../shared/buildInfo.js';
 import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUtils.js';
 import { freemem } from 'os';
-import { getMatchSubmissionLocksString } from './database/dbSpecific.js';
+import { getMatchSubmissionLocksString } from './database/dbMatchLocks.js';
+import { logger } from './logger.js';
 
 /**
  * Aika ennen kun lähetetään timeout.
@@ -113,7 +114,7 @@ app.use(BASE_URL + '/auth', authRouter);
 app.use(BASE_URL + '/api', generalRouter);
 
 // Tietoa serveristä:
-app.get(BASE_URL + '/info', (_req, res, next) => {
+app.get(BASE_URL + '/info', async (_req, res, next) => {
     try {
         const serverTime = currentTimeInFinlandString();
         const formatMemory = (b: number) => `${(b/(1024*1024)).toFixed(0)} MB`;
@@ -122,9 +123,9 @@ app.get(BASE_URL + '/info', (_req, res, next) => {
         const usedMemoryRSS = formatMemory(usedMemory.rss);
         const usedMemoryHeap = formatMemory(usedMemory.heapUsed);
         res.setHeader('Content-Type', 'text/html');
-        res.send(`Serverin aika: ${serverTime}<br>
+        res.send(`Serverin aika: ${serverTime} (${(Date.now()/1000).toFixed(0)})<br>
             Koodi rakennettu: ${buildTimestamp}<br>
-            Serveri käynnistetty: ${serverStartTime} (${(Date.now()/1000).toFixed(0)})<br>
+            Serveri käynnistetty: ${serverStartTime}, pid ${process.pid}<br>
             Live-ottelut: ${getLivescoreInfo()}<br>
             Muisti: rss: ${usedMemoryRSS}, heap: ${usedMemoryHeap}, free: ${freeMemory}<br>
             shutdownErrorCounter: ${getShutdownErrorCounter()}<br>

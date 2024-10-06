@@ -9,8 +9,8 @@ import multer from 'multer';
 import util from 'util';
 import express, { Router, Request, Response } from 'express';
 import { createThumbnail } from './imageTools';
-import { logger } from '../server/serverErrorHandler.js';
 import { RequestWithAuth, injectAuth, requireAuth } from './auth/auth.js';
+import { logger } from './logger.js';
 
 const baseUploadDirectory = process.env.BASE_UPLOAD_DIRECTORY || "/home/userdata";
 const imageDirectory = `${baseUploadDirectory}/images`;

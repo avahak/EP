@@ -60,7 +60,7 @@ const customColumnStyleEven = {
  * Tyyli taulun korostetulle riville
  */
 const customColumnStyleHighlight = {
-    backgroundColor: "#66bbff",
+    backgroundColor: "#88ccff",
     padding: "2px 4px",
     margin: "0px 0",
     border: "1px solid gray",
