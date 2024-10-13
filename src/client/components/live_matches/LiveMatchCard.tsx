@@ -15,7 +15,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
 });
 
 /**
- * Kortti esittämään yhtä live ottelua. Siinä on joukkueet, tulos, ja 
+ * Kortti esittämään yhtä live-ottelua. Siinä on joukkueet, tulos, ja 
  * kirjauksen aloitusaika.
  */
 const LiveMatchCard: React.FC<LiveMatchCardProps> = (({ entry, onSelect, selected }) => {

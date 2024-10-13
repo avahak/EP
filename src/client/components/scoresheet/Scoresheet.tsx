@@ -21,8 +21,8 @@ import { base64JSONparse, dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings } 
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
-import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer } from "../../utils/matchTools";
-import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode, createEmptyTeam } from "../../../shared/scoresheetTypes";
+import { computeGameRunningStats, gameIndexToPlayerIndexes, getPlayerName, isEmptyPlayer, statusDescription } from "../../utils/matchTools";
+import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, createEmptyTeam } from "../../../shared/scoresheetTypes";
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { LegendBox } from "./LegendBox";
 import { integrateLiveMatchChanges } from "../../../shared/liveMatchTools";
@@ -37,11 +37,33 @@ type LiveMatchState = {
     state: ScoresheetFields|null;
 };
 
+type ScoresheetProps = {
+    initialValues: ScoresheetFields;
+    isModifiable?: boolean,
+    submitCallback?: (data: ScoresheetFields) => void;
+    onAlreadySubmitted?: () => void;
+    rejectCallback?: () => void;
+    onChangeCallback?: {
+        (getMostRecentScoresheetData: () => { oldValues: ScoresheetFields | null; newValues: ScoresheetFields }): void;
+        cancel: () => boolean;
+    };
+    eventSource?: EventSource;
+    uuid?: string;
+};
+
 /**
  * Lomake ottelupöytäkirjan esittämiseen ja muokkaamiseen.
- * @param mode Tuloslomakkeen esitysmuoto, "modify"=muokattava lomake, "verify"=vahvistamisen tarvitseva lomake, "display"=vain tulosten esitys, "display_modifiable"=esitys adminille joka voi vielä muokata.
  */
-const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCallback?: (data: ScoresheetFields) => void, onAlreadySubmitted?: () => void, rejectCallback?: () => void, onChangeCallback?: ((getMostRecentScoresheetData: () => { oldValues: ScoresheetFields|null, newValues: ScoresheetFields }) => void) & { cancel: () => boolean; }, eventSource?: EventSource, uuid?: string}> = ({initialValues, mode, submitCallback, onAlreadySubmitted, rejectCallback, onChangeCallback, eventSource, uuid}) => {
+const Scoresheet: React.FC<ScoresheetProps> = ({
+    initialValues, 
+    isModifiable = false,
+    submitCallback, 
+    onAlreadySubmitted, 
+    rejectCallback, 
+    onChangeCallback, 
+    eventSource, 
+    uuid,
+}) => {
     const setSnackbarState = useContext(SnackbarContext);
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
@@ -103,7 +125,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
     const handleAddPlayer = (player: ScoresheetPlayer, team: ScoresheetTeam, slot: number) => {
         console.log("handleAddPlayer", player.name, team);
         console.log("currentPlayerSlot", currentPlayerSlot);
-        const isHome = (team.teamRole == "home");
+        const isHome = (team.role == "home");
         // const baseTeam = isHome ? formFields.teamHome : formFields.teamAway;
         setValue(isHome ? "teamHome.allPlayers" : "teamAway.allPlayers", [...team.allPlayers, player]);
         setValue(isHome ? `teamHome.selectedPlayers.${slot}` : `teamAway.selectedPlayers.${slot}`, player);
@@ -127,7 +149,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             });
         } else {
             if (submitCallback) 
-                submitCallback({ ...data, isSubmitted: true });
+                submitCallback({ ...data });
         }
     };
 
@@ -173,7 +195,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
         const value = event.target.value;
         event.target.value = "";
         console.log("handleSelectPlayer", value);
-        const isHome = (team.teamRole == "home");
+        const isHome = (team.role == "home");
         const oldPlayer = isHome ? getPlayerName(formFields.teamHome.selectedPlayers, slot, "Koti") : getPlayerName(formFields.teamAway.selectedPlayers, slot, "Vieras");
         if (value === "noPlayer") {
             // Valittu 3. pelaaja tyhjäksi
@@ -229,11 +251,12 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 console.error("SSE matchUpdate: id mismatch - this should never happen!");
                 return;
             }
-            const author = parsedData.author;
+            // const author = parsedData.author;
             let version = Number(parsedData.version);
             if (isNaN(version))
                 version = -1;
-            console.log("matchUpdate from", author, author == uuid ? "(me)" : "(other)", "versions", version, liveMatchState.current.version);
+            console.log("matchUpdate versions", version, liveMatchState.current.version);
+            // console.log("matchUpdate from", author, author == uuid ? "(me)" : "(other)", "versions", version, liveMatchState.current.version);
 
             if (version === 0) {
                 // Serveri lähettää ensimmäisen version
@@ -254,20 +277,18 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 dataString.current = createDataString(newState);
                 reset(newState);
             }
-            if (data.isSubmitted && onAlreadySubmitted)
+            if (data.status !== "T" && onAlreadySubmitted)
                 onAlreadySubmitted();
         }
 
         // console.log(`Received: type: ${type}, data: ${JSON.stringify(data)}`);
     };
 
-    console.log("uuid", uuid);
-
     // Asetetaan eventSource.onmessage jos eventSource on määritelty.
     useEffect(() => {
-        console.log("Scoresheet useEffect, setting up eventSource", eventSource);
         if (!eventSource)
             return;
+        console.log("Scoresheet useEffect, setting up eventSource", eventSource);
         eventSource.onmessage = handleSSEMessage;
         return () => {
             eventSource.onmessage = null;
@@ -309,30 +330,39 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             />
             
             {/* Ottelu ja päivämäärä: */}
-            <Box display="flex" justifyContent="center" sx={{mb: 2}}>
-                <Box textAlign="center">
-                    <Typography variant='h4'>
-                        {formFields.teamHome.teamName} - {formFields.teamAway.teamName}
+            <Box justifyContent="center" sx={{ mb: 2 }}>
+                <Box>
+                    <Typography variant='h4' textAlign="center">
+                        {formFields.teamHome.name} - {formFields.teamAway.name}
                     </Typography>
-                    <Box display="flex">
-                        <Typography variant='body1'>
-                            {!formFields.date ? "" : getDayOfWeekStrings(new Date(formFields.date)).long}
-                            &nbsp;    
-                        </Typography>
-                            {mode == "modify" ?
-                            <input
-                                type="date"
-                                value={dateToYYYYMMDD(new Date(formFields.date))}
-                                onChange={(event) => handleSetDate(event.target.value)}
-                                style={{zIndex: 1}}
-                            />
-                            :
-                            <Typography variant='body1'>
-                                {dateToDDMMYYYY(new Date(formFields.date))}
-                            </Typography>
-                        }
-                    </Box>
                 </Box>
+                <Box display="flex" justifyContent="center">
+                    <Typography variant='body1'>
+                        {!formFields.date ? "" : getDayOfWeekStrings(new Date(formFields.date)).long}
+                        &nbsp;
+                    </Typography>
+                        {isModifiable ?
+                        <input
+                            type="date"
+                            value={ dateToYYYYMMDD(new Date(formFields.date)) }
+                            onChange={(event) => handleSetDate(event.target.value)}
+                            style={{zIndex: 1}}
+                        />
+                        :
+                        <Typography variant='body1'>
+                            {dateToDDMMYYYY(new Date(formFields.date))}
+                        </Typography>
+                    }
+                </Box>
+                {/* Status */}
+                {(!isModifiable && formFields.status !== "T") &&
+                <Box>
+                    <Typography variant='body2' textAlign="center">
+                        {statusDescription(formFields.status)}
+                        &#32;
+                        ({formFields.status})
+                    </Typography>
+                </Box>}
             </Box>
 
             {/* Pelaajien valinta: */}
@@ -340,11 +370,11 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 <Grid container>
                     {/* Kotijoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
-                        {<TeamSelection mode={mode} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
+                        {<TeamSelection isModifiable={isModifiable} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                     {/* Vierasjoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
-                        {<TeamSelection mode={mode} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
+                        {<TeamSelection isModifiable={isModifiable} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                 </Grid>
             </Box>
@@ -353,7 +383,7 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
             {playersAllSelected &&
             <Box display="flex" justifyContent="center">
                 <Box width="100%" maxWidth="750px" minWidth="300px">
-                    <RoundResultsTable mode={mode} displayErrors={displayErrors} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
+                    <RoundResultsTable isModifiable={isModifiable} displayErrors={displayErrors} formFields={formFields} onGameDialogSubmit={handleGameDialogSubmit} gameRunningStats={gameRunningStats}></RoundResultsTable>
                 </Box>
             </Box>
             }
@@ -386,21 +416,24 @@ const Scoresheet: React.FC<{ initialValues: any, mode: ScoresheetMode, submitCal
                 <Box flexGrow={1}>
                 </Box>
                 <Box>
-                {(mode == 'modify' && playersAllSelected) &&
-                <Button type="submit" variant="contained" color="success">Lähetä</Button>}
+                    {/* Muokattavana oleva lomake */}
+                    {(submitCallback && !rejectCallback && isModifiable && playersAllSelected) &&
+                    <Button type="submit" variant="contained" color="success">Lähetä</Button>}
 
-                {(mode == "verify") && 
-                <Box display="flex" gap="20px">
-                    <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
-                    {playersAllSelected &&
-                    <Button type="submit" variant="contained" color="success">Hyväksy</Button>
-                    }
-                </Box>}
+                    {/* Hyväksyttävänä oleva täytetty lomake */}
+                    {(submitCallback && rejectCallback && !isModifiable) &&
+                    <Box display="flex" gap="20px">
+                        <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
+                        {playersAllSelected &&
+                        <Button type="submit" variant="contained" color="success">Hyväksy</Button>
+                        }
+                    </Box>}
 
-                {(mode == "display_modifiable") && 
-                <Box display="flex" gap="20px">
-                    <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
-                </Box>}
+                    {/* Täytetyn pöytäkirjan esittäminen muokattavana */}
+                    {(!submitCallback && rejectCallback && !isModifiable) && 
+                    <Box display="flex" gap="20px">
+                        <Button type="button" variant="contained" color="error" onClick={rejectCallback}>Muokkaa</Button>
+                    </Box>}
                 </Box>
             </Box>
         </Box>

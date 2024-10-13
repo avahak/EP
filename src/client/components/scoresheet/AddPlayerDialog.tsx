@@ -58,7 +58,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
 
             console.log("jsonData.rows", jsonData.rows);
 
-            setSnackbarState({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.teamName}.`, severity: "success" });
+            setSnackbarState({ isOpen: true, message: `Pelaaja ${name} lisätty joukkueeseen ${team.name}.`, severity: "success" });
             return jsonData.rows.insertId;
         } catch(error) {
             console.error('Error:', error);
@@ -94,7 +94,7 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ isOpen, team, onClose
     return (
         <>
         <Dialog open={isOpen} onClose={onClose}>
-            <DialogTitle>Lisää pelaaja joukkueeseen {team.teamName} ({team.teamRole == "home" ? "koti" : "vieras"})</DialogTitle>
+            <DialogTitle>Lisää pelaaja joukkueeseen {team.name} ({team.role == "home" ? "koti" : "vieras"})</DialogTitle>
             <DialogContent>
                 <DialogContentText>Puuttuuko pelaaja listasta? Syötä uuden pelaajan tiedot.</DialogContentText>
                 <Box display="flex">

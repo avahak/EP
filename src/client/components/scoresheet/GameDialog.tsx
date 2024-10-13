@@ -114,7 +114,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
     return (
         <>
         <Dialog open={state.isOpen} onClose={onClose}>
-            <DialogTitle>{`${formFields.teamHome.teamName} - ${formFields.teamAway.teamName}, peli ${state.gameIndex+1}`}</DialogTitle>
+            <DialogTitle>{`${formFields.teamHome.name} - ${formFields.teamAway.name}, peli ${state.gameIndex+1}`}</DialogTitle>
             <DialogContent>
                 {false && 
                 <Box sx={{mt: 2}}>
@@ -146,7 +146,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         <Typography variant="body2">Kotipelaaja</Typography>
                     </legend>
                     <Typography fontWeight="bold">
-                        {playerHome}, {formFields.teamHome.teamName}
+                        {playerHome}, {formFields.teamHome.name}
                     </Typography>
                     <Box display="flex" sx={{mt: 1}}>
                         {/* Kotipelaajan nappulat tässä: */}
@@ -239,7 +239,7 @@ const GameDialog: React.FC<GameDialogProps> = ({ state, formFields, onClose, onS
                         <Typography variant="body2">Vieraspelaaja</Typography>
                     </legend>
                     <Typography fontWeight="bold">
-                        {playerAway}, {formFields.teamAway.teamName}
+                        {playerAway}, {formFields.teamAway.name}
                     </Typography>
                     <Box display="flex" sx={{mt: 1}}>
                         {/* Vieraspelaajan nappulat tässä: */}

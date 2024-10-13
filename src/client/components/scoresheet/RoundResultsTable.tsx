@@ -9,13 +9,13 @@ import { Fragment, useState } from "react";
 import { GameRunningStatRow, gameHasEmptyPlayer, gameIndexToPlayerIndexes, getSelectedPlayerName } from "../../utils/matchTools";
 import { BasicGameOnLeftTypography, BasicNameTypography, BasicTable, BasicTableCellLow, BasicTableHeadCell, BasicTypography } from "../general_tables/BasicTableStyles";
 import EditIcon from '@mui/icons-material/Edit';
-import { ScoresheetFields, ScoresheetMode } from "../../../shared/scoresheetTypes";
+import { ScoresheetFields } from "../../../shared/scoresheetTypes";
 import './RoundResultsTable.css';
 
 const PARITY = Array.from({ length: 9 }, (_, k) => (k%2 == 0 ? "even" : "odd"));
 
 type RoundResultsTableProps = {
-    mode: ScoresheetMode;
+    isModifiable: boolean;
     displayErrors: boolean;
     formFields: ScoresheetFields;
     onGameDialogSubmit: (gameIndex: number, results: string[][]) => void;
@@ -26,7 +26,13 @@ type RoundResultsTableProps = {
  * RoundResultsTable on tuloslomakkeen komponentti, joka sisältää erien tulokset
  * taulukkona.
  */
-const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErrors, formFields, onGameDialogSubmit, gameRunningStats }) => {
+const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ 
+    isModifiable, 
+    displayErrors, 
+    formFields, 
+    onGameDialogSubmit, 
+    gameRunningStats 
+}) => {
     const [gameDialogState, setGameDialogState] = useState<GameDialogState>({ isOpen: false, gameIndex: 0 });
 
     /**
@@ -99,7 +105,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
             </BasicTypography>
         </BasicTableHeadCell>
 
-        {mode == "modify" &&
+        {isModifiable &&
         <BasicTableHeadCell width="15%">
             <BasicTypography variant="body2">
                 Muokkaa
@@ -162,7 +168,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
             }
 
             {/* Muokkaa ikoni: */}
-            {(mode == "modify" && playerIndex == 0) &&
+            {(isModifiable && playerIndex == 0) &&
             (!gameHasEmptyPlayer(formFields, gameIndex) ? 
             <TableCell 
                 sx={{p: 0, width: "40px", border: "1px solid black"}} 
@@ -193,7 +199,7 @@ const RoundResultsTable: React.FC<RoundResultsTableProps> = ({ mode, displayErro
         }
         {(displayErrors && !gameRunningStats[gameIndex].isValidGame) &&
         <TableRow key={`error-rounds-row-${gameIndex}`}>
-            <TableCell colSpan={mode == "modify" ? 10 : 9} sx={{pt: 0, pb: 2}}>
+            <TableCell colSpan={isModifiable ? 10 : 9} sx={{pt: 0, pb: 2}}>
                 <Typography textAlign="center" fontWeight="bold" color="error">
                     {gameRunningStats[gameIndex].gameErrorMessage}
                 </Typography>

@@ -5,7 +5,7 @@
 import { decodeToken } from "react-jwt";
 
 /**
- * Tyyppi, jota käytetään live otteluiden listassa kun se lähetetään serveriltä.
+ * Tyyppi, jota käytetään live-otteluiden listassa kun se lähetetään serveriltä.
  */
 type LiveMatchEntry = {
     matchId: number;
@@ -76,44 +76,5 @@ function roleIsAtLeast(role: string | null, minRole: string | null) {
     return false;
 }
 
-type ErrorLevel = "info"|"warn"|"error";
-
-/**
- * Error, mihin on lisätty statusCode ja clientMessage.
- */
-class CustomError extends Error {
-    statusCode: number;
-    level: ErrorLevel;
-    clientMessage: string;
-    debugInfo?: Record<string, any>;
-
-    constructor(
-        statusCode: number, 
-        level: ErrorLevel, 
-        message: string, 
-        clientMessage: string,
-        debugInfo?: Record<string, any>,
-    ) {
-        super(message);
-        this.statusCode = statusCode;
-        this.level = level;
-        this.clientMessage = clientMessage;
-        this.debugInfo = debugInfo;
-        Object.setPrototypeOf(this, new.target.prototype); // Required for extending built-in Error
-    }
-}
-
-/**
- * Virheilmoitus, jota voidaan käyttää kun käyttäjän antama
- * autentikaatio ei vastaa pyyntöä.
- */
-class AuthError extends CustomError {
-    constructor(message?: string) {
-        message = message || "Auth error.";
-        super(401, "error", message, "Toiminto kielletty.");
-        Object.setPrototypeOf(this, AuthError.prototype);
-    }
-}
-
-export type { AuthTokenPayload, LiveMatchEntry, ErrorLevel };
-export { roleIsAtLeast, AuthError, isAuthTokenPayload, getAuthTokenPayload, CustomError };
+export type { AuthTokenPayload, LiveMatchEntry };
+export { roleIsAtLeast, isAuthTokenPayload, getAuthTokenPayload };

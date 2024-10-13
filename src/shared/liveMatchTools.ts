@@ -94,13 +94,14 @@ function integrateLiveMatchChanges(baseMatch: ScoresheetFields, oldMatch: Scores
     if (newMatch.id !== oldMatch.id)    // ei pitäisi tapahtua koskaan
         result.id = newMatch.id;
 
-    if (newMatch.status !== oldMatch.status)    // ei pitäisi koskaan tapahtua
+    // Jos joku status ei ole "T", käytetään sitä
+    if (newMatch.status !== "T" && result.status === "T")
         result.status = newMatch.status;
+    if (oldMatch.status !== "T" && result.status === "T")
+        result.status = oldMatch.status;
 
     if (newMatch.date !== oldMatch.date)
         result.date = newMatch.date;
-
-    result.isSubmitted = newMatch.isSubmitted || oldMatch.isSubmitted;
 
     integrateLiveMatchChangesTeam(result.teamHome, oldMatch.teamHome, newMatch.teamHome);
     integrateLiveMatchChangesTeam(result.teamAway, oldMatch.teamAway, newMatch.teamAway);

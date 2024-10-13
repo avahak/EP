@@ -15,13 +15,13 @@ type LiveConnection = {
 };
 
 /**
- * Nämä tiedot talletetaan kustakin seurattavasta live ottelusta.
+ * Nämä tiedot talletetaan kustakin seurattavasta live-ottelusta.
  */
 type LiveMatch = {
     startTime: number;
     score: number[];
     lastUpdate: number;
-    lastAuthor: string;
+    // lastAuthor: string;
     version: number;
     data: ScoresheetFields;
 };

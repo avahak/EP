@@ -212,7 +212,7 @@ function generate_ottelut(joukkueet: any[], kaudet: any[], lohkot: any[]) {
                     if (matchDate < currentDateMinusHalfYear)
                         status = 'H';
                     else 
-                        status = ['T', 'M', 'V', 'K'][Math.floor(4*Math.random())];
+                        status = ['T', 'M', 'V', 'K', 'W', 'L'][Math.floor(6*Math.random())];
                 }
                 // Jätetään viimeinen lohko avoimeksi:
                 if (lohko === lohkot.length-1)

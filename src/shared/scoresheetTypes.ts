@@ -15,8 +15,9 @@ type ScoresheetPlayer = {
  */
 type ScoresheetTeam = {
     id: number;
-    teamName: string;
-    teamRole: "home" | "away";
+    name: string;
+    nameFull: string;
+    role: "home" | "away";
     allPlayers: ScoresheetPlayer[];
     selectedPlayers: (ScoresheetPlayer | null)[];
 };
@@ -31,10 +32,40 @@ type ScoresheetFields = {
     teamAway: ScoresheetTeam;
     date: string;
     scores: string[][][];   // scores[peli][0(koti)/1(vieras)][erä]
-    isSubmitted: boolean;
 };
 
-type ScoresheetMode = "modify" | "verify" | "display" | "display_modifiable";
+// type ScoresheetMode = 
+//     "modify" |                      // muokattava lomake
+//     "verify" |                      // vahvistamisen tarvitseva lomake
+//     "display" |                     // vain tulosten esitys
+//     "display_modifiable" |          // esitys adminille joka voi vielä muokata
+//     "modify_no_submit";             // mukattava lomake ilman submit painiketta (vierasjoukkueen live-syöttöön)
+
+// /**
+//  * Tila, jossa Scoresheet toimii.
+//  */
+// const enum ScoresheetMode {
+//     /**
+//      * Muokattava lomake
+//      */
+//     Modify,
+//     /**
+//      * Vahvistamisen tarvitseva lomake
+//      */
+//     Verify,
+//     /**
+//      * Vain tulosten esitys
+//      */
+//     Display,
+//     /**
+//      * Esitys adminille joka voi vielä muokata
+//      */
+//     DisplayModifiable,
+//     /**
+//      * Mukattava lomake ilman submit painiketta (vierasjoukkueen live-syöttöön)
+//      */
+//     ModifyWithoutSubmit
+// };
 
 /**
  * Luo tyhjän joukkueen.
@@ -42,8 +73,9 @@ type ScoresheetMode = "modify" | "verify" | "display" | "display_modifiable";
 function createEmptyTeam() {
     const emptyTeam: ScoresheetTeam = {
         id: -1,
-        teamName: '',
-        teamRole: "home",
+        name: '',
+        nameFull: '',
+        role: "home",
         allPlayers: [],
         selectedPlayers: [],
     };
@@ -69,9 +101,8 @@ function createEmptyScoresheet() {
         teamAway: {...createEmptyTeam(), teamRole: "away"},
         date: '',
         scores: createEmptyScores(),
-        isSubmitted: false,
     } as ScoresheetFields;
 }
 
-export type { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, ScoresheetMode };
+export type { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields };
 export { createEmptyTeam, createEmptyScores, createEmptyScoresheet };

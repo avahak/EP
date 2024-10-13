@@ -10,6 +10,7 @@ import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
 import { loadSQLFiles, replicateDB } from './dbReplicate.js';
 import { logger } from '../logger.js';
+import { CustomError } from '../../shared/customErrors.js';
 
 const router: Router = express.Router();
 
@@ -144,9 +145,10 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {
-            if (!res.headersSent)
-                return res.status(400).send({ error: `Invalid or missing queryName: queryName: ${queryName ?? "no query"}, queryFunction: ${queryFunction?.name ?? "no function"}` });
-            return;
+            if (!res.headersSent) {
+                const extra = { field: "queryName", queryName, queryFunction: queryFunction?.name };
+                throw new CustomError("INVALID_INPUT", extra, extra);
+            }
         }
 
         const rows = await queryFunction(params, req.auth);

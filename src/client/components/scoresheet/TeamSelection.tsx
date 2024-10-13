@@ -1,14 +1,14 @@
 import { Box, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Typography } from "@mui/material";
 import React from "react";
-import { ScoresheetMode, ScoresheetTeam } from "../../../shared/scoresheetTypes";
+import { ScoresheetTeam } from "../../../shared/scoresheetTypes";
 
 /**
  * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
  * ja pelaajien valintaan käytettävät select-elementit.
  */
-const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, handleSelectPlayer: (event: SelectChangeEvent<any>, team: ScoresheetTeam, playerIndex: number) => any }> = ({ mode, team, handleSelectPlayer }) => {
-    const teamText = (team.teamRole == "home") ? "Kotijoukkue" : "Vierasjoukkue";
-    const playerText = (team.teamRole == "home") ? "Kotipelaaja" : "Vieraspelaaja";
+const TeamSelection: React.FC<{ isModifiable: boolean, team: ScoresheetTeam, handleSelectPlayer: (event: SelectChangeEvent<any>, team: ScoresheetTeam, playerIndex: number) => any }> = ({ isModifiable, team, handleSelectPlayer }) => {
+    const teamText = (team.role == "home") ? "Kotijoukkue" : "Vierasjoukkue";
+    const playerText = (team.role == "home") ? "Kotipelaaja" : "Vieraspelaaja";
     // const defaultOptionText = (team.teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
 
     /**
@@ -29,11 +29,12 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
             <Box sx={{ p: 1 }}>
             {/* Joukkuen nimi */}
             <Typography variant="body1" textAlign="center" fontWeight="bold" sx={{mb: 1}}>
-                {teamText}&nbsp;
-                {!!team.teamName ? team.teamName : "-"}
+                {teamText}
+                <br />
+                {!!team.nameFull ? team.nameFull : "-"} ({!!team.name ? team.name : "-"})
             </Typography>
 
-            {mode == "modify" && [0, 1, 2].map((playerIndex) => (
+            {isModifiable  && [0, 1, 2].map((playerIndex) => (
                 <Box key={`pelaaja-select-${playerIndex}`} sx={{ py: 1 }}>
                 <FormControl fullWidth size="small" error={!team.selectedPlayers[playerIndex]?.id}>
                     <InputLabel id="pelaaja-label">{`${playerText} ${playerIndex+1}`}</InputLabel>
@@ -62,9 +63,9 @@ const TeamSelection: React.FC<{ mode: ScoresheetMode, team: ScoresheetTeam, hand
                 </FormControl>
                 </Box>
             ))}
-            {mode != "modify" && [0, 1, 2].map((playerIndex) => (
+            {!isModifiable && [0, 1, 2].map((playerIndex) => (
                 <Box key={`pelaaja-select-${playerIndex}`} sx={{ py: 1 }}>
-                    <Typography variant="body1">{playerIndex+1}. {team.selectedPlayers[playerIndex]?.name ?? ''}</Typography>
+                    <Typography variant="body1">{playerIndex+1}. {team.selectedPlayers[playerIndex]?.name ?? '-'}</Typography>
                 </Box>
             ))}
             </Box>

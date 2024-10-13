@@ -83,8 +83,8 @@ const GameResultsTable: React.FC<{ gameRunningStats: GameRunningStatRow[]; displ
                 <TableRow>
                     <StyledTableCell width="30%" className="diagonal-split-box">
                         <DiagonalSplitBox 
-                            left={<StyledTableText variant="body2" fontWeight="bold">{teamHome.teamName}</StyledTableText>}
-                            right={<StyledTableText variant="body2" fontWeight="bold">{teamAway.teamName}</StyledTableText>}
+                            left={<StyledTableText variant="body2" fontWeight="bold">{teamHome.name}</StyledTableText>}
+                            right={<StyledTableText variant="body2" fontWeight="bold">{teamAway.name}</StyledTableText>}
                         />
                     </StyledTableCell>
 

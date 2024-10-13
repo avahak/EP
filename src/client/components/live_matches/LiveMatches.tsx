@@ -9,14 +9,14 @@ import { LiveMatchCard } from "./LiveMatchCard";
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Live otteluiden esityssivu. Näyttää kutakin ottelua kohden kortin sen tiedoista.
+ * Live-otteluiden esityssivu. Näyttää kutakin ottelua kohden kortin sen tiedoista.
  * Kun korttia painetaan, näkyy ottelun pöytäkirja. Pöytäkirja päivitty automaattisesti
  * käyttäen SSE:tä.
  * Katso https://en.wikipedia.org/wiki/Server-sent_events
  */
 const LiveMatches: React.FC = () => {
     const [matchId, setMatchId] = useState<number | null>(null);
-    const [matchData, setMatchData] = useState<any>(null);
+    const [matchData, setMatchData] = useState<any>(null);  // TODO pitäisikö olla ScoresheetFields?
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
     // const retryCountRef = useRef<number>(0); // To track retry attempts
     // const hasHeartbeatRef = useRef<boolean>(false);
@@ -96,7 +96,7 @@ const LiveMatches: React.FC = () => {
             {liveMatchList.length > 0 &&
             <>
                 <Typography textAlign="center" variant="h3">
-                    Live ottelut
+                    Live-ottelut
                 </Typography>
                 <Grid container>
                     {liveMatchList.map((entry, index) => (
@@ -108,12 +108,12 @@ const LiveMatches: React.FC = () => {
             </>}
             {liveMatchList.length == 0 &&
                 <Typography textAlign="center" variant="h3">
-                    Ei live otteluita
+                    Ei live-otteluita
                 </Typography>
             }
             {matchData &&
                 <Box sx={{mt: 6}}>
-                    <Scoresheet initialValues={matchData} mode="display" />
+                    <Scoresheet initialValues={matchData} />
                 </Box>
             }
         </Container>

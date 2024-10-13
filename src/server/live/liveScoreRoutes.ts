@@ -24,8 +24,6 @@
  * Nyt käytössä oleva koodi on tehty mahdollisimman yksinkertaiseksi. Jos koodin
  * tehokkuus tai tietoliikenteen määrä tulee ongelmaksi, niitä voi parantaa usealla 
  * tavalla.
- * 
- * HUOM! Ottelut säilytetään levyllä käyttäen SQLite tietokantaa, katso sqliteWrapper.ts.
  */
 /**
  * Correctness proof idea:
@@ -39,11 +37,12 @@
 import express, { Router } from 'express';
 import { base64JSONStringifyNode, createRandomUniqueIdentifier } from '../../shared/generalUtils.js';
 import { currentScore } from '../../client/utils/matchTools.js';
-import { CustomError, LiveMatchEntry } from '../../shared/commonTypes.js';
+import { LiveMatchEntry } from '../../shared/commonTypes.js';
 import { injectAuth, requireAuth } from '../auth/auth.js';
 import { integrateLiveMatchChanges } from '../../shared/liveMatchTools.js';
 import { LiveConnection, LiveMatch } from './liveTypes.js';
 import { logger } from '../logger.js';
+import { CustomError } from '../../shared/customErrors.js';
 
 const router: Router = express.Router();
 
@@ -62,11 +61,11 @@ const HEARTBEAT_INTERVAL = 25*SECOND_ms;
  */
 const MAINTENANCE_INTERVAL = 15*MINUTE_ms;
 /**
- * Maksimiaika live ottelun seuraamiseen ilman uuden datan lähettämistä ennen tuhoamista.
+ * Maksimiaika live-ottelun seuraamiseen ilman uuden datan lähettämistä ennen tuhoamista.
  */
 const MAX_LIVE_CONNECTION_INACTIVITY = 4*HOUR_ms;
 /**
- * Maksimiaika live ottelun ilmoittamiseen. 
+ * Maksimiaika live-ottelun ilmoittamiseen. 
  */
 const MAX_LIVE_MATCH_DURATION = 8*HOUR_ms;
 /**
@@ -82,7 +81,7 @@ const MAX_LIVE_MATCH_INACTIVITY = 4*HOUR_ms;
 const liveConnections: Map<string, LiveConnection> = new Map();
 
 /**
- * Live ottelut, kuvaus (ep_ottelu.id) -> LiveMatch.
+ * Live-ottelut, kuvaus (ep_ottelu.id) -> LiveMatch.
  */
 const liveMatches: Map<number, LiveMatch> = new Map();
 
@@ -93,7 +92,7 @@ function sendLiveMatch(connectionId: string, liveMatch: LiveMatch) {
     const connection = liveConnections.get(connectionId);
     if (!connection || !connection.res.writable || connection.res.writableEnded)
         return;
-    const data = { type: "matchUpdate", timestamp: liveMatch.lastUpdate, author: liveMatch.lastAuthor, version: liveMatch.version, data: liveMatch.data };
+    const data = { type: "matchUpdate", timestamp: liveMatch.lastUpdate, version: liveMatch.version, data: liveMatch.data };
     try {
         connection.lastActivity = Date.now();
         connection.res.write(`data: ${base64JSONStringifyNode(data)}\n\n`);
@@ -139,19 +138,19 @@ function broadcastLiveMatch(matchId: number) {
 }
 
 /**
- * Luo listan live otteluista yhteyksiin lähetettävässä muodossa.
+ * Luo listan live-otteluista yhteyksiin lähetettävässä muodossa.
  */
 function createMatchList() {
     const matchList: LiveMatchEntry[] = [];
     for (const [matchId, liveMatch] of liveMatches) {
         const startTimeAsDate = new Date(liveMatch.startTime);
-        matchList.push({ matchId, home: liveMatch.data.teamHome.teamName, away: liveMatch.data.teamAway.teamName, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
+        matchList.push({ matchId, home: liveMatch.data.teamHome.name, away: liveMatch.data.teamAway.name, score: liveMatch.score, submitStartTime: startTimeAsDate.toISOString() });
     }
     return matchList;
 }
 
 /**
- * Lähettää listan live otteluista kaikkiin yhteyksiin.
+ * Lähettää listan live-otteluista kaikkiin yhteyksiin.
  */
 function broadcastMatchList() {
     const matchList = createMatchList();
@@ -172,15 +171,13 @@ function getLivescoreInfo() {
  * Tämä kutsutaan kun ottelupöytäkirja talletetaan tietokantaan hyväksytysti.
  * Poistaa ottelun liveMatches listalta.
  */
-function endLiveMatch(matchId: number) {
+function endLiveMatch(matchId: number, newStatus: string) {
     try {
         logger.info("endLiveMatch", { matchId });
         const liveMatch = liveMatches.get(matchId);
         if (liveMatch) {
-            logger.info("endLiveMatch", { matchId });
             liveMatch.lastUpdate = Date.now();
-            liveMatch.data.isSubmitted = true;
-            liveMatches.set(matchId, liveMatch);
+            liveMatch.data.status = newStatus;
             broadcastLiveMatch(matchId);
             liveMatches.delete(matchId);
             broadcastMatchList();
@@ -197,15 +194,12 @@ function endLiveMatch(matchId: number) {
  */
 router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) => {
     try {
-        const author = req.body.author;
         const result = req.body.result;
         const oldResult = req.body.oldResult;
-        if (!author) 
-            throw new CustomError(400, "error", "Missing author", "Missing author.");
         if (!result)
-            throw new CustomError(400, "error", "Missing result", "Missing result.");
+            throw new CustomError("INVALID_INPUT", { field: "result" })
         if (result.status !== "T") 
-            throw new CustomError(400, "error", "Invalid result", "Invalid result.");
+            throw new CustomError("INVALID_INPUT", { field: "result" })
 
         const matchId = result.id;
         const now = Date.now();
@@ -220,7 +214,6 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
 
             // Päivitä olemassaolevaa liveMatch:
             liveMatch.lastUpdate = now;
-            liveMatch.lastAuthor = author;
             liveMatch.version += 1;
 
             // liveMatch.data = combineLiveMatchPlayers(liveMatch.data, result);
@@ -235,12 +228,12 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
             liveMatch.score = score;
         } else {
             // Luodaan uusi liveMatch
-            if (!result.isSubmitted) {
+            if (result.status === "T") {
                 const score = currentScore(result);
-                liveMatch = { startTime: now, lastUpdate: now, lastAuthor: author, version: 0, data: result, score: score };
+                liveMatch = { startTime: now, lastUpdate: now, version: 0, data: result, score: score };
                 liveMatches.set(matchId, liveMatch);
                 isMatchListChanged = true;
-                logger.info("Starting match in liveScoreRoutes", { matchId, author });
+                logger.info("Starting match in liveScoreRoutes", { matchId });
             }
         }
 

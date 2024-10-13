@@ -64,7 +64,7 @@ function tryLockMatch(matchId: number): boolean {
 }
 
 /**
- * Apufunktio SQLite arvon poistamiseen.
+ * Apufunktio arvon poistamiseen.
  */
 function releaseMatchLock(matchId: number): void {
     matchLocks.delete(matchId);

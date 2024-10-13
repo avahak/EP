@@ -29,6 +29,27 @@ type GameRunningStatRow = {
 };
 
 /**
+ * Palauttaa tekstin, joka kuvaa ottelun statusta.
+ */
+function statusDescription(status: string): string {
+    if (status === "T") 
+        return "Tuleva ottelu";
+    if (status === "K") 
+        return "Kotijoukkueen ilmoittama";
+    if (status === "W") 
+        return "Vierasjoukkueen ilmoittama";
+    if (status === "V") 
+        return "Vierasjoukkueen korjaama";
+    if (status === "L") 
+        return "Kotijoukkueen korjaama";
+    if (status === "M") 
+        return "Molempien joukkueiden vahvistama";
+    if (status === "H") 
+        return "Tulosvastaavan vahvistama";
+    return "Tuntematon status";
+}
+
+/**
  * Palauttaa pelaajan players[index] nimen jos ei tyhjä ja defaultName muutoin.
  */
 const getPlayerName = (players: (ScoresheetPlayer | null)[], index: number, defaultName: string) => {
@@ -219,7 +240,6 @@ function parseScores(rawScores: any, teamHome: (ScoresheetPlayer | null)[], team
  * Hakee tietokannasta pelaajat joukkueeseen sen id:n perusteella.
  */
 const fetchPlayers = async (teamId: number) => {
-    console.log("ID", teamId);
     try {
         const response = await serverFetch("/api/db/specific_query", {
             method: 'POST',
@@ -347,26 +367,27 @@ const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
         status: matchInfo.status,
         teamHome: {
             id: matchInfo.homeId,
-            teamName: matchInfo.home,
-            teamRole: "home",
+            name: matchInfo.home,
+            nameFull: matchInfo.homeFull,
+            role: "home",
             allPlayers: playersHome,
             selectedPlayers: playingHome
         }, teamAway: {
             id: matchInfo.awayId,
-            teamName: matchInfo.away,
-            teamRole: "away",
+            name: matchInfo.away,
+            nameFull: matchInfo.awayFull,
+            role: "away",
             allPlayers: playersAway,
             selectedPlayers: playingAway
         }, 
         date: matchInfo.date,
         scores: parseScores(rawScores, playingHome, playingAway),
-        isSubmitted: matchInfo.status !== "T",
     } as ScoresheetFields;
 };
 
 
 export type { GameRunningStatRow };
-export { getPlayerName, getSelectedPlayerName, computeGameRunningStats, 
+export { statusDescription, getPlayerName, getSelectedPlayerName, computeGameRunningStats, 
     fetchMatchData, gameIndexToPlayerIndexes, playerIndexesToGameIndex, 
     computeGameScore, checkGameResults, currentScore,
     isEmptyPlayer, gameHasEmptyPlayer };

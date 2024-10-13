@@ -81,13 +81,12 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
         newStatus,
         id: match.id, 
         date: match.date,
-        homeTeamName: match.teamHome.teamName,
-        awayTeamName: match.teamAway.teamName,
+        homeTeamName: match.teamHome.name,
+        awayTeamName: match.teamAway.name,
         playersHome: match.teamHome.selectedPlayers.map((player: any) => player.id), 
         playersAway: match.teamAway.selectedPlayers.map((player: any) => player.id), 
         games, 
         rounds,
-        isSubmitted: match.isSubmitted
     };
 }
 

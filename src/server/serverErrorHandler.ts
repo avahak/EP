@@ -3,8 +3,8 @@
  */
 
 import { Express, NextFunction, Request, Response } from 'express';
-import { CustomError, ErrorLevel } from '../shared/commonTypes';
 import { logger } from './logger';
+import { CustomError, ErrorLevel } from '../shared/customErrors';
 
 /**
  * Maksimimäärä kiinnisaamattomia poikkeuksia ennen serverin pysäyttämistä.
@@ -41,34 +41,39 @@ function initializeErrorHandling(app: Express) {
     // Globaali virheenkäsittely "GEH" (synkronisten reittien käsittelemättömät poikkeukset).
     app.use((err: any, req: Request, res: Response, _next: NextFunction): any => {
         try {
-            const level: ErrorLevel = err.level || "error";
+            const identifier = (err instanceof CustomError ? { code: err.code } : { message: err.message });
+            const level: ErrorLevel = err?.details?.level || "error";
+            const statusCode = err?.details?.status;
+            const info = err?.info || {};
             if (level === "error") {
                 // Kirjoitetaan enemmän tietoa kun on kyseessä "error"
                 logger.error("GEH", {
-                    message: err.message,
+                    ...identifier,
                     stack: err.stack,
-                    statusCode: err.statusCode,
+                    ...( statusCode && { statusCode: statusCode } ),
                     agent: req.headers['user-agent'],
                     route: req.originalUrl,
                     method: req.method,
-                    ...(err.debugInfo && { debugInfo: err.debugInfo })
+                    ...info,
+                    ...(err?.logAdditionalInfo || {})
                 });
             } else {
                 logger[level]("GEH", {
-                    message: err.message,
-                    statusCode: err.statusCode,
+                    ...identifier,
+                    ...( statusCode && { statusCode: statusCode } ),
                     agent: req.headers['user-agent'],
                     route: req.originalUrl,
                     method: req.method,
-                    ...(err.debugInfo && { debugInfo: err.debugInfo })
+                    ...info,
+                    ...(err?.logAdditionalInfo || {})
                 });
             }
             if (err instanceof CustomError) {
                 if (!res.headersSent)
-                    res.status(err.statusCode).send({ error: err.clientMessage });
+                    res.status(err.details.status).json({ error: err.details.clientMessage, code: err.code, ...err.info });
             } else {
                 if (!res.headersSent)
-                    res.status(500).send({ error: "Jokin meni pieleen." });
+                    res.status(500).json({ error: "Jokin meni pieleen." });
             }
         } catch (error) {
             logger.error("Unexpected error in global error handler", error);

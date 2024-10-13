@@ -4,14 +4,15 @@
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToYYYYMMDD, delay, removeSpecialChars } from '../../shared/generalUtils.js';
+import { dateToYYYYMMDD, removeSpecialChars } from '../../shared/generalUtils.js';
 import { enforceValidSymbolsInRounds, isValidParsedMatch } from '../../shared/parseMatch.js';
-import { AuthError, AuthTokenPayload, CustomError, roleIsAtLeast } from '../../shared/commonTypes.js';
+import { AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
 import { RowDataPacket } from 'mysql2';
 import { endLiveMatch } from '../live/liveScoreRoutes.js';
 import { releaseMatchLock, tryLockMatch } from './dbMatchLocks.js';
 import { logger } from '../logger.js';
+import { CustomError } from '../../shared/customErrors.js';
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -49,7 +50,7 @@ async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPay
  */
 async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
-        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
+        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, j1.nimi AS homeFull, j2.nimi AS awayFull, o.status AS status
         FROM ep_ottelu o
         JOIN ep_joukkue j1 ON o.koti = j1.id
         JOIN ep_joukkue j2 ON o.vieras = j2.id
@@ -59,13 +60,13 @@ async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload
 }
 
 /**
- * Palauttaa menneet käyttäjän ilmoittamattomat (T) tai 
- * kotijoukkueen ilmoittamat (K) ottelut.
+ * Palauttaa menneet käyttäjän ilmoittamattomat (T) ja vain yhden joukkueen 
+ * ilmoittamat (K, W) ottelut.
  */
 async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth)
-        throw new AuthError();
-    // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K'
+        throw new CustomError("UNAUTHORIZED");
+    // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status on 'T' tai 'K' tai 'W'
     // ja toinen joukkueista on käyttäjän joukkue:
     const dateNow = dateToYYYYMMDD(new Date());
     const query = `
@@ -73,7 +74,7 @@ async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPa
         FROM ep_ottelu o
         JOIN ep_joukkue j1 ON o.koti = j1.id
         JOIN ep_joukkue j2 ON o.vieras = j2.id
-        WHERE (o.status = 'T' OR o.status = 'K') AND (j1.kausi = ?) AND (o.paiva <= ?) 
+        WHERE (o.status IN ('T', 'K', 'W')) AND (j1.kausi = ?) AND (o.paiva <= ?) 
             AND ((j1.lyhenne = ?) OR (j2.lyhenne = ?))
         ORDER BY o.paiva
     `;
@@ -86,7 +87,7 @@ async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPa
  */
 async function getMatchesToReportModerator(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth || !roleIsAtLeast(auth.role, "mod"))
-        throw new AuthError();
+        throw new CustomError("UNAUTHORIZED");
     // Valitaan ottelut, missä päivä on ennen nykyhetkeä ja status ei ole 'H':
     const dateNow = dateToYYYYMMDD(new Date());
     const query = `
@@ -308,47 +309,52 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
  */
 async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPayload | null) {
     if (!auth)
-        throw new AuthError();
+        throw new CustomError("UNAUTHORIZED");
 
     const match = params.result;
     // console.log("match", JSON.stringify(match));
 
     if (!match.ok || !isValidParsedMatch(match) || match.newStatus === 'T')
-        throw new CustomError(400, "info", "Invalid match", "Ottelun tiedot ovat virheellisiä.", { matchId: match.id });
+        throw new CustomError("INVALID_INPUT", { matchId: match.id });
     // Vain admin voi muuttaa jo hyväksytyn ottelun tulosta:
     if (match.status === 'H' && !roleIsAtLeast(auth.role, "admin"))
-        throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
+        throw new CustomError("UNAUTHORIZED", { matchId: match.id });
 
     // Tavalliset käyttäjät voivat ilmoittaa ainoastaan otteluita, 
     // missä toinen joukkueista on heidän:
     if (!roleIsAtLeast(auth.role, "mod")) {
+        if (!['T', 'K', 'W'].includes(match.status))
+            throw new CustomError("UNAUTHORIZED", { matchId: match.id });
         if (match.status === 'T')
-            if (auth.team !== match.homeTeamName || match.newStatus !== 'K')
-                throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
+            if (!(auth.team === match.homeTeamName && match.newStatus === 'K') &&
+                    !(auth.team === match.awayTeamName && match.newStatus === 'W'))
+                throw new CustomError("UNAUTHORIZED", { matchId: match.id });
         if (match.status === 'K')
             if (auth.team !== match.awayTeamName || (match.newStatus !== 'V' && match.newStatus !== 'M'))
-                throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
-        if (match.status !== 'T' && match.status !== 'K')
-            throw new CustomError(403, "error", "Forbidden", "Käyttäjällä ei oikeuksia muutokseen.", { matchId: match.id });
+                throw new CustomError("UNAUTHORIZED", { matchId: match.id });
+        if (match.status === 'W')
+            if (auth.team !== match.homeTeamName || (match.newStatus !== 'L' && match.newStatus !== 'M'))
+                throw new CustomError("UNAUTHORIZED", { matchId: match.id });
     }
 
     // Pakotetaan erätulossymbolit hyväksyttäviksi arvoiksi (K1-K6, V0-V6):
     // TODO Tämä pitäisi tehdä ennen isValidParsedMatch testiä.
     const rounds = enforceValidSymbolsInRounds(match.rounds);
 
+    let lockAcquired = false;
     try {
         // Yritetään lukita ottelu. Palautusarvo on true joss yritys onnistui.
-        const lockAcquired = tryLockMatch(match.id);
+        lockAcquired = tryLockMatch(match.id);
         if (!lockAcquired) 
-            throw new CustomError(500, "error", "Locked match", "Ottelun ilmoitusta käsitellään.", { matchId: match.id });
+            throw new CustomError("MATCH_SUBMIT_LOCKED", { matchId: match.id });
 
         // Tarkistetaan, että ottelun tiedot ovat samat kuin tietokannassa:
         const dbRows = await getMatchInfo({ matchId: match.id }, null);
         if (!Array.isArray(dbRows) || dbRows.length !== 1)
-            throw new CustomError(400, "error", "No match in database", "Tietokannasta ei saatu tietoa ottelusta.", { matchId: match.id });
+            throw new CustomError("DATA_MISMATCH", { matchId: match.id });
         const dbMatch = dbRows[0] as RowDataPacket;
         if (dbMatch.home !== match.homeTeamName || dbMatch.away !== match.awayTeamName || dbMatch.status !== match.status)
-            throw new CustomError(400, "error", "Difference from database", "Lähetetyt tiedot poikkeavat tietokannasta. Voi olla että ottelu on jo lähetetty.", { matchId: match.id });
+            throw new CustomError("DATA_MISMATCH", { dbMatchStatus: dbMatch.status, matchId: match.id });
 
         const connection = await pool.getConnection();
         await connection.beginTransaction(); 
@@ -385,13 +391,9 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
             // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
-                await delay(1000);  // TODO remove, only for testing!
-                // if (1 == 1)
-                //     throw new AuthError();
-                // if (Math.random() < 0.1)
-                //     throw new CustomError(500, "info", "Debug error", "Debug error message.");
-                // if (Math.random() < 0.1)
-                //     throw new Error("Regular debug error");
+                // await delay(500);  // TODO remove, only for testing!
+                // if (1 == 1 || Math.random() < 0.1)
+                //     throw new CustomError("DEBUG_ERROR");
 
                 // Ei talleteta kahden tyhjän pelaajan peliä:
                 if (match.games[k][1] === -1 && match.games[k][2] === -1)
@@ -403,7 +405,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 if ('insertId' in insertedRow)
                     rounds[k][0] = insertedRow.insertId;
                 else 
-                    throw new CustomError(500, "error", "Error with ep_peli INSERT", "Pelin lisääminen epäonnistui.", { matchId: match.id, insertData: match.games[k] });
+                    throw new CustomError("INTERNAL_SERVER_ERROR", { info: "Pelin lisäys epäonnistui.", matchId: match.id });
 
                 console.log("ep_peli insertId", match.id, insertedRow.insertId);
 
@@ -421,7 +423,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             await connection.query(query5, [match.date, match.newStatus, match.id]);
 
             await connection.commit();
-            endLiveMatch(match.id);
+            endLiveMatch(match.id, match.newStatus);
             logger.info("commit in submitMatchResult", { matchId: match.id });
         } catch (error) {
             await connection.rollback();
@@ -432,11 +434,13 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             // connection.release();
         }
     } catch (error) {
-        logger.error("Error during submitMatchResult", error);
+        // Tässä ei tarvitse log, GEH hoitaa sen.
+        // TODO Poista tarpeettomana
         throw error;
     } finally {
-        // Poistetaan lukko
-        releaseMatchLock(match.id);
+        // Poistetaan lukko jos se saatiin
+        if (lockAcquired)
+            releaseMatchLock(match.id);
     }
 }
 
@@ -448,7 +452,7 @@ async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | n
     // Miten autentikaatio tulisi tarkistaa tässä? Käyttäjän tulee pystyä lisäämään
     // tarvittaessa pelaaja vierasjoukkueeseenkin pöytäkirjan ilmoituksen yhteydessä.
     if (!auth)
-        throw new AuthError();
+        throw new CustomError("UNAUTHORIZED");
     if (!params.teamId || !params.name || typeof params.name !== "string")
         throw Error('Missing player info.');
     const name = removeSpecialChars(params.name.trim()).slice(0, 15);

@@ -18,12 +18,12 @@ import { Link } from "react-router-dom";
  * Kategoriat otteluille
  */
 type SelectionCategory = 
-    "home"                          // kotijoukkueen ilmoitus
-    | "away"                        // vierasjoukkueen tarkistus
-    | "moderator_status_T"          // moderaattorille näkyvät ottelut, joilla status T
-    | "moderator_status_K"          // moderaattorille näkyvät ottelut, joilla status K
-    | "moderator_status_V"          // moderaattorille näkyvät ottelut, joilla status V
-    | "moderator_status_M";         // moderaattorille näkyvät ottelut, joilla status M
+    "my_T" |                        // ilmoitus, ottelulle, jonka status T
+    "my_KW" |                       // ilmoitus, ottelulle, jonka status K tai W
+    "moderator_T" |                 // moderaattorille näkyvät ottelut, joilla status T
+    "moderator_KW" |                // moderaattorille näkyvät ottelut, joilla status K tai W
+    "moderator_VL" |                // moderaattorille näkyvät ottelut, joilla status V tai L
+    "moderator_M";                  // moderaattorille näkyvät ottelut, joilla status M
 
 type FormFields = {
     selectionCategory: SelectionCategory | undefined;
@@ -40,7 +40,7 @@ type MatchChooserSubmitFields = {
 
 type MatchCategoryCardProps = {
     title: string;
-    moderator?: boolean;
+    moderatorInfo?: string[];
     categoryName: SelectionCategory;
     matches: any[];
     selectedRadioButton: string;
@@ -55,15 +55,22 @@ const formatDate = (dateString: string) => {
 /**
  * Kortti, missä kaikki saman kategorian ottelut on listattu valintapainikkeina.
  */
-const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator = false, categoryName, matches, selectedRadioButton, handleRadioChange }) => {
+const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ 
+    title, 
+    moderatorInfo, 
+    categoryName, 
+    matches, 
+    selectedRadioButton, 
+    handleRadioChange 
+}) => {
     return (
-        <Paper sx={{ p: 1, background: moderator ? "#ffd580" : "inherit" }} elevation={5}>
+        <Paper sx={{ p: 1, background: moderatorInfo ? "#ffd580" : "inherit" }} elevation={5}>
             <Typography variant="body1" textAlign="center" fontWeight="bold">
                 {title}
             </Typography>
-            {moderator &&
+            {moderatorInfo &&
             <Typography variant="body2" textAlign="center" fontWeight="bold" color="error">
-                Moderaattorin ilmoitus
+                {`Moderaattorin ilmoitus (${moderatorInfo[0]}`}&rarr;{`${moderatorInfo[1]})`}
             </Typography>
             }
             <Box style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -78,7 +85,7 @@ const MatchCategoryCard: React.FC<MatchCategoryCardProps> = ({ title, moderator 
                     />
                     ))}
                 </RadioGroup>) 
-                : <Typography variant="body2">Ei ilmoittamattomia otteluja</Typography>
+                : <Typography variant="body2">Ei otteluja.</Typography>
                 }
             </Box>
         </Paper>
@@ -111,20 +118,20 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
     /**
      * Palauttaa valitun ottelun tai null.
      */
-    const getSelectedMatch = (category: string | undefined, index: number) => {
+    const getSelectedMatch = (category: SelectionCategory | undefined, index: number) => {
         let selectedMatch = null;
-        if (category === 'home')
-            selectedMatch = homeMatches[index];
-        else if (category === 'away')
-            selectedMatch = awayMatches[index];
-        else if (category === 'moderator_status_T')
-            selectedMatch = moderatorMatchesStatus_T[index];
-        else if (category === 'moderator_status_K')
-            selectedMatch = moderatorMatchesStatus_K[index];
-        else if (category === 'moderator_status_V')
-            selectedMatch = moderatorMatchesStatus_V[index];
-        else if (category === 'moderator_status_M')
-            selectedMatch = moderatorMatchesStatus_M[index];
+        if (category === 'my_T')
+            selectedMatch = myMatches_T[index];
+        else if (category === 'my_KW')
+            selectedMatch = myMatches_KW[index];
+        else if (category === 'moderator_T')
+            selectedMatch = moderatorMatches_T[index];
+        else if (category === 'moderator_KW')
+            selectedMatch = moderatorMatches_KW[index];
+        else if (category === 'moderator_VL')
+            selectedMatch = moderatorMatches_VL[index];
+        else if (category === 'moderator_M')
+            selectedMatch = moderatorMatches_M[index];
         return selectedMatch;
     };
 
@@ -223,15 +230,17 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
     }
 
     // Luodaan osajoukot otteluista kategorian mukaan:
-    const homeMatches = matches.filter((match) => (match.home == userTeam) && (match.status == 'T'));
-    const awayMatches = matches.filter((match) => (match.away == userTeam) && (match.status == 'K'));
-    const moderatorMatchesStatus_T = matches.filter((match) => (match.status == 'T'));
-    const moderatorMatchesStatus_K = matches.filter((match) => (match.status == 'K'));
-    const moderatorMatchesStatus_V = matches.filter((match) => (match.status == 'V'));
-    const moderatorMatchesStatus_M = matches.filter((match) => (match.status == 'M'));
+    const myMatches_T = matches.filter((match) => (match.home === userTeam || match.away === userTeam) && (match.status === 'T'));
+    const myMatches_KW = matches.filter((match) => (match.away === userTeam && match.status === 'K') || (match.home === userTeam && match.status === 'W'));
+    const moderatorMatches_T = matches.filter((match) => (match.status === 'T' && match.home !== userTeam && match.away !== userTeam));
+    const moderatorMatches_KW = matches.filter((match) => (match.status === 'K' || match.status === 'W'));
+    const moderatorMatches_VL = matches.filter((match) => (match.status === 'V' || match.status === 'L'));
+    const moderatorMatches_M = matches.filter((match) => (match.status === 'M'));
 
     let selectedMatch = getSelectedMatch(formValues.selectionCategory, formValues.selectionIndex);
     useEffect(() => {
+        if (selectedMatch && selectedMatch.status === 'T')
+            setValue("useLivescore", true);
         sendButton.current?.focus();
     }, [selectedMatch]);
 
@@ -244,26 +253,32 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
             <Box sx={{ mb: 5 }}>
                 <Typography variant="h2" textAlign="center">Ilmoita tulos</Typography>
             </Box>
+            <Typography sx={{ mb: 3 }}>
+                <b>HUOM!</b> Tulosten ilmoittaminen on muuttunut. Nyt kumpi tahansa 
+                joukkue voi ilmoittaa ottelun tuloksen ensimmäisenä. Toisen 
+                joukkueen tulee sitten tarkistaa tulokset. Molemmat joukkueet 
+                voivat osallistua live-syöttöön.
+            </Typography>
             <Grid container>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
-                    <MatchCategoryCard title="Omat kotiottelut" categoryName="home" matches={homeMatches} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                    <MatchCategoryCard title="Ilmoittamattomat ottelut" categoryName="my_T" matches={myMatches_T} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                 </Grid>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>
-                    <MatchCategoryCard title="Omat vierasottelut" categoryName="away" matches={awayMatches} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                    <MatchCategoryCard title="Tarkistamattomat ottelut" categoryName="my_KW" matches={myMatches_KW} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                 </Grid>
                 {roleIsAtLeast(authenticationState.role, "mod") && 
                     <>
                     <Grid item xs={12} sm={6} sx={{p: 2}}>
-                        <MatchCategoryCard moderator title={"Tulevat ottelut"} categoryName="moderator_status_T" matches={moderatorMatchesStatus_T} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                        <MatchCategoryCard moderatorInfo={["T", "H"]} title={"Ilmoittamattomat ottelut"} categoryName="moderator_T" matches={moderatorMatches_T} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                     </Grid>
                     <Grid item xs={12} sm={6} sx={{p: 2}}>
-                        <MatchCategoryCard moderator title={"Kotijoukkueen ilmoittamat"} categoryName="moderator_status_K" matches={moderatorMatchesStatus_K} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                        <MatchCategoryCard moderatorInfo={["K/W", "H"]} title={"Ilmoitetut tarkistamattomat ottelut"} categoryName="moderator_KW" matches={moderatorMatches_KW} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                     </Grid>
                     <Grid item xs={12} sm={6} sx={{p: 2}}>
-                        <MatchCategoryCard moderator title={"Vierasjoukkueen korjaamat"} categoryName="moderator_status_V" matches={moderatorMatchesStatus_V} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                        <MatchCategoryCard moderatorInfo={["V/L", "H"]} title={"Korjatut ottelut"} categoryName="moderator_VL" matches={moderatorMatches_VL} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                     </Grid>
                     <Grid item xs={12} sm={6} sx={{p: 2}}>
-                        <MatchCategoryCard moderator title={"Molempien hyväksymät"} categoryName="moderator_status_M" matches={moderatorMatchesStatus_M} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
+                        <MatchCategoryCard moderatorInfo={["M", "H"]} title={"Molempien hyväksymät ottelut"} categoryName="moderator_M" matches={moderatorMatches_M} selectedRadioButton={selectedRadioButton} handleRadioChange={handleRadioChange}/>
                     </Grid>
                     </>
                 }
@@ -271,7 +286,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
             {selectedMatch && <>
                 <Box sx={{ mb: 1, mt: 5 }}>
                     <Typography variant="h2" textAlign="center">{selectedMatch.home} - {selectedMatch.away}</Typography>
-                    {(!formValues.useLivescore || selectedMatch.status !== "T") &&
+                    {(!formValues.useLivescore && selectedMatch.status === "T") &&
                     <Box sx={{ mt:4 }}>
                         <Typography textAlign="center" variant="body1">Muuta päivämäärää tarvittaessa:</Typography>
                         <Box display="flex" gap="10px" justifyContent="center">
@@ -282,17 +297,18 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                                 onChange={(event) => handleSetDate(event.target.value)}
                             />
                         </Box>
-                    </Box>
-                    }
+                    </Box>}
                     {selectedMatch.status === "T" &&
                     <Box sx={{ mt: 3 }} display="flex" justifyContent="center">
                         <FormControlLabel
-                            control={<Checkbox checked={formValues.useLivescore} onChange={(event) => { setValue('useLivescore', event.target.checked) }} />}
+                            control={<Checkbox 
+                                checked={formValues.useLivescore} 
+                                onChange={(event) => { setValue('useLivescore', event.target.checked) }} 
+                            />}
                             title="Valitse jos haluat tulosten näkyvän reaaliajassa otteluseuranta sivulla"
                             label="Kirjaa tulokset reaaliajassa otteluseurantaan"
                         />
-                    </Box>
-                    }
+                    </Box>}
                 </Box>
                 <Box display="flex" justifyContent="right">
                     <Button ref={sendButton} variant="contained" type="submit">Valitse</Button>
