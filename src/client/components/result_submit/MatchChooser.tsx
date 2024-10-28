@@ -257,7 +257,8 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 <b>HUOM!</b> Tulosten ilmoittaminen on muuttunut. Nyt kumpi tahansa 
                 joukkue voi ilmoittaa ottelun tuloksen ensimmäisenä. Toisen 
                 joukkueen tulee sitten tarkistaa tulokset. Molemmat joukkueet 
-                voivat osallistua live-syöttöön.
+                voivat osallistua live-syöttöön. Muista lähettää tulokset tietokantaan
+                painamalla "Lähetä"-nappia live-syötön lopuksi.
             </Typography>
             <Grid container>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>

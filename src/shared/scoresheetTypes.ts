@@ -70,12 +70,12 @@ type ScoresheetFields = {
 /**
  * Luo tyhjän joukkueen.
  */
-function createEmptyTeam() {
+function createEmptyTeam(role: "home"|"away") {
     const emptyTeam: ScoresheetTeam = {
         id: -1,
         name: '',
         nameFull: '',
-        role: "home",
+        role: role,
         allPlayers: [],
         selectedPlayers: [],
     };
@@ -97,8 +97,8 @@ function createEmptyScoresheet() {
     return {
         id: -1,
         status: 'T',
-        teamHome: {...createEmptyTeam(), teamRole: "home"},
-        teamAway: {...createEmptyTeam(), teamRole: "away"},
+        teamHome: {...createEmptyTeam("home")},
+        teamAway: {...createEmptyTeam("away")},
         date: '',
         scores: createEmptyScores(),
     } as ScoresheetFields;

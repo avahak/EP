@@ -70,7 +70,7 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
     // currentPlayerSlot on apumuuttuja pitämään kirjaa vimeiseksi muutetusta pelaajasta. 
     // Tätä käytetään selvittämään mikä joukkue ja monesko pelaaja on kyseessä kun 
     // uusi pelaaja lisätään modaalin avulla:
-    const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: ScoresheetTeam, slot: number}>({team: createEmptyTeam(), slot: 0});
+    const [currentPlayerSlot, setCurrentPlayerSlot] = useState<{team: ScoresheetTeam, slot: number}>({team: createEmptyTeam("home"), slot: 0});
     // Lomakkeen kenttien tila:
     const { setValue, handleSubmit, watch, reset, getValues } = useForm<ScoresheetFields>({
         defaultValues: initialValues

@@ -49,11 +49,8 @@ import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUti
 import { freemem } from 'os';
 import { getMatchSubmissionLocksString } from './database/dbMatchLocks.js';
 import { logger } from './logger.js';
-
-/**
- * Aika ennen kun lähetetään timeout.
- */
-const RESPONSE_TIMEOUT = 120*1000;  // 1000=one second
+import './eventLoopLag.js';
+import { RESPONSE_DELAYED_MS, RESPONSE_TIMEOUT_MS } from './config.js';
 
 const app = express();
 
@@ -78,15 +75,26 @@ app.use(cors());
 // Määritetään middleware JSON-parsija:
 app.use(express.json());
 
-// Timeout middleware
-app.use((_req, res, next) => {
-    res.setTimeout(RESPONSE_TIMEOUT, () => {
-        logger.warn(`Request has timed out, headersSent=${res.headersSent}`);
-        if (!res.headersSent) {
+
+// Middleware joka laskee pyynnön vastausajan ja varoittaa jos se on pitkä.
+// Jos vastausta ei ole annettu pitkään aikaan, yhteys katkaistaan.
+app.use((req, res, next) => {
+    res.setTimeout(RESPONSE_TIMEOUT_MS, () => {
+        logger.warn("Request has timed out", { method: req.method, url: req.url, headersSent: res.headersSent });
+        if (!res.headersSent && !res.writableEnded) {
             res.status(500).send('Server response timeout');
-        } else
+        } else {
             res.end();
+        }
     });
+
+    const startTime = Date.now();
+    res.on('finish', () => {
+        const diff = Date.now() - startTime;
+        if (diff > RESPONSE_DELAYED_MS)
+            logger.warn("Request took long time to finish", { method: req.method, url: req.url, duration: `${(diff/1000).toFixed(1)}s` });
+    });
+
     next();
 });
 
@@ -114,7 +122,7 @@ app.use(BASE_URL + '/auth', authRouter);
 app.use(BASE_URL + '/api', generalRouter);
 
 // Tietoa serveristä:
-app.get(BASE_URL + '/info', async (_req, res, next) => {
+app.get(BASE_URL + '/info', (_req, res, next) => {
     try {
         const serverTime = currentTimeInFinlandString();
         const formatMemory = (b: number) => `${(b/(1024*1024)).toFixed(0)} MB`;

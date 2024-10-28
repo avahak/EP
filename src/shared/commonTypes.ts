@@ -13,7 +13,7 @@ type LiveMatchEntry = {
     away: string
     score: number[];
     // submitter: string;
-    submitStartTime: string;
+    startTime: string;
 };
 
 /**

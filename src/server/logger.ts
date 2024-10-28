@@ -56,4 +56,4 @@ const logger = winston.createLogger({
     ],
 });
 
-export { logger };
+export { logger, LOG_FILE_DIRECTORY };

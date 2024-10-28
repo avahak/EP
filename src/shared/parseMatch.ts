@@ -87,6 +87,7 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
         playersAway: match.teamAway.selectedPlayers.map((player: any) => player.id), 
         games, 
         rounds,
+        originalData: match,
     };
 }
 

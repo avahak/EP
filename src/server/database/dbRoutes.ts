@@ -145,14 +145,12 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {
-            if (!res.headersSent) {
-                const extra = { field: "queryName", queryName, queryFunction: queryFunction?.name };
-                throw new CustomError("INVALID_INPUT", extra, extra);
-            }
+            const extra = { field: "queryName", queryName, queryFunction: queryFunction?.name };
+            throw new CustomError("INVALID_INPUT", extra, extra);
         }
 
         const rows = await queryFunction(params, req.auth);
-        if (!res.headersSent)
+        if (!res.headersSent && !res.writableEnded)
             res.json({ rows });
         // console.log(`databaseRoutes: /specific_query (queryName=${queryName}) done`);
     } catch (error) {

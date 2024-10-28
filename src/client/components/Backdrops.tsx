@@ -1,5 +1,5 @@
 import { Backdrop, Box, Button, CircularProgress, Typography } from "@mui/material";
-import React from "react"
+import React from "react";
 
 /**
  * Koko ruudun peittävä overlay, joka esittää tekstin ja

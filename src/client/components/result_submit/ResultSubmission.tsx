@@ -73,7 +73,7 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
      */
     const fetchSendResult = async (newStatus: string, result: ScoresheetFields) => {
         console.log("fetchSendResult()");
-        let clearBackdrop = true;
+        let shouldClearBackdrop = true;
         try {
             const parsedResult = parseMatch(newStatus, result);
             console.log("parsedResult", parsedResult);
@@ -87,15 +87,24 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
 
             let dataMismatch = false;
             if (!response.ok) {
-                const errorData = await response.json();
+                let errorData = null;
+                try {
+                    errorData = await response.json();
+                } catch (error) {
+                    const errorText = await response.text();
+                    throw new Error(`Virhe status ${response.status}, viesti: ${errorText}`);
+                }
                 const checkAgainstCode: ErrorCode = "DATA_MISMATCH";
-                if (errorData.code === checkAgainstCode && 
-                        errorData.dbMatchStatus && 
-                        result.status !== errorData.dbMatchStatus) {
+                if (
+                    errorData &&
+                    errorData.code === checkAgainstCode && 
+                    errorData.dbMatchStatus && 
+                    result.status !== errorData.dbMatchStatus
+                ) {
                     // Ottelulla on tietokannassa eri status
                     dataMismatch = true;
                 } else 
-                    throw new Error(errorData.error || `Tuntematon virhe`);
+                    throw new Error(errorData?.error || `Virhe, status ${response.status}`);
             }
 
             // Haetaan data uudelleen esitettäväksi:
@@ -106,21 +115,18 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
             setResult(matchData);
             setPageState("scoresheet_display");
             console.log("matchData", matchData);
-            if (!dataMismatch)
-                setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
-            else {
+            if (dataMismatch) {
                 setBackdropState({ state: "message", title: "Ottelun status on muuttunut", text: "Ottelun status on muuttunut tietokannassa. Todennäköisin syy on, että toiminto on jo suoritettu. Paina \"Jatka\" nähdäksesi ottelun tiedot.", buttonText: "Jatka" });
-                clearBackdrop = false;
-                // setSnackbarState({ isOpen: true, autoHideDuration: 10000, message: "Ottelun status ei vastaa tietokannan tietoja. Todennäköisin syy on, että toiminto on jo suoritettu.", severity: "error" });
-            }
+                shouldClearBackdrop = false;
+            } else 
+                setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
         } catch (error: any) {
-            // Jokin meni pieleen - palataan edelliseen sivun tilaan 
-            // ja näytetään virheilmoitus käyttäjälle:
+            // Jokin meni pieleen - näytetään virheilmoitus käyttäjälle:
             console.error('Error:', error);
             const message = error.message || "Tuntematon Virhe";
             setSnackbarState({ isOpen: true, autoHideDuration: 10000, message: `Lomakkeen lähetys epäonnistui. Viesti: ${message}`, severity: "error" });
         } finally {
-            if (clearBackdrop)
+            if (shouldClearBackdrop)
                 setBackdropState({ state: "off", title: "", text: "", buttonText: "" });
         }
     };

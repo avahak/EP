@@ -19,7 +19,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
  * kirjauksen aloitusaika.
  */
 const LiveMatchCard: React.FC<LiveMatchCardProps> = (({ entry, onSelect, selected }) => {
-    const startTime = timeFormatter.format(new Date(entry.submitStartTime));
+    const startTime = timeFormatter.format(new Date(entry.startTime));
     return (
         <Card 
             onClick={() => onSelect(entry.matchId)} 

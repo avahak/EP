@@ -1,10 +1,12 @@
 /**
  * Kokoelma tietokantaan kohdistuvia kyselyitä, joita React app tarvitsee.
  * Näitä kutsuu src/server/database/dbRoutes.ts funktio specificQuery.
+ * 
+ * TODO harkitse `await connection.query('SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE');`
  */
 
 import { myQuery } from './dbGeneral.js';
-import { dateToYYYYMMDD, removeSpecialChars } from '../../shared/generalUtils.js';
+import { dateToYYYYMMDD, delay, removeSpecialChars } from '../../shared/generalUtils.js';
 import { enforceValidSymbolsInRounds, isValidParsedMatch } from '../../shared/parseMatch.js';
 import { AuthTokenPayload, roleIsAtLeast } from '../../shared/commonTypes.js';
 import { pool } from './dbConnections.js';
@@ -391,7 +393,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
             // Lisätään uudet rivit tauluun ep_erat, ep_peli:
             for (let k = 0; k < 9; k++) {
-                // await delay(500);  // TODO remove, only for testing!
+                await delay(500);  // TODO remove, only for testing!
                 // if (1 == 1 || Math.random() < 0.1)
                 //     throw new CustomError("DEBUG_ERROR");
 
@@ -423,7 +425,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             await connection.query(query5, [match.date, match.newStatus, match.id]);
 
             await connection.commit();
-            endLiveMatch(match.id, match.newStatus);
+            endLiveMatch(match.id, match.newStatus, match.originalData);
             logger.info("commit in submitMatchResult", { matchId: match.id });
         } catch (error) {
             await connection.rollback();

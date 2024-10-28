@@ -68,7 +68,7 @@ const injectAuth = (req: RequestWithAuth, res: Response, next: NextFunction) => 
             const verifyResult = verifyJWT(token);
             if (verifyResult.message == "Expired") {
                 // Access token on vanhentunut - hylätään pyyntö jo tässä vaiheessa
-                if (!res.headersSent) {
+                if (!res.headersSent && !res.writableEnded) {
                     // Lähetetään custom viesti, jotta React puolella tiedetään, että
                     // access token on vanhentunut.
                     res.setHeader('X-Token-Expired', 'true');  // custom header
@@ -113,7 +113,7 @@ const requireAuth = (requiredRole: string|null = null) => {
             logger.error("Error in requireAuth", error);
         }
         if (!isVerified) {
-            if (!res.headersSent)
+            if (!res.headersSent && !res.writableEnded)
                 return res.status(401).send('Unauthorized request.');
             return;
         }
@@ -137,7 +137,7 @@ router.post('/create_refresh_token', async (req: Request, res: Response, next: N
         const payload: AuthTokenPayload = { name, team, role, iat, exp };
         // console.log("creating refresh token with payload:", payload);
         const token = encodeJWT(payload);
-        if (!res.headersSent)
+        if (!res.headersSent && !res.writableEnded)
             res.json({ token });
     } catch (error) {
         logger.error('Error creating refresh token.', error);
@@ -162,7 +162,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
     try {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string') {
             logger.info("/create_access_token missing token");
-            if (!res.headersSent)
+            if (!res.headersSent && !res.writableEnded)
                 return res.status(400).send("Missing token.");
             return;
         }
@@ -170,7 +170,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         const oldRefreshTokenPayload = verifyJWT(oldRefreshToken).payload;
         if (!isAuthTokenPayload(oldRefreshTokenPayload)) {
             logger.info("/create_access_token invalid token");
-            if (!res.headersSent)
+            if (!res.headersSent && !res.writableEnded)
                 return res.status(401).send("Unable to verify token.");
             return;
         }
@@ -180,7 +180,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         const rows = await findUserInDatabase(oldRefreshTokenPayload.name, oldRefreshTokenPayload.team);
         if (!Array.isArray(rows) || rows.length !== 1) {
             logger.warn("/create_access_token no user in database");
-            if (!res.headersSent)
+            if (!res.headersSent && !res.writableEnded)
                 return res.status(403).send("Forbidden.");
             return;
         }
@@ -193,7 +193,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         const newRefreshToken = encodeJWT(newRefreshTokenPayload);
         const accessToken = encodeJWT(accessTokenPayload);
         logger.info("/create_access_token issued new tokens");
-        if (!res.headersSent)
+        if (!res.headersSent && !res.writableEnded)
             res.json({ refresh_token: newRefreshToken, access_token: accessToken });
     } catch (error) {
         next(error);

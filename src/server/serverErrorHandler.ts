@@ -69,10 +69,10 @@ function initializeErrorHandling(app: Express) {
                 });
             }
             if (err instanceof CustomError) {
-                if (!res.headersSent)
+                if (!res.headersSent && !res.writableEnded)
                     res.status(err.details.status).json({ error: err.details.clientMessage, code: err.code, ...err.info });
             } else {
-                if (!res.headersSent)
+                if (!res.headersSent && !res.writableEnded)
                     res.status(500).json({ error: "Jokin meni pieleen." });
             }
         } catch (error) {
@@ -104,7 +104,7 @@ const shutdown = async () => {
     const timeout = setTimeout(() => {
         logger.warn("Cleanup taking too long, forcing exit.");
         process.exit(1);
-    }, 1000);
+    }, 1000).unref();
 
     try {
         // Sulje resurssit tässä (SQLite close esim. jos sitä käytettäisiin)
