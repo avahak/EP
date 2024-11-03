@@ -118,8 +118,11 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
             if (dataMismatch) {
                 setBackdropState({ state: "message", title: "Ottelun status on muuttunut", text: "Ottelun status on muuttunut tietokannassa. Todennäköisin syy on, että toiminto on jo suoritettu. Paina \"Jatka\" nähdäksesi ottelun tiedot.", buttonText: "Jatka" });
                 shouldClearBackdrop = false;
-            } else 
+            } else {
                 setSnackbarState({ isOpen: true, message: "Lomakkeen lähetys onnistui.", severity: "success" });
+                setBackdropState({ state: "message", title: "Tiedot lähetetty", text: "Ottelun lähetys onnistui. Tässä on lähetetty lomake.", buttonText: "Jatka" });
+                shouldClearBackdrop = false;
+            }
         } catch (error: any) {
             // Jokin meni pieleen - näytetään virheilmoitus käyttäjälle:
             console.error('Error:', error);

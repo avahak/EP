@@ -40,7 +40,7 @@ const Wrap: React.FC<{ children: ReactNode, pageName?: string, restricted?: bool
         return <p>Lataus kesken..</p>;
     
     if (restricted && !authenticationState.isAuthenticated)
-        return (<Navigate to="/simulate_login" />);
+        return (<Navigate to="/login" />);
 
     return (
         <LayoutWrapper>
@@ -77,7 +77,7 @@ const AppRouter = () => {
                 {/* Väliaikaisia kehitystyökaluja */}
                 <Route path="/upload" element={<FileUpload />} />
                 <Route path="/db" element={<DBTest />} />
-                <Route path="/simulate_login" element={<Wrap pageName="Simuloitu login"><SimulateLogin /></Wrap>} />
+                <Route path="/login" element={<Wrap pageName="Simuloitu login"><SimulateLogin /></Wrap>} />
 
                 {/* Juuri */}
                 <Route path="/" element={<Wrap pageName="Etusivu"><App /></Wrap>} />

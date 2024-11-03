@@ -49,8 +49,8 @@ import { currentTimeInFinlandString, dateToYYYYMMDD } from '../shared/generalUti
 import { freemem } from 'os';
 import { getMatchSubmissionLocksString } from './database/dbMatchLocks.js';
 import { logger } from './logger.js';
-import './eventLoopLag.js';
 import { RESPONSE_DELAYED_MS, RESPONSE_TIMEOUT_MS } from './config.js';
+import './eventLoopLag.js';
 
 const app = express();
 

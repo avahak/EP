@@ -29,7 +29,7 @@ const App = () => {
                 <br />
                 <Link to="/display_match/1">Näytä yksittäisen ottelun tulos</Link> 
                 <br />
-                <Link to="/simulate_login">Simuloi login</Link> 
+                <Link to="/login">Simuloi login</Link> 
                 <br />
                 <Link to="/">Etusivu</Link> 
                 <br />

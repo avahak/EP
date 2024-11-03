@@ -174,7 +174,7 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
                 severity: "error",
                 autoHideDuration: 12000,
                 action: (
-                    <Link to="/simulate_login">
+                    <Link to="/login">
                         <Button color="primary" variant="contained">Login linkki</Button>
                     </Link>
                 ),
@@ -253,12 +253,15 @@ const MatchChooser: React.FC<{ submitCallback: (data: MatchChooserSubmitFields) 
             <Box sx={{ mb: 5 }}>
                 <Typography variant="h2" textAlign="center">Ilmoita tulos</Typography>
             </Box>
-            <Typography sx={{ mb: 3 }}>
-                <b>HUOM!</b> Tulosten ilmoittaminen on muuttunut. Nyt kumpi tahansa 
+            <Typography paragraph>
+                Tulosten ilmoittaminen on muuttunut. Nyt kumpi tahansa 
                 joukkue voi ilmoittaa ottelun tuloksen ensimmäisenä. Toisen 
                 joukkueen tulee sitten tarkistaa tulokset. Molemmat joukkueet 
-                voivat osallistua live-syöttöön. Muista lähettää tulokset tietokantaan
-                painamalla "Lähetä"-nappia live-syötön lopuksi.
+                voivat osallistua live-syöttöön. 
+            </Typography>
+            <Typography paragraph>
+                <b>HUOM!</b> Muista lähettää tulokset tietokantaan
+                painamalla "Lähetä"-nappia myös live-syötön lopuksi!
             </Typography>
             <Grid container>
                 <Grid item xs={12} sm={6} sx={{p: 2}}>

@@ -146,7 +146,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {
             const extra = { field: "queryName", queryName, queryFunction: queryFunction?.name };
-            throw new CustomError("INVALID_INPUT", extra, extra);
+            throw new CustomError("INVALID_INPUT", extra);
         }
 
         const rows = await queryFunction(params, req.auth);

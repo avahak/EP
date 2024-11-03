@@ -32,6 +32,9 @@ class LiveConnection {
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('X-Accel-Buffering', 'no');
+        // from https://github.com/zacbarton/node-server-sent-events/blob/master/index.js#L11
+        // res.status(200);
+        // res.write('retry: 5000\n\n');
 
         // Käsitellään kirjoittamiseen liittyvät ongelmat, esimerkiksi kun kirjoitetaan res.end() jälkeen
         res.on('error', (error) => {
@@ -67,7 +70,7 @@ class LiveConnection {
             return;
         const data = { type: "matchUpdate", timestamp: liveMatch.lastUpdateTime, version: liveMatch.version, data: liveMatch.data };
         try {
-            this.writeMessage(`data: ${base64JSONStringifyNode(data)}\n\n`);
+            this.writeMessage(`\ndata: ${base64JSONStringifyNode(data)}\n\n`);
             this.lastSentMatchVersion = liveMatch.version;
         } catch (error) {
             logger.error(`Failed sendLiveMatch`);
@@ -82,7 +85,7 @@ class LiveConnection {
             return;
         const data = { type: "matchListUpdate", data: matchList };
         try {
-            this.writeMessage(`data: ${base64JSONStringifyNode(data)}\n\n`);
+            this.writeMessage(`\ndata: ${base64JSONStringifyNode(data)}\n\n`);
             this.lastSentMatchListVersion = matchListVersion;
         } catch (error) {
             logger.error(`Failed sendMatchList`);
@@ -91,7 +94,8 @@ class LiveConnection {
 
     sendHeartbeat() {
         try {
-            this.writeMessage(`data: hb\n\n`, false);
+            // this.writeMessage(`\ndata: hb\n\n`, false);
+            this.writeMessage(`\n:hb\n\n`, false);
         } catch (error) {
             // logger.error(`Failed sendHeartbeat`);
         }

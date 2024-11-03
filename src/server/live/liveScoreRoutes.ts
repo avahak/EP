@@ -29,6 +29,20 @@
  * except possibly in the fields where the user has made local changes.
  */
 
+
+// use the following?
+// res.on("close" instead of req.on("close"
+//   res.writeHead(200, {
+//     "Connection": "keep-alive",
+//     "Cache-Control": "no-cache",
+//     "Content-Type": "text/event-stream",
+//   });
+// https://github.com/zacbarton/node-server-sent-events/blob/master/index.js#L11
+
+// see also https://github.com/dpskvn/express-sse/blob/master/index.js
+
+
+
 import express, { Router } from 'express';
 import { createRandomUniqueIdentifier } from '../../shared/generalUtils.js';
 import { currentScore } from '../../client/utils/matchTools.js';
@@ -199,6 +213,11 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         const connectionId = createRandomUniqueIdentifier();
         liveConnections.set(connectionId, connection);
 
+        // from https://github.com/zacbarton/node-server-sent-events/blob/master/index.js#L11
+        // req.socket.setKeepAlive(true);
+        // req.setTimeout(0);
+        // req.socket.setNoDelay(true);
+
         // Käsitellään client disconnect
         req.on('close', () => {
             liveConnections.delete(connectionId);
@@ -244,7 +263,6 @@ router.get('/get_match/:matchId', async (req, res, next) => {
  * live-ottelut ja tilanteet.
  */
 function broadcast(matchId?: number) {
-    console.log("broadcast", matchId);
     try {
         const now = Date.now();
 

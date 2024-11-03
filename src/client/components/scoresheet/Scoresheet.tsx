@@ -81,6 +81,8 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
     const [displayErrors, setDisplayErrors] = useState<boolean>(false);
     // Metatieto viimeisestä serverin lähettämästä SSE-datasta.
     const liveMatchState = useRef<LiveMatchState>({ version: -1, state: null });
+    // Onko muistutus lähettää lomake annettu?
+    const [isSubmitReminderSent, setIsSubmitReminderSent] = useState<boolean>(false);
 
     const formFields = watch();
 
@@ -304,7 +306,7 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
         for (let k = 0; k < 3; k++)
             if (!formFields.teamHome.selectedPlayers[k] || !formFields.teamAway.selectedPlayers[k])
                 playersAllSelected = false;
-    };
+    }
 
     // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on:
     if (playersAllSelected && onChangeCallback) {
@@ -315,7 +317,16 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
                 return { oldValues: liveMatchState.current.state, newValues: getValues() };
             });
         };
-    };
+    }
+
+    useEffect(() => {
+        // Jos kyseessä on live-ottelu niin muistutetaan lomakkeen lähettämisestä kun 
+        // lähettäminen tulee ensimmäisen kerran mahdolliseksi.
+        if (playersAllSelected && !isSubmitReminderSent && gameRunningStats[8].isAllGamesValid && onChangeCallback) {
+            setIsSubmitReminderSent(true);
+            setSnackbarState({ isOpen: true, message: "Muista lähettää lomake lopuksi painamalla \"Lähetä\"-nappia!", severity: "success", autoHideDuration: 8000 });
+        }
+    }, [onChangeCallback, formFields]);
 
     return (
         <Box>
