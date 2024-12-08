@@ -197,7 +197,7 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
 router.get('/watch_match/:matchId?', async (req, res) => {
     try {
         let liveMatch: LiveMatch|undefined = undefined;
-        let matchId = undefined;
+        let matchId: undefined | number = undefined;
         if (req.params.matchId) {
             matchId = parseInt(req.params.matchId);
             if (isNaN(matchId))
@@ -208,8 +208,6 @@ router.get('/watch_match/:matchId?', async (req, res) => {
 
         const connection = new LiveConnection(res, matchId);
 
-        logger.info("/watch_match", { matchId });
-
         const connectionId = createRandomUniqueIdentifier();
         liveConnections.set(connectionId, connection);
 
@@ -218,14 +216,24 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         // req.setTimeout(0);
         // req.socket.setNoDelay(true);
 
+        req.socket.setKeepAlive(true);
+        req.socket.setTimeout(0);
+
+        // Kosmeettinen, ainoastaan duplikaattien lokimerkintöjen estämiseksi
+        let errorLogged = false;
+
         // Käsitellään client disconnect
         req.on('close', () => {
+            if (!errorLogged)
+                logger.info("SSE close", { matchId, id: connectionId });
             liveConnections.delete(connectionId);
             res.end();
         });
 
         // Käsitellään yhteysongelmat - tämä tapahtuu myös kun EventSource suljetaan (ECONNRESET)
-        req.on('error', () => {
+        req.on('error', (err) => {
+            errorLogged = true;
+            logger.info("SSE error", { matchId, id: connectionId, code: (err as any).code || '-' });
             liveConnections.delete(connectionId);
             res.end();
         });
@@ -233,6 +241,8 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         connection.sendMatchList(matchList, matchListVersion);
         if (liveMatch)
             connection.sendLiveMatch(liveMatch);
+
+        logger.info("/watch_match", { matchId, id: connectionId, ip: req.ip });
     } catch (error) {
         logger.error(`Error during /watch_match`, error);
         res.end();
@@ -244,7 +254,7 @@ router.get('/watch_match/:matchId?', async (req, res) => {
  */
 router.get('/get_match/:matchId', async (req, res, next) => {
     try {
-        logger.info("/get_match", { matchId: req.params.matchId });
+        logger.info("/get_match", { matchId: req.params.matchId, ip: req.ip });
         const matchId = Number(req.params.matchId);
         let liveMatch = Number.isNaN(matchId) ? null : liveMatches.get(matchId);
         if (!liveMatch) 

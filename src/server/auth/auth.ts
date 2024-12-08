@@ -161,7 +161,7 @@ async function findUserInDatabase(name: string, team: string) {
 router.post('/create_access_token', async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.body.refresh_token || typeof req.body.refresh_token !== 'string') {
-            logger.info("/create_access_token missing token");
+            logger.info("/create_access_token missing token", { ip: req.ip });
             if (!res.headersSent && !res.writableEnded)
                 return res.status(400).send("Missing token.");
             return;
@@ -169,7 +169,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         const oldRefreshToken = req.body.refresh_token;
         const oldRefreshTokenPayload = verifyJWT(oldRefreshToken).payload;
         if (!isAuthTokenPayload(oldRefreshTokenPayload)) {
-            logger.info("/create_access_token invalid token");
+            logger.info("/create_access_token invalid token", { ip: req.ip });
             if (!res.headersSent && !res.writableEnded)
                 return res.status(401).send("Unable to verify token.");
             return;
@@ -179,7 +179,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
         // remember token ja access token frontend puolella:
         const rows = await findUserInDatabase(oldRefreshTokenPayload.name, oldRefreshTokenPayload.team);
         if (!Array.isArray(rows) || rows.length !== 1) {
-            logger.warn("/create_access_token no user in database");
+            logger.warn("/create_access_token no user in database", { ip: req.ip });
             if (!res.headersSent && !res.writableEnded)
                 return res.status(403).send("Forbidden.");
             return;
@@ -192,7 +192,7 @@ router.post('/create_access_token', async (req: Request, res: Response, next: Ne
 
         const newRefreshToken = encodeJWT(newRefreshTokenPayload);
         const accessToken = encodeJWT(accessTokenPayload);
-        logger.info("/create_access_token issued new tokens");
+        logger.info("/create_access_token issued new tokens", { ip: req.ip });
         if (!res.headersSent && !res.writableEnded)
             res.json({ refresh_token: newRefreshToken, access_token: accessToken });
     } catch (error) {

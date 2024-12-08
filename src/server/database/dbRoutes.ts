@@ -141,7 +141,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const params = req.body.params || {};
         params._current_kausi = KULUVA_KAUSI;
 
-        logger.info("/specific_query", { queryName });
+        logger.info("/specific_query", { queryName, ip: req.ip });
 
         const queryFunction = queryFunctions[queryName];
         if (!queryName || !queryFunction) {

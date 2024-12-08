@@ -54,6 +54,9 @@ import './eventLoopLag.js';
 
 const app = express();
 
+// Tarvitaan req.ip lukemiseen kun ollaan proxyn takana
+app.set('trust proxy', true);
+
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL || "";
 
@@ -80,7 +83,7 @@ app.use(express.json());
 // Jos vastausta ei ole annettu pitkään aikaan, yhteys katkaistaan.
 app.use((req, res, next) => {
     res.setTimeout(RESPONSE_TIMEOUT_MS, () => {
-        logger.warn("Request has timed out", { method: req.method, url: req.url, headersSent: res.headersSent });
+        logger.warn("Request has timed out", { method: req.method, url: req.url, headersSent: res.headersSent, ip: req.ip });
         if (!res.headersSent && !res.writableEnded) {
             res.status(500).send('Server response timeout');
         } else {
@@ -92,7 +95,7 @@ app.use((req, res, next) => {
     res.on('finish', () => {
         const diff = Date.now() - startTime;
         if (diff > RESPONSE_DELAYED_MS)
-            logger.warn("Request took long time to finish", { method: req.method, url: req.url, duration: `${(diff/1000).toFixed(1)}s` });
+            logger.warn("Request took long time to finish", { method: req.method, url: req.url, duration: `${(diff/1000).toFixed(1)}s`, ip: req.ip });
     });
 
     next();

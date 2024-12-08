@@ -11,7 +11,7 @@ import { CustomError, ErrorLevel } from '../shared/customErrors';
  * HUOM! Muista että tämä on vaarallinen lähestymistapa - serveri voi jäädä
  * käyntiin vaikka sen sisäinen tila on epäkelpo ja toimii epäodotetulla tavalla.
  */
-const MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN = 5;
+const MAX_UNCAUGHT_ERRORS_BEFORE_SHUTDOWN = 1;
 // Vastaava laskuri
 let shutdownErrorCounter = 0;
 
@@ -54,6 +54,7 @@ function initializeErrorHandling(app: Express) {
                     agent: req.headers['user-agent'],
                     route: req.originalUrl,
                     method: req.method,
+                    ip: req.ip,
                     ...info,
                     ...(err?.logAdditionalInfo || {})
                 });
@@ -64,6 +65,7 @@ function initializeErrorHandling(app: Express) {
                     agent: req.headers['user-agent'],
                     route: req.originalUrl,
                     method: req.method,
+                    ip: req.ip,
                     ...info,
                     ...(err?.logAdditionalInfo || {})
                 });
