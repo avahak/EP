@@ -16,7 +16,7 @@ import { DisplayResultsTeams } from '../components/result_tables/DisplayResultsT
 import { DisplayResultsPlayers } from '../components/result_tables/DisplayResultsPlayers';
 import { DisplayScoresheet } from '../components/result_submit/DisplayScoresheet';
 import { SnackbarProvider } from '../contexts/SnackbarContext';
-import { LiveMatches } from '../components/live_matches/LiveMatches';
+import { LiveMatchesFetch } from '../components/live_matches/LiveMatchesFetch';
 import { LayoutWrapper } from '../components/layout/LayoutWrapper';
 import { ReactNode, useContext, useEffect } from 'react';
 import { PageNameContext, PageNameProvider } from '../contexts/PageNameContext';
@@ -66,7 +66,7 @@ const AppRouter = () => {
                 <Route path="/results_teams_debug" element={<Wrap pageName="Joukkueiden tuloksia"><DisplayResultsTeams debug /></Wrap>} />
                 <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
                 <Route path="/results_players_debug" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers debug /></Wrap>} />
-                <Route path="/live_matches" element={<Wrap pageName="Live-ottelut"><LiveMatches /></Wrap>} />
+                <Route path="/live_matches" element={<Wrap pageName="Live-ottelut"><LiveMatchesFetch /></Wrap>} />
                 <Route path="/display_match/:matchId" element={<Wrap pageName="Ottelun tiedot"><DisplayScoresheet /></Wrap>} />
 
                 {/* Konenäkö */}

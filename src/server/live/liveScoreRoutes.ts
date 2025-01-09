@@ -250,17 +250,37 @@ router.get('/watch_match/:matchId?', async (req, res) => {
 });
 
 /**
- * Palauttaa ottelun ilman SSE-yhteyttä.
+ * Palauttaa ottelun ilman SSE-yhteyttä. Pyynnön yhteydessä lähetetään
+ * viimeiset versionumerot ja jos serverillä on uudempia tietoja, ne lähetetään takaisin.
  */
-router.get('/get_match/:matchId', async (req, res, next) => {
+router.post('/get_match', async (req, res, next) => {
     try {
-        logger.info("/get_match", { matchId: req.params.matchId, ip: req.ip });
-        const matchId = Number(req.params.matchId);
-        let liveMatch = Number.isNaN(matchId) ? null : liveMatches.get(matchId);
-        if (!liveMatch) 
-            throw new CustomError("INVALID_INPUT", { matchId });
+        const matchId = Number(req.body.mId);
+        const matchVersion = Number(req.body.mVer);
+        const listVersion = Number(req.body.lVer);
+        if (Number.isNaN(matchId))
+            throw new CustomError("INVALID_INPUT", { field: "mId" });
+        if (Number.isNaN(matchVersion))
+            throw new CustomError("INVALID_INPUT", { field: "mVer" });
+        if (Number.isNaN(listVersion))
+            throw new CustomError("INVALID_INPUT", { field: "lVer" });
+
+        logger.info("live/get_match", { matchId, ip: req.ip });
+
+        const liveMatch = Number.isNaN(matchId) ? null : liveMatches.get(matchId);
+        const matchObject = liveMatch ? { timestamp: liveMatch.lastUpdateTime, version: liveMatch.version, data: liveMatch.data } : null;
+        const listObject = { version: matchListVersion, data: matchList };
+
+        const data = { 
+            "match": (liveMatch && liveMatch.version === matchVersion) ? null : matchObject, 
+            "list": matchListVersion === listVersion ? null : listObject,
+        };
+
+        // console.log("body", req.body);
+        // console.log("data", data);
+
         if (!res.headersSent && !res.writableEnded)
-            return res.json({ data: liveMatch.data });
+            return res.json(data);
     } catch (error) {
         next(error);
     }

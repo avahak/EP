@@ -32,6 +32,8 @@ class LiveConnection {
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('X-Accel-Buffering', 'no');
+        // res.flushHeaders();
+        
         // from https://github.com/zacbarton/node-server-sent-events/blob/master/index.js#L11
         // res.status(200);
         // res.write('retry: 5000\n\n');
