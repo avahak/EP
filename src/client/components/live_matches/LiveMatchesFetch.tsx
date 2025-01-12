@@ -11,7 +11,7 @@ import { LiveMatchCard } from "./LiveMatchCard";
  * pyytäen jatkuvasti uusia tuloksia backendiltä (korvaa SSE-yhteydet).
  */
 const LiveMatchesFetch: React.FC = () => {
-    const [matchId, setMatchId] = useState<number | null>(null);
+    const [matchId, setMatchId] = useState<number | null>(-1);
     const [matchData, setMatchData] = useState<any>(null);
     const [matchVersion, setMatchVersion] = useState<number>(-1);
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
@@ -30,33 +30,50 @@ const LiveMatchesFetch: React.FC = () => {
     /**
      * Hylkää promisen jos aikaa menee liian kauan
      */
-    const rejectAfterTimeout = (ms: number): Promise<never> => 
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
+    const rejectAfterTimeout = (ms: number, timeoutHandle: { id: any }): Promise<never> =>
+        new Promise((_, reject) => {
+            timeoutHandle.id = setTimeout(() => {
+                reject(new Error('Request timed out'));
+            }, ms);
+        });
 
     /**
      * Hakee ottelutietoja ja listan otteluista serveriltä. Serverille lähetetään
      * nykyiset versionumerot, jotta turhaa tietoa tarvitsisi lähettää vähemmän.
-     * Jos serveri lähettää ottelun tai listan takaisin, se otettan käyttöön.
+     * Jos serveri lähettää ottelun tai listan takaisin, se otetaan käyttöön.
      */
     const fetchData = async () => {
         console.log("fetchData");
+
+        // URL query parametrit:
+        const queryParams = new URLSearchParams({
+            mId: String(matchId),
+            mVer: String(matchVersion),
+            lVer: String(listVersion)
+        }).toString();
+        // handle rejectAfterTimeout timeoutille
+        const timeoutHandle = { id: undefined };
+
         try {
-            setTimer(120000);    // pitkä odotus jos serveri ei vastaa
+            setTimer(180000);    // pitkä odotus jos serveri ei vastaa
 
             // Odotetaan serverin vastausta tai timeout, kumpi tahansa tulee ensin:
             const response = await Promise.race([
-                rejectAfterTimeout(60000),     // reject jos fetch vie liian kauan
-                serverFetch(`/api/live/get_match`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        mId: matchId, 
-                        mVer: matchVersion,
-                        lVer: listVersion,
-                    }),
+                rejectAfterTimeout(120000, timeoutHandle),     // reject jos fetch vie liian kauan
+                serverFetch(`/api/live/get_match?${queryParams}`, {
+                    method: 'GET',
                 }, null)
+                // serverFetch(`/api/live/get_match`, {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({ 
+                //         mId: matchId, 
+                //         mVer: matchVersion,
+                //         lVer: listVersion,
+                //     }),
+                // }, null)
             ]);
 
             if (!response.ok) 
@@ -76,8 +93,10 @@ const LiveMatchesFetch: React.FC = () => {
         } catch(error) {
             console.error('Error:', error);
         } finally {
+            if (timeoutHandle.id)
+                clearTimeout(timeoutHandle.id);
             // Tietojen haku valmis, palataan takaisin normaaliin tulosten kyselytahtiin
-            setTimer(5000);
+            setTimer(10000);
         }
     };
     // Päivitetään timerin käyttämä callback funktio

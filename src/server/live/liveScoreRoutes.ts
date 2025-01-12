@@ -160,6 +160,8 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
             liveMatch.lastUpdateTime = now;
             liveMatch.version++;
 
+            logger.info("Live match update", { matchId, ip: req.ip });
+
             // liveMatch.data = combineLiveMatchPlayers(liveMatch.data, result);
             if (oldResult)
                 liveMatch.data = integrateLiveMatchChanges(liveMatch.data, oldResult, result);
@@ -174,7 +176,7 @@ router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) =
                 const score = currentScore(result);
                 liveMatch = { startTime: now, lastUpdateTime: now, version: 0, data: result, score: score };
                 liveMatches.set(matchId, liveMatch);
-                logger.info("Starting match in liveScoreRoutes", { matchId });
+                logger.info("Starting match in liveScoreRoutes", { matchId, ip: req.ip });
                 // Tavallisesta poiketen lähetetään ottelun tietoja heti, ei viiveellä.
                 // Tämä tehdään koska muutoin Scoresheet ylikirjoittaa viiveellä ensimmäisen muutokset uudessa lomakkeessa.
                 broadcast(matchId);
@@ -224,17 +226,17 @@ router.get('/watch_match/:matchId?', async (req, res) => {
 
         // Käsitellään client disconnect
         req.on('close', () => {
-            if (!errorLogged)
-                logger.info("SSE close", { matchId, id: connectionId });
             liveConnections.delete(connectionId);
+            if (!errorLogged)
+                logger.info("SSE close", { matchId, id: connectionId, numSSE: liveConnections.size });
             res.end();
         });
 
         // Käsitellään yhteysongelmat - tämä tapahtuu myös kun EventSource suljetaan (ECONNRESET)
         req.on('error', (err) => {
             errorLogged = true;
-            logger.info("SSE error", { matchId, id: connectionId, code: (err as any).code || '-' });
             liveConnections.delete(connectionId);
+            logger.info("SSE error", { matchId, id: connectionId, numSSE: liveConnections.size, code: (err as any).code || '-' });
             res.end();
         });
 
@@ -242,7 +244,7 @@ router.get('/watch_match/:matchId?', async (req, res) => {
         if (liveMatch)
             connection.sendLiveMatch(liveMatch);
 
-        logger.info("/watch_match", { matchId, id: connectionId, ip: req.ip });
+        logger.info("/watch_match", { matchId, id: connectionId, ip: req.ip, numSSE: liveConnections.size });
     } catch (error) {
         logger.error(`Error during /watch_match`, error);
         res.end();
@@ -253,11 +255,11 @@ router.get('/watch_match/:matchId?', async (req, res) => {
  * Palauttaa ottelun ilman SSE-yhteyttä. Pyynnön yhteydessä lähetetään
  * viimeiset versionumerot ja jos serverillä on uudempia tietoja, ne lähetetään takaisin.
  */
-router.post('/get_match', async (req, res, next) => {
+router.get('/get_match', async (req, res, next) => {
     try {
-        const matchId = Number(req.body.mId);
-        const matchVersion = Number(req.body.mVer);
-        const listVersion = Number(req.body.lVer);
+        const matchId = Number(req.query.mId);
+        const matchVersion = Number(req.query.mVer);
+        const listVersion = Number(req.query.lVer);
         if (Number.isNaN(matchId))
             throw new CustomError("INVALID_INPUT", { field: "mId" });
         if (Number.isNaN(matchVersion))
@@ -265,7 +267,8 @@ router.post('/get_match', async (req, res, next) => {
         if (Number.isNaN(listVersion))
             throw new CustomError("INVALID_INPUT", { field: "lVer" });
 
-        logger.info("live/get_match", { matchId, ip: req.ip });
+        // Tämän loggaus toisi suuren määrän rivejä, ei tehdä lokimerkintää
+        // logger.info("live/get_match", { matchId, ip: req.ip });
 
         const liveMatch = Number.isNaN(matchId) ? null : liveMatches.get(matchId);
         const matchObject = liveMatch ? { timestamp: liveMatch.lastUpdateTime, version: liveMatch.version, data: liveMatch.data } : null;

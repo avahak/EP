@@ -7,8 +7,8 @@ import { AuthenticationState } from '../contexts/AuthenticationContext';
 /**
  * Apufunktio API-kutsujen tekemiseen palvelimelle. Käyttää annettua access tokenia.
  */
-const serverFetchWithAccessToken = async (route: string, options: any = {}, accessToken: string) => {
-    const headers = { ...(options.headers ?? {}), 'Authorization': `Bearer ${accessToken}` };
+const serverFetchWithAccessToken = async (route: string, options: any = {}, accessToken: string|null) => {
+    const headers = { ...(options.headers ?? {}), ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) };
     return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
 }
 
@@ -19,9 +19,9 @@ const serverFetchWithAccessToken = async (route: string, options: any = {}, acce
 const serverFetch = async (route: string, options: any = {}, authenticationState: AuthenticationState|null) => {
     let accessTokenRenewed = false;
 
-    // If no authentication is provided, proceed with empty access token
+    // If no authentication is provided, proceed with no access token
     if (!authenticationState || !authenticationState.isAuthenticated)
-        return serverFetchWithAccessToken(route, options, "");
+        return serverFetchWithAccessToken(route, options, null);
 
     let accessToken: string|null = window.localStorage.getItem('accessToken');
     // console.log("accessToken from localstorage:", accessToken);
@@ -31,7 +31,7 @@ const serverFetch = async (route: string, options: any = {}, authenticationState
         accessToken = await authenticationState.renewAccessToken();
         accessTokenRenewed = true;
         if (!accessToken)
-            accessToken = "";
+            accessToken = null;
         // console.log("accessToken was empty so try to renew it:", accessToken);
     }
     
