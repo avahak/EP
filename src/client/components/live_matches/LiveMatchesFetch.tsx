@@ -4,6 +4,7 @@ import { serverFetch } from "../../utils/apiUtils";
 import { LiveMatchEntry } from "../../../shared/commonTypes";
 import { Scoresheet } from "../scoresheet/Scoresheet";
 import { LiveMatchCard } from "./LiveMatchCard";
+import { rejectAfterTimeout } from "../../../shared/generalUtils";
 
 /**
  * Live-otteluiden esityssivu. Näyttää kutakin ottelua kohden kortin sen tiedoista.
@@ -16,26 +17,16 @@ const LiveMatchesFetch: React.FC = () => {
     const [matchVersion, setMatchVersion] = useState<number>(-1);
     const [liveMatchList, setLiveMatchList] = useState<LiveMatchEntry[]>([]);
     const [listVersion, setListVersion] = useState<number>(-1);
-    const timer = useRef<NodeJS.Timeout>();
-    const callbackRef = useRef<() => void>(() => {});   // ongelman "useEffect with stale closure" ratkaisemiseksi
+    const timer = useRef<{ timeout: NodeJS.Timeout|null, callback: () => void }>({ timeout: null, callback: () => {} });
 
     /**
      * Resetoi ajastimen uudella viiveellä
      */
     const setTimer = (delay: number) => {
-        clearTimeout(timer.current);
-        timer.current = setTimeout(callbackRef.current, delay);
+        if (timer.current.timeout) 
+            clearTimeout(timer.current.timeout);
+        timer.current.timeout = setTimeout(timer.current.callback, delay);
     };
-
-    /**
-     * Hylkää promisen jos aikaa menee liian kauan
-     */
-    const rejectAfterTimeout = (ms: number, timeoutHandle: { id: any }): Promise<never> =>
-        new Promise((_, reject) => {
-            timeoutHandle.id = setTimeout(() => {
-                reject(new Error('Request timed out'));
-            }, ms);
-        });
 
     /**
      * Hakee ottelutietoja ja listan otteluista serveriltä. Serverille lähetetään
@@ -100,7 +91,7 @@ const LiveMatchesFetch: React.FC = () => {
         }
     };
     // Päivitetään timerin käyttämä callback funktio
-    callbackRef.current = fetchData; 
+    timer.current.callback = fetchData; 
 
     useEffect(() => {
         console.log("LiveMatchesFetch useEffect!");
@@ -108,7 +99,8 @@ const LiveMatchesFetch: React.FC = () => {
         fetchData();
 
         return () => {
-            clearTimeout(timer.current);
+            if (timer.current.timeout)
+                clearTimeout(timer.current.timeout);
         };
     }, [matchId]);
 

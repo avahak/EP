@@ -278,6 +278,16 @@ function compareJsonObjects(obj1: any, obj2: any, path: string[] = []): string[]
 }
 
 /**
+ * Hylkää promisen jos aikaa menee liian kauan
+ */
+const rejectAfterTimeout = (ms: number, timeoutHandle: { id: any }): Promise<never> =>
+    new Promise((_, reject) => {
+        timeoutHandle.id = setTimeout(() => {
+            reject(new Error('Request timed out'));
+        }, ms);
+});
+
+/**
  * Viive ms millisekuntia.
  */
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
@@ -337,4 +347,4 @@ export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements,
     base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
     createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 
     removeSpecialChars, findStringDifference, compareJsonObjects, 
-    currentTimeInFinlandString, delay, useDebounce };
+    currentTimeInFinlandString, delay, useDebounce, rejectAfterTimeout };

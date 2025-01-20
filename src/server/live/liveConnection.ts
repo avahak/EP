@@ -38,6 +38,9 @@ class LiveConnection {
         // res.status(200);
         // res.write('retry: 5000\n\n');
 
+        // https://stackoverflow.com/a/78321582:
+        // res.setHeader('Content-Encoding', 'none');
+
         // Käsitellään kirjoittamiseen liittyvät ongelmat, esimerkiksi kun kirjoitetaan res.end() jälkeen
         res.on('error', (error) => {
             logger.error('Stream error on text stream response', error);

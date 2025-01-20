@@ -84,6 +84,12 @@ let matchList: LiveMatchEntry[] = [];
 let matchListVersion: number = 0;
 
 /**
+ * Pitää kirjaa kuinka monta live-ottelu-pyyntöä serveri on käsitellyt 
+ * (get_match ja submit_match).
+ */
+let numLiveUpdateRequests: number = 0;
+
+/**
  * Päivittää listan live-otteluista yhteyksiin lähetettävässä muodossa.
  * Jos lista on jo ajan tasalla, ei tehdä mitään.
  */
@@ -111,7 +117,7 @@ function updateMatchList() {
  */
 function getLivescoreInfo() {
     const matchIds = Array.from(liveMatches.keys());
-    return `${matchIds.length} ottelua (${matchIds}), ${liveConnections.size} yhteyttä`;
+    return `${matchIds.length} ottelua (${matchIds}), ${liveConnections.size} yhteyttä, yhteensä ${numLiveUpdateRequests} pyyntöä`;
 }
 
 /**
@@ -139,55 +145,79 @@ function endLiveMatch(matchId: number, newStatus: string, originalData: Scoreshe
  */
 router.post('/submit_match', injectAuth, requireAuth(), async (req, res, next) => {
     try {
-        const result = req.body.result;
-        const oldResult = req.body.oldResult;
-        if (!result)
-            throw new CustomError("INVALID_INPUT", { field: "result" })
-        if (result.status !== "T") 
-            throw new CustomError("INVALID_INPUT", { field: "result" })
+        numLiveUpdateRequests++;
+        if (numLiveUpdateRequests % 100 == 0)
+            logger.info("Live-otteluiden pyyntöjen määrä", { num: numLiveUpdateRequests });
 
-        const matchId = result.id;
-        const now = Date.now();
+        const matchId = Number(req.body.matchId);
+        if (Number.isNaN(matchId))
+            throw new CustomError("INVALID_INPUT", { field: "matchId" })
+        const data = req.body.data;
 
-        let liveMatch: LiveMatch|undefined = liveMatches.get(matchId);
-        if (liveMatch) {
-            // console.log("received update from", author);
-            // console.log("liveMatch.data", liveMatch.data.scores[0]);
-            // console.log("oldResult", oldResult.scores[0]);
-            // console.log("newResult", result.scores[0]);
+        // console.log("matchId", matchId, "data", data);
 
-            // Päivitä olemassaolevaa liveMatch:
-            liveMatch.lastUpdateTime = now;
-            liveMatch.version++;
+        const version = data?.version ?? -1;
 
-            logger.info("Live match update", { matchId, ip: req.ip });
+        // Jos pyynnössä on lähetetty otteludataa, integroidaan se live-otteluihin
+        if (data?.newValues) {
+            const result = data?.newValues;
+            const oldResult = data?.oldValues;
+            if (!result)
+                throw new CustomError("INVALID_INPUT", { field: "newValues" })
+            if (result.status !== "T") 
+                throw new CustomError("INVALID_INPUT", { field: "newValues" })
 
-            // liveMatch.data = combineLiveMatchPlayers(liveMatch.data, result);
-            if (oldResult)
-                liveMatch.data = integrateLiveMatchChanges(liveMatch.data, oldResult, result);
-            else 
-                liveMatch.data = integrateLiveMatchChanges(liveMatch.data, liveMatch.data, result);
+            const now = Date.now();
 
-            const score = currentScore(liveMatch.data);
-            liveMatch.score = score;
-        } else {
-            // Luodaan uusi liveMatch
-            if (result.status === "T") {
-                const score = currentScore(result);
-                liveMatch = { startTime: now, lastUpdateTime: now, version: 0, data: result, score: score };
-                liveMatches.set(matchId, liveMatch);
-                logger.info("Starting match in liveScoreRoutes", { matchId, ip: req.ip });
-                // Tavallisesta poiketen lähetetään ottelun tietoja heti, ei viiveellä.
-                // Tämä tehdään koska muutoin Scoresheet ylikirjoittaa viiveellä ensimmäisen muutokset uudessa lomakkeessa.
-                broadcast(matchId);
+            let liveMatch: LiveMatch|undefined = liveMatches.get(matchId);
+            if (liveMatch) {
+                // console.log("received update from", author);
+                // console.log("liveMatch.data", liveMatch.data.scores[0]);
+                // console.log("oldResult", oldResult.scores[0]);
+                // console.log("newResult", result.scores[0]);
+
+                // Päivitä olemassaolevaa liveMatch:
+                liveMatch.lastUpdateTime = now;
+                liveMatch.version++;
+
+                logger.info("Live match update", { matchId, ip: req.ip });
+
+                // liveMatch.data = combineLiveMatchPlayers(liveMatch.data, result);
+                if (oldResult)
+                    liveMatch.data = integrateLiveMatchChanges(liveMatch.data, oldResult, result);
+                else 
+                    liveMatch.data = integrateLiveMatchChanges(liveMatch.data, liveMatch.data, result);
+
+                const score = currentScore(liveMatch.data);
+                liveMatch.score = score;
+            } else {
+                // Luodaan uusi liveMatch
+                if (result.status === "T") {
+                    const score = currentScore(result);
+                    liveMatch = { startTime: now, lastUpdateTime: now, version: 0, data: result, score: score };
+                    liveMatches.set(matchId, liveMatch);
+                    logger.info("Starting match in liveScoreRoutes", { matchId, ip: req.ip });
+                    // Tavallisesta poiketen lähetetään ottelun tietoja heti, ei viiveellä.
+                    // Tämä tehdään koska muutoin Scoresheet ylikirjoittaa viiveellä ensimmäisen muutokset uudessa lomakkeessa.
+                    // broadcast(matchId);
+                    // HUOM tätä ei enää tehdä mutta ei pitäisi tarvita koska uusi versio
+                    // lähetetään heti takaisin vastauksena
+                }
             }
+
+            updateMatchList();
         }
 
-        // TODO REMOVE!
-        // await delay(100+400*Math.random());
-
-        if (!res.headersSent && !res.writableEnded)
-            return res.json({ ok: true });  // TODO tässä voisi lähettää takaisin uusin versio
+        const liveMatch: LiveMatch|undefined = liveMatches.get(matchId);
+        // console.log("versions: request:", version, "on server:", liveMatch?.version);
+        if (!liveMatch || version === liveMatch.version) {
+            if (!res.headersSent && !res.writableEnded)
+                return res.json({ });
+        } else {
+            const responseData = { timestamp: liveMatch.lastUpdateTime, version: liveMatch.version, data: liveMatch.data };
+            if (!res.headersSent && !res.writableEnded)
+                return res.json(responseData);
+        }
     } catch (error) {
         next(error);
     }
@@ -257,6 +287,10 @@ router.get('/watch_match/:matchId?', async (req, res) => {
  */
 router.get('/get_match', async (req, res, next) => {
     try {
+        numLiveUpdateRequests++;
+        if (numLiveUpdateRequests % 100 == 0)
+            logger.info("Live-otteluiden pyyntöjen määrä", { num: numLiveUpdateRequests });
+
         const matchId = Number(req.query.mId);
         const matchVersion = Number(req.query.mVer);
         const listVersion = Number(req.query.lVer);

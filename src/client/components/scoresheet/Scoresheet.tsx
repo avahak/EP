@@ -6,10 +6,9 @@
  * ja niitä voi muokata GameDialog komponentilla. Näiden alla on pelien tulokset
  * GameResultsTable komponentissa. 
  * 
- * Live-otteluiden yhtäaikainen editointi on selitetty tiedoston liveScoreRoutes.ts 
- * kommenteissa. Tässä komponentissa eventSource saadaan propsina ja siihen 
- * liitetään onmessage funktio handleSSEMessage, joka hoitaa tilan päivityksen.
- * Muutokset lähetetään serverille kutsumalla onChangeCallback.
+ * Live-otteluiden kohdalla lomakkeen tiedot lähetetään serverille live-seurantaa varten
+ * ja ne synkronoidaan muiden ottelun live-syöttäjien kanssa tekemällä toistuvia 
+ * POST pyyntöjä serverille funktiolla liveUpdate().
  * 
  * Suomennokset: ottelu=match, peli=game, erä=round.
  */
@@ -17,7 +16,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { GameResultsTable } from "./GameResultsTable";
 import AddPlayerDialog from './AddPlayerDialog';
-import { base64JSONparse, dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings } from '../../../shared/generalUtils';
+import { dateToDDMMYYYY, dateToYYYYMMDD, getDayOfWeekStrings, rejectAfterTimeout } from '../../../shared/generalUtils';
 import { Box, Button, Grid, SelectChangeEvent, Typography } from '@mui/material';
 import { TeamSelection } from "./TeamSelection";
 import { RoundResultsTable } from "./RoundResultsTable";
@@ -26,28 +25,28 @@ import { ScoresheetPlayer, ScoresheetTeam, ScoresheetFields, createEmptyTeam } f
 import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { LegendBox } from "./LegendBox";
 import { integrateLiveMatchChanges } from "../../../shared/liveMatchTools";
+import { AuthenticationContext } from "../../contexts/AuthenticationContext";
+import { serverFetch } from "../../utils/apiUtils";
 
 /**
- * Tyyppi SSE metadatalle.
+ * Tyyppi live-ottelun metadatalle.
  */
 type LiveMatchState = {
     // Uusimman serveriltä saadun pöytäkirjan versio
     version: number;
     // Viimeinen pöytäkirjan tila, joka saatu serveriltä
     state: ScoresheetFields|null;
+    // Viimeisin serveriltä saatu pöytäkirja merkkijonona
+    dataString: string;
 };
 
 type ScoresheetProps = {
     initialValues: ScoresheetFields;
     isModifiable?: boolean,
+    isLive?: boolean,
     submitCallback?: (data: ScoresheetFields) => void;
     onAlreadySubmitted?: () => void;
     rejectCallback?: () => void;
-    onChangeCallback?: {
-        (getMostRecentScoresheetData: () => { oldValues: ScoresheetFields | null; newValues: ScoresheetFields }): void;
-        cancel: () => boolean;
-    };
-    eventSource?: EventSource;
     uuid?: string;
 };
 
@@ -57,13 +56,13 @@ type ScoresheetProps = {
 const Scoresheet: React.FC<ScoresheetProps> = ({
     initialValues, 
     isModifiable = false,
+    isLive = false,
     submitCallback, 
     onAlreadySubmitted, 
     rejectCallback, 
-    onChangeCallback, 
-    eventSource, 
     uuid,
 }) => {
+    const authenticationState = useContext(AuthenticationContext);
     const setSnackbarState = useContext(SnackbarContext);
     // isAddPlayerDialogOpen seuraa onko modaali pelaajan lisäämiseksi auki:
     const [isAddPlayerDialogOpen, setIsAddPlayerDialogOpen] = useState(false);
@@ -75,14 +74,14 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
     const { setValue, handleSubmit, watch, reset, getValues } = useForm<ScoresheetFields>({
         defaultValues: initialValues
     });
-    // Käytetään onChageCallback varten tarkistamaan onko muutoksia tapahtunut:
-    const dataString = useRef("");
     // Kun lomake yritetään lähettää epäonnistuneesti, aletaan näyttää virheilmoituksia:
     const [displayErrors, setDisplayErrors] = useState<boolean>(false);
-    // Metatieto viimeisestä serverin lähettämästä SSE-datasta.
-    const liveMatchState = useRef<LiveMatchState>({ version: -1, state: null });
+    // Metatieto viimeisestä serverin lähettämästä live-ottelun tiedosta
+    const liveMatchState = useRef<LiveMatchState>({ version: -1, state: null, dataString: "" });
     // Onko muistutus lähettää lomake annettu?
     const [isSubmitReminderSent, setIsSubmitReminderSent] = useState<boolean>(false);
+    // Ajastin live-päivityksille
+    const liveTimer = useRef<{ timeout: NodeJS.Timeout|null, callback: () => void }>({ timeout: null, callback: () => {} });
 
     const formFields = watch();
 
@@ -92,15 +91,6 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
         reset(initialValues);
         console.log("Scoresheet useEffect on [initialValues] called");
     }, [initialValues]);
-
-    // Peruutetaan ottelun lähetys livenä mikäli komponentti poistetaan DOM:sta.
-    useEffect(() => {
-        console.log("Scoresheet useEffect on [] called")
-        return () => {
-            if (onChangeCallback)
-                onChangeCallback.cancel();
-        }
-    }, []);
 
     // Lasketaan väliaikatulokset ja virheilmoitukset:
     const gameRunningStats = computeGameRunningStats(formFields);
@@ -226,76 +216,98 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
     };
 
     /**
-     * Muuttaa lomakkeen tiedot merkkijonoksi.
+     * Resetoi live-päivitysten ajastimen uudella viiveellä
      */
-    const createDataString = (data: any) => {
-        return JSON.stringify(data);
+    const setLiveTimer = (delay: number) => {
+        if (liveTimer.current.timeout) 
+            clearTimeout(liveTimer.current.timeout);
+        liveTimer.current.timeout = setTimeout(liveTimer.current.callback, delay);
     };
 
     /**
-     * Funktio, jota kutsutaan kun eventSource saa vastaan serverin lähettämän viestin
+     * Funktio, jota kutsutaan toistuvasti kun kyseessä on live-ottelu. 
+     * Tämä lähettää käyttäjän muutokset serverille ja vastaanottaa serveriltä
+     * päivitetyn ottelun, jossa voi olla mukana muiden tekemiä muutoksia.
      */
-    const handleSSEMessage = (event: MessageEvent) => {
-        // handleSSEMessage asetetaan useEffect:ssä, joten formFields ei ole ajan tasalla
+    const liveUpdate = async () => {
+        console.log("liveUpdate()");
         const currentFormFields = getValues();
 
-        // console.log("currentFormFields at start of handleSSEMessage", currentFormFields);
-        const eventData = event.data;
-        if (eventData === "hb") {
-            console.log(`Received: heartbeat.`);
-            return;
-        }
-        const parsedData = base64JSONparse(eventData);
-        const { type, data } = parsedData;
-
-        if (type === "matchUpdate") {
-            if (data.id !== currentFormFields.id) {
-                console.error("SSE matchUpdate: id mismatch - this should never happen!");
-                return;
-            }
-            // const author = parsedData.author;
-            let version = Number(parsedData.version);
-            if (isNaN(version))
-                version = -1;
-            console.log("matchUpdate versions", version, liveMatchState.current.version);
-            // console.log("matchUpdate from", author, author == uuid ? "(me)" : "(other)", "versions", version, liveMatchState.current.version);
-
-            if (version === 0) {
-                // Serveri lähettää ensimmäisen version
-                // Tämä voi tapahtua myös jos serveri kaatuu
-                liveMatchState.current.version = version;
-                liveMatchState.current.state = data;
-                dataString.current = createDataString(data);
-                reset(data);
-            } else if (version > liveMatchState.current.version) {
-                // Tarkistetaan mitä muutoksia data:ssa on edelliseen serverin lähettämään 
-                // verrattuna ja integroidaan muutokset currentFormFields kopioon, palauttaa tuloksen.
-                let newState = data;
-                if (liveMatchState.current.state)
-                    newState = integrateLiveMatchChanges(currentFormFields, liveMatchState.current.state, data);
-
-                liveMatchState.current.version = version;
-                liveMatchState.current.state = data;
-                dataString.current = createDataString(newState);
-                reset(newState);
-            }
-            if (data.status !== "T" && onAlreadySubmitted)
-                onAlreadySubmitted();
+        let uploadData: any = { version: liveMatchState.current.version };
+        if (playersAllSelected) {
+            const newDataString = JSON.stringify(currentFormFields);
+            if (newDataString !== liveMatchState.current.dataString) {
+                uploadData = { version: liveMatchState.current.version, oldValues: liveMatchState.current.state, newValues: currentFormFields };
+            };
         }
 
-        // console.log(`Received: type: ${type}, data: ${JSON.stringify(data)}`);
+        const timeoutHandle = { id: undefined };
+        try {
+            setLiveTimer(120000);   // pitkä odotus jos serveri ei vastaa
+            // await delay(100+400*Math.random());
+            console.log("DEBUG, liveUpdate sending", JSON.stringify({ matchId: getValues().id, data: uploadData }));
+            const response = await Promise.race([
+                rejectAfterTimeout(60000, timeoutHandle), 
+                serverFetch("/api/live/submit_match", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ matchId: getValues().id, data: uploadData }),
+                }, authenticationState)
+            ]);
+            if (!response.ok) 
+                throw new Error(`HTTP error! Status: ${response.status}`);
+
+            const { version, data } = await response.json();
+            console.log("DEBUG, liveUpdate response", { version, data });
+            if (data) {
+                if (version === 0) {
+                    // Serveri lähettää ensimmäisen version
+                    // Tämä voi tapahtua myös jos serveri kaatuu
+                    // TODO tämä ei enää toimi entisellä SSE tavalla, pitäisikö muuttaa?
+                    liveMatchState.current.version = version;
+                    liveMatchState.current.state = data;
+                    liveMatchState.current.dataString = JSON.stringify(data);
+                    reset(data);
+                } else if (version !== liveMatchState.current.version) {
+                    // Tarkistetaan mitä muutoksia data:ssa on edelliseen serverin lähettämään 
+                    // verrattuna ja integroidaan muutokset currentFormFields kopioon, palauttaa tuloksen.
+                    let newState = data;
+                    if (liveMatchState.current.state)
+                        newState = integrateLiveMatchChanges(currentFormFields, liveMatchState.current.state, data);
+
+                    liveMatchState.current.version = version;
+                    liveMatchState.current.state = data;
+                    liveMatchState.current.dataString = JSON.stringify(data); // ennen oli = JSON.stringify(newState);
+                    reset(newState);
+                }
+                if (data.status !== "T" && onAlreadySubmitted)
+                    onAlreadySubmitted();
+            }
+
+        } catch(error) {
+            console.error('Error:', error);
+        } finally {
+            if (timeoutHandle.id)
+                clearTimeout(timeoutHandle.id);
+            // Sovitaan uusi timeout
+            setLiveTimer(6000);
+        }
     };
+    liveTimer.current.callback = liveUpdate;
 
-    // Asetetaan eventSource.onmessage jos eventSource on määritelty.
+    // Asetetaan ajastin live-päivityksille
     useEffect(() => {
-        if (!eventSource)
-            return;
-        console.log("Scoresheet useEffect, setting up eventSource", eventSource);
-        eventSource.onmessage = handleSSEMessage;
-        return () => {
-            eventSource.onmessage = null;
-        };
-    }, [uuid, eventSource instanceof EventSource ? eventSource.url : null]);
+        if (isLive) {
+            console.log("Scoresheet useEffect, calling liveUpdate");
+            liveUpdate();
+            return () => {
+                if (liveTimer.current.timeout)
+                    clearTimeout(liveTimer.current.timeout);
+            };
+        }
+    }, [uuid, isLive]);
 
     // Erätuloksia voi muuttaa ainoastaan jos kaikki pelaajat on valittu.
     // Tarkistetaan tässä onko kaikki pelaajat valittu:
@@ -308,25 +320,14 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
                 playersAllSelected = false;
     }
 
-    // Tarkistetaan onko lomakkeen tila muuttunut, kutsuu onChangeCallback jos on:
-    if (playersAllSelected && onChangeCallback) {
-        const newDataString = createDataString(formFields);
-        if (onChangeCallback && (newDataString !== dataString.current)) {
-            dataString.current = newDataString;
-            onChangeCallback(() => {
-                return { oldValues: liveMatchState.current.state, newValues: getValues() };
-            });
-        };
-    }
-
     useEffect(() => {
         // Jos kyseessä on live-ottelu niin muistutetaan lomakkeen lähettämisestä kun 
         // lähettäminen tulee ensimmäisen kerran mahdolliseksi.
-        if (playersAllSelected && !isSubmitReminderSent && gameRunningStats[8].isAllGamesValid && onChangeCallback) {
+        if (playersAllSelected && !isSubmitReminderSent && gameRunningStats[8].isAllGamesValid && isLive) {
             setIsSubmitReminderSent(true);
             setSnackbarState({ isOpen: true, message: "Muista lähettää lomake lopuksi painamalla \"Lähetä\"-nappia!", severity: "success", autoHideDuration: 8000 });
         }
-    }, [onChangeCallback, formFields]);
+    }, [isLive, formFields]);
 
     return (
         <Box>

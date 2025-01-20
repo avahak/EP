@@ -10,7 +10,7 @@ import { AuthenticationState } from '../contexts/AuthenticationContext';
 const serverFetchWithAccessToken = async (route: string, options: any = {}, accessToken: string|null) => {
     const headers = { ...(options.headers ?? {}), ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) };
     return fetch(`${getBackendUrl()}${route}`, { ...options, headers });
-}
+};
 
 /**
  * Apufunktio API-kutsujen tekemiseen palvelimelle. 

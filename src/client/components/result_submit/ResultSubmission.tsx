@@ -5,10 +5,10 @@
  * esitetään Scoresheet (mode='verify') hyväksyttäväksi.
  */
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { MatchChooser, MatchChooserSubmitFields } from "./MatchChooser";
 import { Scoresheet } from "../scoresheet/Scoresheet";
-import { getBackendUrl, serverFetch } from "../../utils/apiUtils";
+import { serverFetch } from "../../utils/apiUtils";
 import { Container } from "@mui/material";
 import { parseMatch } from "../../../shared/parseMatch";
 import { fetchMatchData } from "../../utils/matchTools";
@@ -16,7 +16,7 @@ import { SnackbarContext } from "../../contexts/SnackbarContext";
 import { ScoresheetFields, createEmptyScoresheet } from "../../../shared/scoresheetTypes";
 import { AuthenticationContext } from "../../contexts/AuthenticationContext";
 import { roleIsAtLeast } from "../../../shared/commonTypes";
-import { createRandomUniqueIdentifier, useDebounce } from "../../../shared/generalUtils";
+import { createRandomUniqueIdentifier } from "../../../shared/generalUtils";
 import { ErrorCode } from "../../../shared/customErrors";
 import { MessageBackdrop, ProcessingBackdrop } from "../Backdrops";
 
@@ -60,8 +60,6 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
     const [useLivescore, setUseLivescore] = useState<boolean>(acceptResultProp ? false : true);
     const [pageState, setPageState] = useState<PageState>(initialPageState);
     const [backdropState, setBackdropState] = useState<BackdropState>({ state: "off", title: "", text: "", buttonText: "" });
-    // EventSource kuuntelemaan muiden tekemiä muutoksia (kun pageState on "scoresheet_fresh")
-    const [eventSource, setEventSource] = useState<EventSource|undefined>();
     // Uniikki id, ei käytetä tällä hetkellä
     const uuid = useRef<string>(createRandomUniqueIdentifier());
     // Hack estämään onAlreadySubmitted tilan muuttaminen samaan aikaan kun lomake lähetetty
@@ -131,29 +129,6 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
         } finally {
             if (shouldClearBackdrop)
                 setBackdropState({ state: "off", title: "", text: "", buttonText: "" });
-        }
-    };
-
-    /**
-     * Lähettää lomakkeen tiedot serverille live-seurantaa varten.
-     * Tämä tehdään jokaisen muutoksen jälkeen.
-     */
-    const fetchSendLiveResult = async ({ oldValues, newValues }: { oldValues: ScoresheetFields|null, newValues: ScoresheetFields }): Promise<void> => {
-        console.log("fetchSendLiveResult()");
-        try {
-            // await delay(100+400*Math.random());
-            const response = await serverFetch("/api/live/submit_match", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ oldResult: oldValues, result: newValues }),
-            }, authenticationState);
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            // await delay(100+400*Math.random());
-        } catch(error) {
-            console.error('Error:', error);
         }
     };
 
@@ -243,18 +218,6 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
     };
 
     /**
-     * Kutsutaan kun ottelupöytäkirjaan tehdään muutoksia tilassa "scoresheet_fresh".
-     * Tässä argumenttina on funktio getMostRecentScoresheetData, joka palauttaa 
-     * pöytäkirjan uusimman datan.
-     */
-    const handleScoresheetLiveResult = useDebounce((getMostRecentScoresheetData: () => { oldValues: ScoresheetFields|null, newValues: ScoresheetFields }) => {
-        if (useLivescore) {
-            const data = getMostRecentScoresheetData();
-            fetchSendLiveResult(data);
-        }
-    }, 3000);
-
-    /**
      * Tämä kutsutaan kun vierasjoukkueen edustaja hylkää kotijoukkueen 
      * antamat tulokset ja haluaa tehdä niihin muutoksia.
      */
@@ -296,25 +259,6 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
         } else 
             setPageState("scoresheet_verify");
     };
-
-    // Jos pageState on "scoresheet_fresh", luodaan EventSource kuuntelemaan 
-    // muiden tekemiä muutoksia pöytäkirjaan
-    useEffect(() => {
-        if (pageState === "scoresheet_fresh" && useLivescore) {
-            const matchId = result.id;
-            console.log("creating eventSource for match id", matchId);
-            const eventSource = new EventSource(`${getBackendUrl()}/api/live/watch_match/${matchId}`);
-            setEventSource(eventSource);
-            const closeEventSource = () => {
-                eventSource?.close();
-            };
-            window.addEventListener('beforeunload', closeEventSource);
-            return () => {
-                closeEventSource();
-                window.removeEventListener('beforeunload', closeEventSource);
-            };
-        }
-    }, [pageState, useLivescore]);
     
     console.log("pageState", pageState);
     console.log("result", result);
@@ -330,10 +274,9 @@ const ResultSubmission: React.FC<{resultProp?: ScoresheetFields|null}> = ({resul
             <Scoresheet 
                 initialValues={result} 
                 isModifiable 
-                onChangeCallback={handleScoresheetLiveResult}
+                isLive={useLivescore}
                 submitCallback={handleSubmit} 
                 onAlreadySubmitted={onAlreadySubmitted} 
-                eventSource={eventSource} 
                 uuid={uuid.current}
             />}
 
