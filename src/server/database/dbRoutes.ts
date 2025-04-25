@@ -4,7 +4,7 @@
 
 import express, { Router } from 'express';
 import fs from 'fs';
-import { getMatchesToReport, getPlayersInTeam, getResultsTeams, getResultsPlayers, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeamsOld, getResultsPlayersOld, getUsers, getMatchesToReportModerator, getGroups } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeams, getResultsPlayers, getUsers, getMatchesToReportModerator, getGroups, getPlayoffMatches, getPlayoffBracket } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
@@ -114,15 +114,15 @@ const queryFunctions: Record<string, any> = {
     "get_match_info": getMatchInfo,
     "get_matches_to_report": getMatchesToReport,
     "get_matches_to_report_moderator": getMatchesToReportModerator,
-    "get_results_teams_old": getResultsTeamsOld,
     "get_results_teams": getResultsTeams,
-    "get_results_players_old": getResultsPlayersOld,
     "get_results_players": getResultsPlayers,
     "get_scores": getScores,
     "submit_match_result": submitMatchResult,
     "add_player": addPlayer,
     "get_users": getUsers,
     "get_groups": getGroups,
+    "get_playoff_matches": getPlayoffMatches,
+    "get_playoff_bracket": getPlayoffBracket,
 };
 
 /**

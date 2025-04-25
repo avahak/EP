@@ -1,6 +1,7 @@
 /**
  * Funktiot ottelupöytäkirjan datan muuntamiseen serverillä käytettävään muotoon
  * ja sen validoimiseen serverillä.
+ * 
  * HUOM! Tulisi refaktoroida ja yhdistää frontend ottelupöytäkirjan käsittelyn kanssa
  * koska nämä eivät muodosta yhtenäistä kokonaisuutta ja on päällekkäisyyttä.
  */
@@ -79,6 +80,7 @@ function parseMatch(newStatus: string, match: ScoresheetFields) {
         ok: true, 
         status: match.status,
         newStatus,
+        laji: match.laji,
         id: match.id, 
         date: match.date,
         homeTeamName: match.teamHome.name,

@@ -85,6 +85,9 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
 
     const formFields = watch();
 
+    // Pelaajia voi lisätä vain runkosarjassa
+    const allowPlayerAdd = formFields.laji.toLowerCase() === 'r';
+
     // Jos initialValues muuttuu, muutetaan lomakkeen tila siihen, tätä
     // käytetään vain "display"-tilassa.
     useEffect(() => {
@@ -334,12 +337,14 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
         <form onSubmit={handleSubmit(onSubmit)}>
         <Box>
             {/* Lisätään AddPlayerDialog pelaajan lisäämiseksi:  */}
+            {allowPlayerAdd &&
             <AddPlayerDialog
                 isOpen={isAddPlayerDialogOpen}
                 team={currentPlayerSlot.team}
                 onClose={handleCloseAddPlayerDialog}
                 onAddPlayer={(player) => handleAddPlayer(player, currentPlayerSlot.team, currentPlayerSlot.slot)}
             />
+            }
             
             {/* Ottelu ja päivämäärä: */}
             <Box justifyContent="center" sx={{ mb: 2 }}>
@@ -382,11 +387,11 @@ const Scoresheet: React.FC<ScoresheetProps> = ({
                 <Grid container>
                     {/* Kotijoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
-                        {<TeamSelection isModifiable={isModifiable} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
+                        {<TeamSelection isModifiable={isModifiable} allowPlayerAdd={allowPlayerAdd} team={formFields.teamHome} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                     {/* Vierasjoukkueen nimi ja pelaajat: */}
                     <Grid item xs={12} sm={6} sx={{px: 2}}>
-                        {<TeamSelection isModifiable={isModifiable} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
+                        {<TeamSelection isModifiable={isModifiable} allowPlayerAdd={allowPlayerAdd} team={formFields.teamAway} handleSelectPlayer={handleSelectPlayer} />}
                     </Grid>
                 </Grid>
             </Box>

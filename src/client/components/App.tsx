@@ -19,11 +19,7 @@ const App = () => {
                 <br />
                 <Link to="/results_teams">Tuloksia joukkueille</Link> 
                 <br />
-                <Link to="/results_teams_debug">Tuloksia joukkueille (DEBUG)</Link> 
-                <br />
                 <Link to="/results_players">Tuloksia pelaajille</Link> 
-                <br />
-                <Link to="/results_players_debug">Tuloksia pelaajille (DEBUG)</Link> 
                 <br />
                 <Link to="/live_matches">Live-otteluseuranta</Link> 
                 <br />
@@ -32,6 +28,10 @@ const App = () => {
                 <Link to="/login">Simuloi login</Link> 
                 <br />
                 <Link to="/">Etusivu</Link> 
+                <br />
+            </Box>
+            <Box sx={{p: 2}}>
+                <Link to="/playoff_bracket">Pudotuspelit</Link> 
                 <br />
             </Box>
             <Box sx={{p: 2}}>

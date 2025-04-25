@@ -28,6 +28,7 @@ type ScoresheetTeam = {
 type ScoresheetFields = {
     id: number;
     status: string;
+    laji: string;
     teamHome: ScoresheetTeam;
     teamAway: ScoresheetTeam;
     date: string;

@@ -6,7 +6,12 @@ import { ScoresheetTeam } from "../../../shared/scoresheetTypes";
  * Luo joukkueen valintaan liittyvät elementit: joukkueen nimi
  * ja pelaajien valintaan käytettävät select-elementit.
  */
-const TeamSelection: React.FC<{ isModifiable: boolean, team: ScoresheetTeam, handleSelectPlayer: (event: SelectChangeEvent<any>, team: ScoresheetTeam, playerIndex: number) => any }> = ({ isModifiable, team, handleSelectPlayer }) => {
+const TeamSelection: React.FC<{ 
+    isModifiable: boolean, 
+    allowPlayerAdd: boolean,
+    team: ScoresheetTeam, 
+    handleSelectPlayer: (event: SelectChangeEvent<any>, team: ScoresheetTeam, playerIndex: number) => any 
+}> = ({ isModifiable, allowPlayerAdd, team, handleSelectPlayer }) => {
     const teamText = (team.role == "home") ? "Kotijoukkue" : "Vierasjoukkue";
     const playerText = (team.role == "home") ? "Kotipelaaja" : "Vieraspelaaja";
     // const defaultOptionText = (team.teamRole == "home") ? "Valitse kotipelaaja" : "Valitse vieraspelaaja";
@@ -58,7 +63,9 @@ const TeamSelection: React.FC<{ isModifiable: boolean, team: ScoresheetTeam, han
                         {playerIndex == 2 && 
                         <MenuItem value="noPlayer">Ei 3. pelaajaa</MenuItem>
                         }
+                        {allowPlayerAdd && 
                         <MenuItem value="newPlayer">Lisää uusi pelaaja</MenuItem>
+                        }
                     </Select>
                 </FormControl>
                 </Box>

@@ -15,6 +15,44 @@
 
 DELIMITER //
 
+-- Lisää kt/vt yhdellä jos erä on koti/vieras voitto.
+DROP PROCEDURE IF EXISTS procedure_count_round_win //
+CREATE PROCEDURE procedure_count_round_win(IN era VARCHAR(2), INOUT kt INT, INOUT vt INT)
+BEGIN
+    IF era IS NOT NULL THEN
+        IF era REGEXP 'K[1-6]$' THEN
+            SET kt = kt + 1;
+        ELSEIF era REGEXP 'V[1-6]$' THEN
+            SET vt = vt + 1;
+        END IF;
+    END IF;
+END //
+
+-- Laskee pelin tuloksen laskemalla erävoitot yhteen.
+DROP PROCEDURE IF EXISTS procedure_calculate_peli_result //
+CREATE PROCEDURE procedure_calculate_peli_result(
+    IN era1 VARCHAR(2),
+    IN era2 VARCHAR(2),
+    IN era3 VARCHAR(2),
+    IN era4 VARCHAR(2),
+    IN era5 VARCHAR(2),
+    OUT ktulos INT,
+    OUT vtulos INT
+)
+BEGIN
+    DECLARE new_ktulos INT DEFAULT 0;
+    DECLARE new_vtulos INT DEFAULT 0;
+
+    CALL procedure_count_round_win(era1, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era2, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era3, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era4, new_ktulos, new_vtulos);
+    CALL procedure_count_round_win(era5, new_ktulos, new_vtulos);
+
+    SET ktulos = new_ktulos;
+    SET vtulos = new_vtulos;
+END //
+
 -- Ottaa vastaan pelin uuden tuloksen ja päivittää tauluja
 -- ep_peli, ep_ottelu, ep_pelaaja, ep_sarjat 
 -- kumoamalla vanhan tuloksen vaikutukset ja ottamalla uusi tulos huomioon.
@@ -22,7 +60,8 @@ DROP PROCEDURE IF EXISTS procedure_update_all_old_from_peli //
 CREATE PROCEDURE procedure_update_all_old_from_peli(
     IN peli_id INT,
     IN new_peli_ktulos INT,
-    IN new_peli_vtulos INT
+    IN new_peli_vtulos INT,
+    IN update_ranking_stats INT
 )
 BEGIN
     -- Muuttujia säilyttämään id-kenttiä:
@@ -57,12 +96,14 @@ BEGIN
     DECLARE new_is_ottelu_away_win INT;
 
     -- Alustetaan ottelu_id, koti_pelaaja_id, vieras_pelaaja_id:
-    SELECT ottelu, kp, vp INTO ottelu_id, koti_pelaaja_id, vieras_pelaaja_id
+    SELECT ottelu, kp, vp 
+        INTO ottelu_id, koti_pelaaja_id, vieras_pelaaja_id
         FROM ep_peli
         WHERE id = peli_id;
 
     -- Alustetaan koti_joukkue_id, vieras_joukkue_id:
-    SELECT koti, vieras INTO koti_joukkue_id, vieras_joukkue_id
+    SELECT koti, vieras 
+        INTO koti_joukkue_id, vieras_joukkue_id
         FROM ep_ottelu
         WHERE id = ottelu_id;
 
@@ -104,49 +145,52 @@ BEGIN
         SET ktulos = new_ottelu_ktulos, vtulos = new_ottelu_vtulos
         WHERE id = ottelu_id;
             
+    -- Runkosarjan peleissä päivitetään myös ep_pelaaja, ep_sarjat tuloskenttiä:
+    IF update_ranking_stats THEN 
     -- Päivitetään ep_pelaaja kotipelaajalle:
-    UPDATE ep_pelaaja
-        SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
-            h_era = h_era + new_peli_vtulos - old_peli_vtulos,
-            e_era = v_era - h_era,
-            v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
-            h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
-            e_peli = v_peli - h_peli,
-            pelit = v_peli + h_peli
-        WHERE id = koti_pelaaja_id;
-    
-    -- Päivitetään ep_pelaaja vieraspelaajalle:
-    UPDATE ep_pelaaja
-        SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
-            h_era = h_era + new_peli_ktulos - old_peli_ktulos,
-            e_era = v_era - h_era,
-            v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
-            h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
-            e_peli = v_peli - h_peli,
-            pelit = v_peli + h_peli
-        WHERE id = vieras_pelaaja_id;
+        UPDATE ep_pelaaja
+            SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
+                h_era = h_era + new_peli_vtulos - old_peli_vtulos,
+                e_era = v_era - h_era,
+                v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
+                h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
+                e_peli = v_peli - h_peli,
+                pelit = v_peli + h_peli
+            WHERE id = koti_pelaaja_id;
+        
+        -- Päivitetään ep_pelaaja vieraspelaajalle:
+        UPDATE ep_pelaaja
+            SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
+                h_era = h_era + new_peli_ktulos - old_peli_ktulos,
+                e_era = v_era - h_era,
+                v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
+                h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
+                e_peli = v_peli - h_peli,
+                pelit = v_peli + h_peli
+            WHERE id = vieras_pelaaja_id;
 
-    -- Päivitetään ep_sarjat kotijoukkueelle:
-    UPDATE ep_sarjat
-        SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
-            h_era = h_era + new_peli_vtulos - old_peli_vtulos,
-            v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
-            h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
-            voitto = voitto + new_is_ottelu_home_win - old_is_ottelu_home_win,
-            tappio = tappio + new_is_ottelu_away_win - old_is_ottelu_away_win,
-            ottelu = ottelu + new_is_ottelu_home_win - old_is_ottelu_home_win + new_is_ottelu_away_win - old_is_ottelu_away_win
-        WHERE joukkue = koti_joukkue_id;
+        -- Päivitetään ep_sarjat kotijoukkueelle:
+        UPDATE ep_sarjat
+            SET v_era = v_era + new_peli_ktulos - old_peli_ktulos,
+                h_era = h_era + new_peli_vtulos - old_peli_vtulos,
+                v_peli = v_peli + new_is_peli_home_win - old_is_peli_home_win,
+                h_peli = h_peli + new_is_peli_away_win - old_is_peli_away_win,
+                voitto = voitto + new_is_ottelu_home_win - old_is_ottelu_home_win,
+                tappio = tappio + new_is_ottelu_away_win - old_is_ottelu_away_win,
+                ottelu = ottelu + new_is_ottelu_home_win - old_is_ottelu_home_win + new_is_ottelu_away_win - old_is_ottelu_away_win
+            WHERE joukkue = koti_joukkue_id;
 
-    -- Päivitetään ep_sarjat vierasjoukkueelle:
-    UPDATE ep_sarjat
-        SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
-            h_era = h_era + new_peli_ktulos - old_peli_ktulos,
-            v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
-            h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
-            voitto = voitto + new_is_ottelu_away_win - old_is_ottelu_away_win,
-            tappio = tappio + new_is_ottelu_home_win - old_is_ottelu_home_win,
-            ottelu = ottelu + new_is_ottelu_home_win - old_is_ottelu_home_win + new_is_ottelu_away_win - old_is_ottelu_away_win
-        WHERE joukkue = vieras_joukkue_id;
+        -- Päivitetään ep_sarjat vierasjoukkueelle:
+        UPDATE ep_sarjat
+            SET v_era = v_era + new_peli_vtulos - old_peli_vtulos,
+                h_era = h_era + new_peli_ktulos - old_peli_ktulos,
+                v_peli = v_peli + new_is_peli_away_win - old_is_peli_away_win,
+                h_peli = h_peli + new_is_peli_home_win - old_is_peli_home_win,
+                voitto = voitto + new_is_ottelu_away_win - old_is_ottelu_away_win,
+                tappio = tappio + new_is_ottelu_home_win - old_is_ottelu_home_win,
+                ottelu = ottelu + new_is_ottelu_home_win - old_is_ottelu_home_win + new_is_ottelu_away_win - old_is_ottelu_away_win
+            WHERE joukkue = vieras_joukkue_id;
+    END IF;
 END //
 
 -- Ottaa vastaan ep_peli id ja päivittää tauluja
@@ -154,7 +198,8 @@ END //
 -- kumoamalla vanhat pelin vaikutukset ja ottamalla pelin erätulokset huomioon.
 DROP PROCEDURE IF EXISTS procedure_update_all_old_from_erat //
 CREATE PROCEDURE procedure_update_all_old_from_erat(
-    IN peli_id INT
+    IN peli_id INT,
+    IN update_ranking_stats INT
 )
 BEGIN
     -- Muuttujat ep_erat rivin kentille:
@@ -178,7 +223,7 @@ BEGIN
     CALL procedure_calculate_peli_result(era1_value, era2_value, era3_value, era4_value, era5_value, ktulos, vtulos);
 
     -- Päivitetään tuloksia useassa taulussa ottaen huomioon uuden pelin tuloksen:
-    CALL procedure_update_all_old_from_peli(peli_id, ktulos, vtulos);
+    CALL procedure_update_all_old_from_peli(peli_id, ktulos, vtulos, update_ranking_stats);
 END //
 
 -- Kutsuu procedure_update_all_old_from_erat jokaiselle ep_erat riville,
@@ -209,7 +254,7 @@ BEGIN
             LEAVE read_loop;
         END IF;
 
-        CALL procedure_update_all_old_from_erat(id_val);
+        CALL procedure_update_all_old_from_erat(id_val, 1);
     END LOOP;
 
     CLOSE id_cursor;

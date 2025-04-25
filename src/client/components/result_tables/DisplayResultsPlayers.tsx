@@ -4,7 +4,7 @@
  * Material UI Tabs pohjana käytetty: https://mui.com/material-ui/react-tabs/
  */
 
-import { compareJsonObjects, deepCopy, extractKeys } from "../../../shared/generalUtils";
+import { deepCopy, extractKeys } from "../../../shared/generalUtils";
 import { serverFetch } from "../../utils/apiUtils";
 import { Box, Container, Link, Tab, Tabs, Typography } from "@mui/material";
 import { CaromWinsTable, CombinationWinsTable, DesignationWinsTable, GoldenBreakWinsTable, RunoutWinsTable, ThreeFoulWinsTable, TotalWinsTable } from "./PlayerTables";
@@ -205,10 +205,9 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
 /**
  * Testisivu pelaajien tulosten esittämiselle.
  */
-const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) => {
+const DisplayResultsPlayers: React.FC = () => {
     const [lohko, setLohko] = useState<any>("");
     const [resultsOld, setResultsOld] = useState<any>("");
-    const [resultsNew, setResultsNew] = useState<any>("");
 
     /**
      * Hakee tietokannasta sarjatilanteen varsinaisten taulujen perusteella.
@@ -220,7 +219,7 @@ const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) =
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_results_players_old", ...(lohko && { params: { lohko } }) }),
+                body: JSON.stringify({ queryName: "get_results_players", ...(lohko && { params: { lohko } }) }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -231,61 +230,15 @@ const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) =
         }
     };
 
-    /**
-     * Hakee tietokannasta sarjatilanteen _tulokset taulujen perusteella.
-     */
-    const fetchResultsNew = async () => {
-        try {
-            const response = await serverFetch("/api/db/specific_query", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ queryName: "get_results_players", ...(lohko && { params: { lohko } }) }),
-            }, null);
-            if (!response.ok) 
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            const jsonData = await response.json();
-            console.log("jsonData", jsonData);
-            setResultsNew(playerDataProcessor(jsonData));
-        } catch(error) {
-            console.error('Error:', error);
-        }
-    };
-
     // Haetaan data jos lohko muuttuu:
     useEffect(() => {
         // console.log("DisplayResultsPlayers useEffect");
-        if (lohko !== "") {
+        if (lohko !== "")
             fetchResultsOld();
-            if (debug)
-                fetchResultsNew();
-        }
     }, [lohko]);
 
     console.log("lohko", lohko);
     console.log("resultsOld", resultsOld);
-    if (debug)
-        console.log("resultsNew", resultsNew);
-
-    let diff = [];
-
-    if (debug && resultsOld && resultsNew) {
-        const reduction = (results: any[]) => results.reduce((acc, curr) => {
-            acc[curr.id] = curr;
-            return acc;
-        }, {} as Record<string, any>);
-        const reductionOld = reduction(resultsOld);
-        const reductionNew = reduction(resultsNew);
-        console.log("reductionOld", reductionOld);
-        console.log("reductionNew", reductionNew);
-        diff = compareJsonObjects(reductionOld, reductionNew);
-        if (diff.length === 0) {
-            console.log("Pelaajapörssit ovat samat varsinaisissa tauluissa ja _tulokset tauluissa.")
-        } else {
-            console.log("Tulokset eroavat ainakin seuraavassa kohdassa:", diff);
-        }
-    }
 
     return (
         <>
@@ -302,31 +255,11 @@ const DisplayResultsPlayers: React.FC<{ debug?: Boolean }> = ({debug = false}) =
             </Typography>
         </Box>}
 
-        { debug && resultsOld && resultsNew &&
-        <Box sx={{my: 2}}>
-        { diff.length === 0 ?
-        <Typography sx={{color: 'green'}}>
-            Tulokset molemmissa tauluissa ovat samat.
-        </Typography>
-        :
-        <Typography sx={{color: 'red', fontSize: '1.5rem'}}>
-            Ongelma: Tulokset eroavat toisistaan! Katso konsoli.
-        </Typography>
-        }
-        </Box>
-        }
-
         {resultsOld ?
         <PlayerResults results={resultsOld}/>
         : 
         "Ladataan pelaajapörssiä.."
         }
-
-        {debug && (resultsNew ?
-        <PlayerResults results={resultsNew}/>
-        : 
-        "Ladataan pelaajapörssiä.."
-        )}
 
         </Container>
         </>

@@ -1,0 +1,72 @@
+.bracket {
+    display: flex;
+    gap: 50px;
+    margin: 10px;
+    padding: 10px;
+    overflow: auto;
+    position: relative;
+}
+  
+.roundColumn {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    min-width: 200px;
+    gap: 40px;
+    /* border: 1px dashed red; */
+}
+  
+.match {
+    border: 2px solid black;
+    border-radius: 8px;
+    padding: 2px;
+}
+
+/* path {
+    transition: d 0.2s ease-out;
+} */
+
+/* .match-table {
+    border-radius: 8px;
+} */
+  
+.team {
+    padding: 8px;
+    text-align: center;
+}
+
+.bbottom {
+    border-bottom: 3px solid black;
+}
+
+.bleft {
+    border-left: 2px solid black;
+}
+
+/* .bright {
+    border-right: 1px solid black;
+} */
+
+/* .cell {
+    margin: 0 !important;
+    padding: 10px !important;
+} */
+
+.description {
+    padding: 0px;
+    text-align: center;
+}
+  
+/* .separator {
+    height: 2px;
+    background: black;
+    margin: 0 10px;
+} */
+
+.winner {
+    background: #afa;
+}
+
+.loser {
+    background: #ddd;
+}

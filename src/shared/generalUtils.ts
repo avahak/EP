@@ -6,6 +6,16 @@
 import { isObject, isEqual } from 'lodash';
 import { useEffect, useRef } from 'react';
 
+const DAY_NAMES = [
+    ['Sunnuntai', 'Su'], 
+    ['Maanantai', 'Ma'], 
+    ['Tiistai', 'Ti'], 
+    ['Keskiviikko', 'Ke'], 
+    ['Torstai', 'To'], 
+    ['Perjantai', 'Pe'], 
+    ['Lauantai', 'La']
+];
+
 /**
  * Palauttaa Suomen ajan merkkijonona.
  */
@@ -50,8 +60,7 @@ function deepCopy<T>(object: T): T {
  * Palauttaa viikonpäivän nimen annetulle ajalle.
  */
 const getDayOfWeekStrings = (date: Date) => {
-    const names = [['Sunnuntai', 'Su'], ['Maanantai', 'Ma'], ['Tiistai', 'Ti'], ['Keskiviikko', 'Ke'], ['Torstai', 'To'], ['Perjantai', 'Pe'], ['Lauantai', 'La']];
-    return { long: names[date.getDay()][0], short: names[date.getDay()][1] };
+    return { long: DAY_NAMES[date.getDay()][0], short: DAY_NAMES[date.getDay()][1] };
 };
 
 /**
@@ -62,7 +71,17 @@ const dateToDDMMYYYY = (date: Date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}.${month}.${year}`;
-  };
+};
+
+/**
+ * Palauttaa päivämäärän muodossa Day DD.MM.
+ */
+const dateToDayDDMM = (date: Date) => {
+    const shortDayName = DAY_NAMES[date.getDay()][1];
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${shortDayName} ${day}.${month}`;
+};
 
 /**
  * Apufunktio, valitsee count erillistä alkiota taulukosta.
@@ -342,7 +361,7 @@ function useDebounce<T extends (...args: any[]) => void>(cb: T, delay: number) {
 }
 
 export type { Order };
-export { dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
+export { dateToDayDDMM, dateToYYYYMMDD, dateFromYYYYMMDD, pickRandomDistinctElements, 
     getDayOfWeekStrings, dateToDDMMYYYY, extractKeys, getComparator, deepCopy, crudeHash,
     base64JSONStringify, base64JSONparse, base64JSONStringifyNode, base64JSONparseNode,
     createRandomUniqueIdentifier, randomIntBetween, formatTimeDifference, 

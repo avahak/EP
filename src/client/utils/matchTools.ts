@@ -365,6 +365,7 @@ const fetchMatchData = async (matchId: number): Promise<ScoresheetFields> => {
     return {
         id: matchId,
         status: matchInfo.status,
+        laji: matchInfo.laji,
         teamHome: {
             id: matchInfo.homeId,
             name: matchInfo.home,

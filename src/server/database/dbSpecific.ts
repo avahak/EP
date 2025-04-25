@@ -25,7 +25,7 @@ async function getScores(params: Record<string, any>, _auth: AuthTokenPayload | 
     const query = `
         SELECT p.kp, p.vp, e.era1, e.era2, e.era3, e.era4, e.era5
         FROM ep_peli p
-        JOIN ep_erat e ON e.peli=p.id
+            JOIN ep_erat e ON e.peli=p.id
         WHERE p.ottelu=?
         ORDER BY p.id ASC
     `;
@@ -48,14 +48,19 @@ async function getPlayersInTeam(params: Record<string, any>, _auth: AuthTokenPay
 
 /**
  * Hakee taulun ep_ottelu perustiedot sen id:n perusteella.
+ * Laji on 'r' tai 'p' ja kertoo tarvitseeko ottelun kohdalla laskea sarjatilannetuloksia.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
  */
 async function getMatchInfo(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     const query = `
-        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, j1.nimi AS homeFull, j2.nimi AS awayFull, o.status AS status
+        SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, 
+            j2.lyhenne AS away, j1.nimi AS homeFull, j2.nimi AS awayFull, o.status AS status, 
+            k.Laji as laji
         FROM ep_ottelu o
-        JOIN ep_joukkue j1 ON o.koti = j1.id
-        JOIN ep_joukkue j2 ON o.vieras = j2.id
+            JOIN ep_joukkue j1 ON o.koti = j1.id
+            JOIN ep_joukkue j2 ON o.vieras = j2.id
+            JOIN ep_lohko l ON o.lohko = l.id
+            JOIN ep_kausi k ON l.kausi = k.id
         WHERE o.id = ?
     `;
     return myQuery(pool, query, [params.matchId]);
@@ -74,8 +79,8 @@ async function getMatchesToReport(params: Record<string, any>, auth: AuthTokenPa
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
-        JOIN ep_joukkue j1 ON o.koti = j1.id
-        JOIN ep_joukkue j2 ON o.vieras = j2.id
+            JOIN ep_joukkue j1 ON o.koti = j1.id
+            JOIN ep_joukkue j2 ON o.vieras = j2.id
         WHERE (o.status IN ('T', 'K', 'W')) AND (j1.kausi = ?) AND (o.paiva <= ?) 
             AND ((j1.lyhenne = ?) OR (j2.lyhenne = ?))
         ORDER BY o.paiva
@@ -95,8 +100,8 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
     const query = `
         SELECT o.id, o.paiva AS date, j1.id AS homeId, j2.id AS awayId, j1.lyhenne AS home, j2.lyhenne AS away, o.status AS status
         FROM ep_ottelu o
-        JOIN ep_joukkue j1 ON o.koti = j1.id
-        JOIN ep_joukkue j2 ON o.vieras = j2.id
+            JOIN ep_joukkue j1 ON o.koti = j1.id
+            JOIN ep_joukkue j2 ON o.vieras = j2.id
         WHERE ((o.status != 'H') AND (j1.kausi = ?) AND (o.paiva <= ?))
         ORDER BY o.paiva
     `;
@@ -122,7 +127,7 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
  * Tuloskysely joukkueiden tilanteesta, käyttää ep_sarjat taulua.
  * @param params - Sisältää kentän _current_kausi.
  */
-async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     if (!params.lohko)
         throw Error(`Missing parameter "lohko".`);
     const query = `
@@ -130,37 +135,17 @@ async function getResultsTeamsOld(params: Record<string, any>, _auth: AuthTokenP
             ep_sarjat.voitto, ep_sarjat.tappio, ep_sarjat.v_era, 
             ep_sarjat.h_era, ep_sarjat.v_peli, ep_sarjat.h_peli
         FROM ep_sarjat
-        JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
+            JOIN ep_lohko ON ep_lohko.id = ep_sarjat.lohko
         WHERE ep_lohko.id = ?
     `;
     return myQuery(pool, query, [params.lohko]);
 }
 
 /**
- * Tuloskysely joukkueiden tilanteesta, käyttää ep_joukkue_tulokset taulua.
- * @param params - Sisältää kentän _current_kausi.
- */
-async function getResultsTeams(params: Record<string, any>, _auth: AuthTokenPayload | null) {
-    if (!params.lohko)
-        throw Error(`Missing parameter "lohko".`);
-    const query = `
-        SELECT ep_joukkue.id AS joukkue, ep_joukkue.nimi, ep_joukkue.lyhenne, 
-            ep_joukkue_tulokset.voitto, ep_joukkue_tulokset.tappio, 
-            ep_joukkue_tulokset.v_era, ep_joukkue_tulokset.h_era, 
-            ep_joukkue_tulokset.v_peli, ep_joukkue_tulokset.h_peli
-        FROM ep_joukkue_tulokset
-        JOIN ep_joukkue ON ep_joukkue.id = ep_joukkue_tulokset.joukkue
-        WHERE ep_joukkue.lohko = ?
-    `;
-    return myQuery(pool, query, [params.lohko]);
-}
-
-/**
- * Tuloskysely pelaajien tilanteesta, käyttää suoraan tauluissa kirjattuja tuloksia,
- * eli ei käytä x_tulokset tauluja.
+ * Tuloskysely pelaajien tilanteesta.
  * @param params Sisältää kentän _current_kausi.
  */
-async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthTokenPayload | null) {
+async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload | null) {
     if (!params.lohko)
         throw Error(`Missing parameter "lohko".`);
     const queryGeneral = `
@@ -229,81 +214,6 @@ async function getResultsPlayersOld(params: Record<string, any>, _auth: AuthToke
     return [resultGeneral, resultHome, resultAway];
 }
 
-/**
- * Tuloskysely pelaajien tilanteesta, käyttäen _tulokset tauluja.
- * @param params Sisältää kentän _current_kausi.
- */
-async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPayload | null) {
-    if (!params.lohko)
-        throw Error(`Missing parameter "lohko".`);
-    const queryGeneral = `
-        SELECT 
-            ep_pelaaja.id,
-            ep_pelaaja.nimi,
-            ep_joukkue.lyhenne,
-            ep_pelaaja_tulokset.v_peli + ep_pelaaja_tulokset.h_peli AS pelit,
-            ep_pelaaja_tulokset.v_era,
-            ep_pelaaja_tulokset.h_era,
-            ep_pelaaja_tulokset.v_peli,
-            ep_pelaaja_tulokset.h_peli
-        FROM
-            ep_pelaaja
-            JOIN ep_pelaaja_tulokset ON ep_pelaaja_tulokset.pelaaja = ep_pelaaja.id
-            JOIN ep_joukkue ON ep_joukkue.id = ep_pelaaja.joukkue
-        WHERE 
-            ep_joukkue.lohko = ?
-    `;
-    const queryHome = `
-        SELECT
-            p.kp AS id,
-            CAST(SUM((e.era1 = 'K1') + (e.era2 = 'K1') + (e.era3 = 'K1') + (e.era4 = 'K1') + (e.era5 = 'K1')) AS SIGNED) AS K1,
-            CAST(SUM((e.era1 = 'K2') + (e.era2 = 'K2') + (e.era3 = 'K2') + (e.era4 = 'K2') + (e.era5 = 'K2')) AS SIGNED) AS K2,
-            CAST(SUM((e.era1 = 'K3') + (e.era2 = 'K3') + (e.era3 = 'K3') + (e.era4 = 'K3') + (e.era5 = 'K3')) AS SIGNED) AS K3,
-            CAST(SUM((e.era1 = 'K4') + (e.era2 = 'K4') + (e.era3 = 'K4') + (e.era4 = 'K4') + (e.era5 = 'K4')) AS SIGNED) AS K4,
-            CAST(SUM((e.era1 = 'K5') + (e.era2 = 'K5') + (e.era3 = 'K5') + (e.era4 = 'K5') + (e.era5 = 'K5')) AS SIGNED) AS K5,
-            CAST(SUM((e.era1 = 'K6') + (e.era2 = 'K6') + (e.era3 = 'K6') + (e.era4 = 'K6') + (e.era5 = 'K6')) AS SIGNED) AS K6,
-            CAST(SUM(pt.ktulos) AS SIGNED) AS v_era_koti,
-            CAST(SUM(pt.vtulos) AS SIGNED) AS h_era_koti,
-            CAST(SUM(IF(pt.ktulos > pt.vtulos, 1, 0)) AS SIGNED) AS v_peli_koti,
-            CAST(SUM(IF(pt.vtulos > pt.ktulos, 1, 0)) AS SIGNED) AS h_peli_koti
-        FROM
-            ep_erat AS e
-            JOIN ep_peli AS p ON p.id = e.peli
-            JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
-            JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-        WHERE
-            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
-        GROUP BY
-            p.kp
-    `;
-    const queryAway = `
-        SELECT
-            p.vp AS id,
-            CAST(SUM((e.era1 = 'V1') + (e.era2 = 'V1') + (e.era3 = 'V1') + (e.era4 = 'V1') + (e.era5 = 'V1')) AS SIGNED) AS V1,
-            CAST(SUM((e.era1 = 'V2') + (e.era2 = 'V2') + (e.era3 = 'V2') + (e.era4 = 'V2') + (e.era5 = 'V2')) AS SIGNED) AS V2,
-            CAST(SUM((e.era1 = 'V3') + (e.era2 = 'V3') + (e.era3 = 'V3') + (e.era4 = 'V3') + (e.era5 = 'V3')) AS SIGNED) AS V3,
-            CAST(SUM((e.era1 = 'V4') + (e.era2 = 'V4') + (e.era3 = 'V4') + (e.era4 = 'V4') + (e.era5 = 'V4')) AS SIGNED) AS V4,
-            CAST(SUM((e.era1 = 'V5') + (e.era2 = 'V5') + (e.era3 = 'V5') + (e.era4 = 'V5') + (e.era5 = 'V5')) AS SIGNED) AS V5,
-            CAST(SUM((e.era1 = 'V6') + (e.era2 = 'V6') + (e.era3 = 'V6') + (e.era4 = 'V6') + (e.era5 = 'V6')) AS SIGNED) AS V6,
-            CAST(SUM(pt.vtulos) AS SIGNED) AS v_era_vieras,
-            CAST(SUM(pt.ktulos) AS SIGNED) AS h_era_vieras,
-            CAST(SUM(IF(pt.vtulos > pt.ktulos, 1, 0)) AS SIGNED) AS v_peli_vieras,
-            CAST(SUM(IF(pt.ktulos > pt.vtulos, 1, 0)) AS SIGNED) AS h_peli_vieras
-        FROM
-            ep_erat AS e
-            JOIN ep_peli AS p ON p.id = e.peli
-            JOIN ep_peli_tulokset AS pt ON pt.peli = p.id
-            JOIN ep_ottelu ON ep_ottelu.id = p.ottelu
-        WHERE
-            ep_ottelu.lohko = ? AND ep_ottelu.status <> 'T'
-        GROUP BY
-            p.vp
-    `;
-    const resultGeneral = await myQuery(pool, queryGeneral, [params.lohko]);
-    const resultHome = await myQuery(pool, queryHome, [params.lohko]);
-    const resultAway = await myQuery(pool, queryAway, [params.lohko]);
-    return [resultGeneral, resultHome, resultAway];
-}
 
 /**
  * Ottelun tulosten kirjaaminen.
@@ -355,8 +265,12 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
         if (!Array.isArray(dbRows) || dbRows.length !== 1)
             throw new CustomError("DATA_MISMATCH", { matchId: match.id });
         const dbMatch = dbRows[0] as RowDataPacket;
-        if (dbMatch.home !== match.homeTeamName || dbMatch.away !== match.awayTeamName || dbMatch.status !== match.status)
+        if (dbMatch.home !== match.homeTeamName || dbMatch.away !== match.awayTeamName 
+                || dbMatch.status !== match.status || dbMatch.laji !== match.laji)
             throw new CustomError("DATA_MISMATCH", { dbMatchStatus: dbMatch.status, matchId: match.id });
+
+        // Päivitetään ep_pelaaja, ep_sarjat tuloskenttiä ainoastaan runkosarjan peleissä
+        const updateRankingStats = dbMatch.laji.toLowerCase() === 'r';
 
         const connection = await pool.getConnection();
         await connection.beginTransaction(); 
@@ -369,8 +283,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             let [rows] = await connection.query(query0_1, [match.id]) as any;
             if (rows && typeof rows[Symbol.iterator] === 'function') {
                 for (let row of (rows as any)) {
-                    const query0_2 = `CALL procedure_update_all_old_from_peli(?, ?, ?)`;
-                    await connection.query(query0_2, [row.id, 0, 0]);
+                    const query0_2 = `CALL procedure_update_all_old_from_peli(?, ?, ?, ?)`;
+                    await connection.query(query0_2, [row.id, 0, 0, updateRankingStats]);
                     // console.log("handling id:", row.id);
                 }
             }
@@ -379,7 +293,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
             const query1 = `
                 DELETE e 
                 FROM ep_erat e
-                JOIN ep_peli p ON e.peli = p.id
+                    JOIN ep_peli p ON e.peli = p.id
                 WHERE p.ottelu = ?
             `;
             await connection.query(query1, [match.id]);
@@ -415,9 +329,8 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
                 const query4_1 = `INSERT INTO ep_erat (peli, era1, era2, era3, era4, era5) VALUES (?, ?, ?, ?, ?, ?)`;
                 await connection.query(query4_1, rounds[k]);
 
-                // Päivitetään varsinaisten taulujen tulosmuuttujat:
-                const query4_2 = `CALL procedure_update_all_old_from_erat(?)`;
-                await connection.query(query4_2, [rounds[k][0]]);
+                const query4_2 = `CALL procedure_update_all_old_from_erat(?, ?)`;
+                await connection.query(query4_2, [rounds[k][0], updateRankingStats]);
             }
 
             // Muutetaan ottelun päivämäärä ja status:
@@ -448,6 +361,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
 /**
  * Lisää uuden pelaajan joukkueeseen.
+ * HUOM! Tässä tulisi tarkistaa että kyseessä on runkosarja, mutta ei tarkisteta.
  * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
  */
 async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | null) {
@@ -499,7 +413,54 @@ async function getGroups(_params: Record<string, any>, _auth: AuthTokenPayload |
     return data;
 }
 
+/**
+ * Pudotuspelien apufunktio. Hakee kaikki pudotuspelien ottelut.
+ * 
+ * TODO lohko tulisi jotenkin tarkistaa pudotuspelilohkoksi.
+ */
+async function getPlayoffMatches(params: Record<string, any>) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
+    const query = `
+        SELECT o.id AS id, o.koti, o.vieras, j1.lyhenne AS k_nimi, j2.lyhenne AS v_nimi, 
+            o.ktulos, o.vtulos, o.paiva,
+            COALESCE(CAST(SUM(p.ktulos) AS SIGNED), 0) AS k_erat, 
+            COALESCE(CAST(SUM(p.vtulos) AS SIGNED), 0) AS v_erat
+        FROM 
+            ep_ottelu AS o
+            LEFT JOIN ep_peli AS p ON p.ottelu = o.id
+            JOIN ep_joukkue AS j1 ON o.koti = j1.id
+            JOIN ep_joukkue AS j2 ON o.vieras = j2.id
+        WHERE
+            o.lohko = ?
+        GROUP BY 
+            o.id
+        LIMIT 64
+    `;
+    return myQuery(pool, query, [params.lohko]);
+}
+
+/**
+ * Pudotuspelien apufunktio. Hakee tiedot ep_cup taulusta.
+ * 
+ * TODO lohko tulisi jotenkin tarkistaa pudotuspelilohkoksi.
+ */
+async function getPlayoffBracket(params: Record<string, any>) {
+    if (!params.lohko)
+        throw Error(`Missing parameter "lohko".`);
+    const query = `
+        SELECT koti, vier AS vieras
+        FROM 
+            ep_cup25
+        WHERE
+            puoli = 'A'
+        ORDER BY
+            id
+    `;
+    return myQuery(pool, query, [params.lohko]);
+}
+
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,
-    getPlayersInTeam, getScores, getResultsTeams, getResultsTeamsOld, 
-    getResultsPlayersOld, getResultsPlayers, submitMatchResult, addPlayer, 
-    getUsers, getGroups };
+    getPlayersInTeam, getScores, getResultsTeams, 
+    getResultsPlayers, submitMatchResult, addPlayer, 
+    getUsers, getGroups, getPlayoffMatches, getPlayoffBracket };
