@@ -128,11 +128,9 @@ function computeRounds(bracket: any, matchesOriginal: any): MatchInfo[][] { //, 
             const teamTwo = rounds[round][k].teamTwo;
             const matchHome = matchesLut.has(`${teamOne.name},${teamTwo.name}`) ? matchesLut.get(`${teamOne.name},${teamTwo.name}`) : null;
             const matchAway = matchesLut.has(`${teamTwo.name},${teamOne.name}`) ? matchesLut.get(`${teamTwo.name},${teamOne.name}`) : null;
-            if (matchHome && !matchHasResult(matchHome))
-            // if (matchHome)  // TODO fix
+            if (matchHome && !matchHasResult(matchHome) && matchHome.paiva)
                 dates.push(matchHome.paiva);
-            if (matchAway && !matchHasResult(matchAway))
-            // if (matchAway)  // TODO fix
+            if (matchAway && !matchHasResult(matchAway) && matchAway.paiva)
                 dates.push(matchAway.paiva);
             dates.sort();       // Päivämäärät pitäisi olla merkkijonovertailtavassa muodossa
             rounds[round][k].dates = dates.map((date) => dateToDayDDMM(dateFromYYYYMMDD(date))).join(', ');

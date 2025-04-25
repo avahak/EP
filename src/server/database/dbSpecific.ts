@@ -361,7 +361,7 @@ async function submitMatchResult(params: Record<string, any>, auth: AuthTokenPay
 
 /**
  * Lisää uuden pelaajan joukkueeseen.
- * HUOM! Tässä tulisi tarkistaa että kyseessä on runkosarja, mutta ei tarkisteta.
+ * TODO Tässä tulisi tarkistaa että kyseessä on runkosarja, mutta ei tarkisteta.
  * @param params - Sisältää kentät teamId (ep_joukkue.id), name, sex.
  */
 async function addPlayer(params: Record<string, any>, auth: AuthTokenPayload | null) {
