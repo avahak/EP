@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { serverFetch } from "../../utils/apiUtils";
-import { Box, Typography } from "@mui/material";
+import { Box, Link, Typography } from "@mui/material";
 import { RenderPlayoffBracket } from "./RenderBracket";
 import { createEmptyMatch, getWinnerAndLoser, isEmptyName, matchHasResult, MatchInfo } from "./common";
 // import { ArrowLeft, ArrowRight } from "@mui/icons-material";
@@ -282,6 +282,12 @@ const PlayoffBracket: React.FC<{ lohko: number }> = ({ lohko }) => {
             /> */}
 
             <RenderPlayoffBracket rounds={rounds} />
+
+            {<Box sx={{mx: 2, my: 4}}>
+                <Typography>
+                    <Link href="/Ohjelma37.php">Takaisin Alueliiga-sivulle</Link>
+                </Typography>
+            </Box>}
         </Box>
     );
 };

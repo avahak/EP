@@ -105,6 +105,8 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
         WHERE ((o.status != 'H') AND (j1.kausi = ?) AND (o.paiva <= ?))
         ORDER BY o.paiva
     `;
+    // Huom. Jos päivä o.paiva on NULL niin (o.paiva <= ?) evaluoituu NULL arvoiseksi 
+    //      ja rivi ei tule mukaan.
     return myQuery(pool, query, [params._current_kausi, dateNow]);
 }
 

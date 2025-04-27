@@ -3,7 +3,7 @@
  */
 
 import { serverFetch } from "../../utils/apiUtils";
-import { Container, Typography } from "@mui/material";
+import { Box, Container, Link, Typography } from "@mui/material";
 import { TeamsTable } from "./TeamTables";
 import { useContext, useEffect, useState } from "react";
 import { GroupSelector } from "./GroupSelector";
@@ -68,6 +68,12 @@ const DisplayResultsTeams: React.FC = () => {
         : 
         "Ladataan taulua.."
         }
+
+        {<Box sx={{my: 2}}>
+            <Typography>
+                <Link href="/Ohjelma37.php">Takaisin Alueliiga-sivulle</Link>
+            </Typography>
+        </Box>}
 
         </Container>
         </>

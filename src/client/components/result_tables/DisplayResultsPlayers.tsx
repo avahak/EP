@@ -261,6 +261,12 @@ const DisplayResultsPlayers: React.FC = () => {
         "Ladataan pelaajapörssiä.."
         }
 
+        {<Box sx={{my: 2}}>
+            <Typography>
+                <Link href="/Ohjelma37.php">Takaisin Alueliiga-sivulle</Link>
+            </Typography>
+        </Box>}
+
         </Container>
         </>
     );
