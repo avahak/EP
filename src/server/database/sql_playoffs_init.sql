@@ -36,8 +36,8 @@ VALUES (@new_kausi, 'PP', 'Pudotuspelit 2024-2025');
 SET @new_lohko = LAST_INSERT_ID();
 
 -- Copy teams to playoff season
-INSERT INTO ep_joukkue (lyhenne, nimi, kausi, lohko, ravintola, yhdhenk, kapt, kpuh, varakapt, vkpuh)
-SELECT lyhenne, nimi, @new_kausi, @new_lohko, ravintola, yhdhenk, kapt, kpuh, varakapt, vkpuh
+INSERT INTO ep_joukkue (lyhenne, nimi, kausi, lohko, ravintola, yhdhenk, yhdpuh, kapt, kpuh, varakapt, vkpuh)
+SELECT lyhenne, nimi, @new_kausi, @new_lohko, ravintola, yhdhenk, yhdpuh, kapt, kpuh, varakapt, vkpuh
 FROM ep_joukkue AS j
     JOIN playoff_teams AS t ON t.team = j.id;
 

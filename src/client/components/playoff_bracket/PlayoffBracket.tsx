@@ -285,7 +285,7 @@ const PlayoffBracket: React.FC<{ lohko: number }> = ({ lohko }) => {
 
             {<Box sx={{mx: 2, my: 4}}>
                 <Typography>
-                    <Link href="/Ohjelma37.php">Takaisin Alueliiga-sivulle</Link>
+                    <Link href="/Ohjelma39.php">Takaisin Alueliiga-sivulle</Link>
                 </Typography>
             </Box>}
         </Box>
