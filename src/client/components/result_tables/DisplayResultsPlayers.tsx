@@ -247,7 +247,7 @@ const DisplayResultsPlayers: React.FC = () => {
         {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
-        <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason={true} />
+        <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason />
 
         {<Box sx={{my: 2}}>
             <Typography>

@@ -9,7 +9,11 @@ import React, { useEffect, useState } from "react";
 /**
  * Testisivu pelaajien tulosten esittämiselle.
  */
-const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>, includeLatestRegularSeason: boolean}> = ({lohko, setLohko, includeLatestRegularSeason}) => {
+const GroupSelector: React.FC<{
+    lohko: any, 
+    setLohko: React.Dispatch<any>, 
+    includeLatestRegularSeason?: boolean
+}> = ({lohko, setLohko, includeLatestRegularSeason = false}) => {
     const [lohkot, setLohkot] = useState<any>(null);
 
     /**

@@ -217,7 +217,7 @@ async function getResultsPlayers(params: Record<string, any>, _auth: AuthTokenPa
 }
 
 /**
- * Tuloskysely pelaajien tilanteesta. Vastaa getResultsPlayers mutta palauttaa
+ * Tuloskysely pelaajien tilanteesta. Samanlainen kuin getResultsPlayers mutta palauttaa
  * viimeisimmän runkosarja kauden tulokset pelaajille.
  * @param params Sisältää kentän _latest_regular_kausi.
  */
