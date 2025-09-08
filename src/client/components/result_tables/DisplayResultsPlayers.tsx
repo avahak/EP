@@ -214,12 +214,14 @@ const DisplayResultsPlayers: React.FC = () => {
      */
     const fetchResultsOld = async () => {
         try {
+            console.log('fetchResultsOld', lohko);
+            const queryName = Number.isInteger(lohko) ? "get_results_players" : "get_latest_regular_season_results_players";
             const response = await serverFetch("/api/db/specific_query", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_results_players", ...(lohko && { params: { lohko } }) }),
+                body: JSON.stringify({ queryName, ...(lohko && { params: { lohko } }) }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -245,13 +247,13 @@ const DisplayResultsPlayers: React.FC = () => {
         {/* <Link to="/">Takaisin</Link> */}
         <Container maxWidth="md">
 
-        <GroupSelector lohko={lohko} setLohko={setLohko} />
+        <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason={true} />
 
         {<Box sx={{my: 2}}>
             <Typography>
                 Alla pelaajien pistepörssit. 
                 Masters karsinta löytyy{" "}
-                <Link href="/Mporssi37.php">täältä</Link>.
+                <Link href="/Mporssi39.php">täältä</Link>.
             </Typography>
         </Box>}
 

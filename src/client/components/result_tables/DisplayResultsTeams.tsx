@@ -55,7 +55,7 @@ const DisplayResultsTeams: React.FC = () => {
         <>
         <Container maxWidth="md">
 
-        <GroupSelector lohko={lohko} setLohko={setLohko} />
+        <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason={false} />
 
         <Typography sx={{pb: 2}}>
             Mukana on kaikki alkusarjassa pelatut ottelut.

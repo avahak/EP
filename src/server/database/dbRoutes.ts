@@ -4,7 +4,7 @@
 
 import express, { Router } from 'express';
 import fs from 'fs';
-import { getMatchesToReport, getPlayersInTeam, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeams, getResultsPlayers, getUsers, getMatchesToReportModerator, getGroups, getPlayoffMatches, getPlayoffBracket } from './dbSpecific.js';
+import { getMatchesToReport, getPlayersInTeam, getScores, submitMatchResult, getMatchInfo, addPlayer, getResultsTeams, getResultsPlayers, getLatestRegularSeasonResultsPlayers, getUsers, getMatchesToReportModerator, getGroups, getPlayoffMatches, getPlayoffBracket } from './dbSpecific.js';
 import { parseSqlFileContent, recreateDatabase } from './dbGeneral.js';
 import { RequestWithAuth, injectAuth } from '../auth/auth.js';
 import { pool, poolNoDatabase } from './dbConnections.js';
@@ -16,6 +16,9 @@ const router: Router = express.Router();
 
 // Tämänhetkinen kausi, käytetään tietokantakyselyissä:
 const KULUVA_KAUSI = process.env.KULUVA_KAUSI;
+
+// Kuluva tai viimeisin päättynyt runkosarja kausi:
+const VIIMEISIN_RUNKOSARJA_KAUSI = process.env.VIIMEISIN_RUNKOSARJA_KAUSI;
 
 /**
  * SQL-tietokannan testausta, palauttaa tietokannan kaavion ja sen perustamiskomennot.
@@ -116,6 +119,7 @@ const queryFunctions: Record<string, any> = {
     "get_matches_to_report_moderator": getMatchesToReportModerator,
     "get_results_teams": getResultsTeams,
     "get_results_players": getResultsPlayers,
+    "get_latest_regular_season_results_players": getLatestRegularSeasonResultsPlayers,
     "get_scores": getScores,
     "submit_match_result": submitMatchResult,
     "add_player": addPlayer,
@@ -140,6 +144,7 @@ router.post('/specific_query', injectAuth, async (req: RequestWithAuth, res, nex
         const queryName = req.body.queryName;
         const params = req.body.params || {};
         params._current_kausi = KULUVA_KAUSI;
+        params._latest_regular_kausi = VIIMEISIN_RUNKOSARJA_KAUSI;
 
         logger.info("/specific_query", { queryName, ip: req.ip });
 

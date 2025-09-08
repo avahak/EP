@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 /**
  * Testisivu pelaajien tulosten esittämiselle.
  */
-const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>}> = ({lohko, setLohko}) => {
+const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>, includeLatestRegularSeason: boolean}> = ({lohko, setLohko, includeLatestRegularSeason}) => {
     const [lohkot, setLohkot] = useState<any>(null);
 
     /**
@@ -27,8 +27,15 @@ const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>}> = ({l
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
-            setLohkot(jsonData.rows);
-            setLohko(jsonData.rows[jsonData.rows.length-1].id);
+            if (includeLatestRegularSeason) {
+                // Lisätään viimeisin runkosarja kausi
+                const latestRegularSeasonEntry = { id: 'viimeisin_runkosarja', kausi: 'Kaikki pelaajat uusimmassa runkosarjassa' };
+                setLohkot([...jsonData.rows, latestRegularSeasonEntry]);
+                setLohko(latestRegularSeasonEntry.id);
+            } else {
+                setLohkot(jsonData.rows);
+                setLohko(jsonData.rows[jsonData.rows.length-1].id);
+            }
             console.log("lohkot", jsonData.rows);
         } catch(error) {
             console.error('Error:', error);
@@ -52,7 +59,7 @@ const GroupSelector: React.FC<{lohko: any, setLohko: React.Dispatch<any>}> = ({l
                 onChange={(event) => setLohko(event.target.value)}
             >
                 {lohkot.map((group: any, index: number) => (
-                    <MenuItem key={index} value={group.id}>{`${group.kausi} (${group.Laji}), ${group.selite}`}</MenuItem>
+                    <MenuItem key={index} value={group.id}>{Number.isInteger(group.id) ? `${group.kausi} (${group.Laji}), ${group.selite}` : `${group.kausi}`}</MenuItem>
                 ))}
             </Select>
         </FormControl>
