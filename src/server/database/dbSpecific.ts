@@ -16,6 +16,8 @@ import { releaseMatchLock, tryLockMatch } from './dbMatchLocks.js';
 import { logger } from '../logger.js';
 import { CustomError } from '../../shared/customErrors.js';
 
+const CUP_TAULU_LUKU = process.env.CUP_TAULU_LUKU || "";
+
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
  * @param params - Sisältää ep_ottelu.id tiedon kentässä matchId.
@@ -105,6 +107,7 @@ async function getMatchesToReportModerator(params: Record<string, any>, auth: Au
         WHERE ((o.status != 'H') AND (j1.kausi = ?) AND (o.paiva <= ?))
         ORDER BY o.paiva
     `;
+    // console.log(query, params._current_kausi, dateNow);
     // Huom. Jos päivä o.paiva on NULL niin (o.paiva <= ?) evaluoituu NULL arvoiseksi 
     //      ja rivi ei tule mukaan.
     return myQuery(pool, query, [params._current_kausi, dateNow]);
@@ -513,6 +516,7 @@ async function getPlayoffMatches(params: Record<string, any>) {
             o.id
         LIMIT 64
     `;
+    // console.log(query, params.lohko);
     return myQuery(pool, query, [params.lohko]);
 }
 
@@ -527,7 +531,7 @@ async function getPlayoffBracket(params: Record<string, any>) {
     const query = `
         SELECT koti, vier AS vieras
         FROM 
-            ep_cup25
+            ep_cup${CUP_TAULU_LUKU}
         WHERE
             puoli = 'A'
         ORDER BY

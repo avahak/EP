@@ -16,7 +16,7 @@ const SideNavigation: React.FC = () => {
                 <area alt="Kilpailut" shape="rect" coords="0,90,190,109" href={`${url}`+"Kilpailut.php"}/>
                 <area alt="Tiedotteet" shape="rect" coords="0,110,190,123" href={`${url}`+"Tiedotteet.php?vuosi=22&tieto=2"}/>
                 <area alt="Tulospalvelu" shape="rect" coords="0,147,190,163" href={`${url}`+"Tulospalvelu.php"}/>
-                <area alt="Ohjelma" shape="rect" coords="0,164,190,180" href={`${url}`+"Ohjelma39.php"}/>
+                <area alt="Ohjelma" shape="rect" coords="0,164,190,180" href={`${url}`+"Ohjelma41.php"}/>
                 <area alt="Mastersporssi" shape="rect" coords="0,181,190,195" href={`/node/results_players`}/>
                 <area alt="Arkisto" shape="rect" coords="0,197,190,212" href={`${url}`+"Arkisto.php"}/>
                 <area alt="Userfilu" shape="rect" coords="0,214,190,235" href="/node/report"/>
