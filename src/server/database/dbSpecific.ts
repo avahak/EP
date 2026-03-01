@@ -16,7 +16,6 @@ import { releaseMatchLock, tryLockMatch } from './dbMatchLocks.js';
 import { logger } from '../logger.js';
 import { CustomError } from '../../shared/customErrors.js';
 
-const CUP_TAULU_LUKU = process.env.CUP_TAULU_LUKU || "";
 
 /**
  * Palauttaa ottelun pelaajat ja erien tulokset.
@@ -526,12 +525,13 @@ async function getPlayoffMatches(params: Record<string, any>) {
  * TODO lohko tulisi jotenkin tarkistaa pudotuspelilohkoksi.
  */
 async function getPlayoffBracket(params: Record<string, any>) {
-    if (!params.lohko)
+    if (!params.lohko)  // || (!params.lohko in LOHKO_CUP_TAULU_MAP)
         throw Error(`Missing parameter "lohko".`);
+    // ${LOHKO_CUP_TAULU_MAP[params.lohko]}
     const query = `
         SELECT koti, vier AS vieras
         FROM 
-            ep_cup${CUP_TAULU_LUKU}
+            ep_cup${params.lohko}
         WHERE
             puoli = 'A'
         ORDER BY

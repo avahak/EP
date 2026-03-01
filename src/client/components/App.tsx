@@ -31,7 +31,7 @@ const App = () => {
                 <br />
             </Box>
             <Box sx={{p: 2}}>
-                <Link to="/playoff_bracket">Pudotuspelit</Link> 
+                <Link to="/playoff_bracket/121">Pudotuspelit</Link> 
                 <br />
             </Box>
             <Box sx={{p: 2}}>

@@ -9,6 +9,7 @@ import { RenderPlayoffBracket } from "./RenderBracket";
 import { createEmptyMatch, getWinnerAndLoser, isEmptyName, matchHasResult, MatchInfo } from "./common";
 // import { ArrowLeft, ArrowRight } from "@mui/icons-material";
 import { dateFromYYYYMMDD, dateToDayDDMM, deepCopy } from "../../../shared/generalUtils";
+import { useParams } from 'react-router-dom';
 
 /**
  * Rakentaa pudotuspelien datan esitettäväksi kaaviomuotoisena. Ensimmäisen kierroksen
@@ -197,9 +198,10 @@ function computeRounds(bracket: any, matchesOriginal: any): MatchInfo[][] { //, 
 /**
  * Komponentti pudotuspelisivulle.
  */
-const PlayoffBracket: React.FC<{ lohko: number }> = ({ lohko }) => {
+const PlayoffBracket: React.FC = () => {
     const [matches, setMatches] = useState<any>(null);
     const [bracket, setBracket] = useState<any>(null);
+    const { lohko } = useParams<{ lohko: string }>();
 
     // debug muuttuja, kuinka monta riviä matches taulukosta otetaan huomioon
     // const [progress_DEBUG, setProgress_DEBUG] = useState<number>(0);
@@ -214,7 +216,8 @@ const PlayoffBracket: React.FC<{ lohko: number }> = ({ lohko }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_playoff_matches", params: { lohko } }),
+                // TODO: Number(lohko) below
+                body: JSON.stringify({ queryName: "get_playoff_matches", params: { lohko: Number(lohko) } }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -285,7 +288,7 @@ const PlayoffBracket: React.FC<{ lohko: number }> = ({ lohko }) => {
 
             {<Box sx={{mx: 2, my: 4}}>
                 <Typography>
-                    <Link href="/Ohjelma41.php">Takaisin Alueliiga-sivulle</Link>
+                    <Link href="/Ohjelma_nyt.php">Takaisin Alueliiga-sivulle</Link>
                 </Typography>
             </Box>}
         </Box>

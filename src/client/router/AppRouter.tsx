@@ -67,7 +67,7 @@ const AppRouter = () => {
                 <Route path="/results_players" element={<Wrap pageName="Pelaajien tuloksia"><DisplayResultsPlayers /></Wrap>} />
                 <Route path="/live_matches" element={<Wrap pageName="Live-ottelut"><LiveMatchesFetch /></Wrap>} />
                 <Route path="/display_match/:matchId" element={<Wrap pageName="Ottelun tiedot"><DisplayScoresheet /></Wrap>} />
-                <Route path="/playoff_bracket" element={<Wrap pageName="Pudotuspelit"><PlayoffBracket lohko={121}/></Wrap>} />
+                <Route path="/playoff_bracket/:lohko" element={<Wrap pageName="Pudotuspelit"><PlayoffBracket/></Wrap>} />
 
                 {/* Konenäkö */}
                 <Route path="/hough" element={<HoughDemo />} />

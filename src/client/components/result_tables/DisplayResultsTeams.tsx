@@ -71,7 +71,7 @@ const DisplayResultsTeams: React.FC = () => {
 
         {<Box sx={{my: 2}}>
             <Typography>
-                <Link href="/Ohjelma41.php">Takaisin Alueliiga-sivulle</Link>
+                <Link href="/Ohjelma_nyt.php">Takaisin Alueliiga-sivulle</Link>
             </Typography>
         </Box>}
 
