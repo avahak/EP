@@ -525,19 +525,23 @@ async function getPlayoffMatches(params: Record<string, any>) {
  * TODO lohko tulisi jotenkin tarkistaa pudotuspelilohkoksi.
  */
 async function getPlayoffBracket(params: Record<string, any>) {
-    if (!params.lohko)  // || (!params.lohko in LOHKO_CUP_TAULU_MAP)
-        throw Error(`Missing parameter "lohko".`);
-    // ${LOHKO_CUP_TAULU_MAP[params.lohko]}
+    const lohko = Number(params.lohko);
+    if (!Number.isInteger(lohko) || lohko < 1)
+        throw Error(`Missing or invalid parameter "lohko".`);
+
+    // VAROITUS! Seuraava kysely muodostetaan dynaamisesti pohjautuen käyttäjän välittämään
+    // params.lohko muuttujaan. Jos koodia muutetaan, pidä huoli että SQL injection 
+    // hyökkäyksen vaaraa ei ole.
     const query = `
         SELECT koti, vier AS vieras
         FROM 
-            ep_cup${params.lohko}
+            ep_cup${lohko}
         WHERE
             puoli = 'A'
         ORDER BY
             id
     `;
-    return myQuery(pool, query, [params.lohko]);
+    return myQuery(pool, query);
 }
 
 export { getMatchInfo, getMatchesToReport, getMatchesToReportModerator,

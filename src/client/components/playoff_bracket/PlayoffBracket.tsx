@@ -216,7 +216,6 @@ const PlayoffBracket: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                // TODO: Number(lohko) below
                 body: JSON.stringify({ queryName: "get_playoff_matches", params: { lohko: Number(lohko) } }),
             }, null);
             if (!response.ok) 
@@ -240,7 +239,7 @@ const PlayoffBracket: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ queryName: "get_playoff_bracket", params: { lohko } }),
+                body: JSON.stringify({ queryName: "get_playoff_bracket", params: { lohko: Number(lohko) } }),
             }, null);
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
