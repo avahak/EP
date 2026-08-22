@@ -221,9 +221,9 @@ const PlayoffBracket: React.FC = () => {
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
+            console.log("matches", jsonData.rows);
             setMatches(jsonData.rows);
             // setProgress_DEBUG(jsonData.rows.length);
-            console.log("matches", jsonData.rows);
         } catch(error) {
             console.error('Error:', error);
         }
@@ -244,8 +244,8 @@ const PlayoffBracket: React.FC = () => {
             if (!response.ok) 
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
-            setBracket(jsonData.rows);
             console.log("bracket", jsonData.rows);
+            setBracket(jsonData.rows);
         } catch(error) {
             console.error('Error:', error);
         }

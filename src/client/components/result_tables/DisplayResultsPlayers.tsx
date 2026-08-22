@@ -25,28 +25,28 @@ type TabPanelProps = {
  */
 const playerDataProcessor = (data: any) => {
     const [rows1, rows2, rows3] = data.rows;
-    const newResults = deepCopy(rows1); 
+    const newResults = deepCopy(rows1);
     const map: Map<number, any> = new Map();
-    rows1.forEach((row: any, index: number) => { 
+    rows1.forEach((row: any, index: number) => {
         map.set(row.id, index);
     });
-    rows2.forEach((row: any, _index: number) => { 
-        newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
+    rows2.forEach((row: any, _index: number) => {
+        newResults[map.get(row.id)] = { ...newResults[map.get(row.id)], ...row };
     });
-    rows3.forEach((row: any, _index: number) => { 
-        newResults[map.get(row.id)] = {...newResults[map.get(row.id)], ...row};
+    rows3.forEach((row: any, _index: number) => {
+        newResults[map.get(row.id)] = { ...newResults[map.get(row.id)], ...row };
     });
     const keys = extractKeys(newResults);
-    
+
     newResults.forEach((row: any, _index: number) => {
-        for (const [key, _type] of keys) 
+        for (const [key, _type] of keys)
             if (!row[key])
                 row[key] = 0;
     });
 
     console.log("keys", keys);
     console.log("newResults", newResults);
-        
+
     return newResults;
 };
 
@@ -65,7 +65,7 @@ function a11yProps(index: number) {
  */
 function CustomTabPanel(props: TabPanelProps) {
     const { children, value, index, ...other } = props;
-  
+
     return (
         <div
             role="tabpanel"
@@ -75,9 +75,9 @@ function CustomTabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-            <Box sx={{ py: 3, px: 0 }}>
-                {children}
-            </Box>
+                <Box sx={{ py: 3, px: 0 }}>
+                    {children}
+                </Box>
             )}
         </div>
     );
@@ -105,100 +105,100 @@ const PlayerResults: React.FC<{ results: any }> = ({ results }) => {
 
     return (
         <Box>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-                value={activeTab} 
-                onChange={handleTabChange} 
-                aria-label="Pelaajien pörssit"
-                sx={{
-                    '& .MuiTabs-flexContainer': {
-                        flexWrap: 'wrap',
-                    },
-                }}
-            >
-                <Tab label="Kaikki" {...a11yProps(0)} />
-                <Tab label="Ysi" {...a11yProps(1)} />
-                <Tab label="Partti" {...a11yProps(2)} />
-                <Tab label="Kyyti" {...a11yProps(3)} />
-                <Tab label="Kara" {...a11yProps(4)} />
-                <Tab label="Piilopallo" {...a11yProps(5)} />
-                <Tab label="Koti" {...a11yProps(6)} />
-                <Tab label="Vieras" {...a11yProps(7)} />
-            </Tabs>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    aria-label="Pelaajien pörssit"
+                    sx={{
+                        '& .MuiTabs-flexContainer': {
+                            flexWrap: 'wrap',
+                        },
+                    }}
+                >
+                    <Tab label="Kaikki" {...a11yProps(0)} />
+                    <Tab label="Ysi" {...a11yProps(1)} />
+                    <Tab label="Partti" {...a11yProps(2)} />
+                    <Tab label="Kyyti" {...a11yProps(3)} />
+                    <Tab label="Kara" {...a11yProps(4)} />
+                    <Tab label="Piilopallo" {...a11yProps(5)} />
+                    <Tab label="Koti" {...a11yProps(6)} />
+                    <Tab label="Vieras" {...a11yProps(7)} />
+                </Tabs>
+            </Box>
+
+            <CustomTabPanel value={activeTab} index={0}>
+                <Typography sx={{ pb: 2 }}>
+                    Mukana kaikki alkusarjassa pelatut ottelut.
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
+                </Typography>
+                <TotalWinsTable rows={results} isHighlighted={isHighlighted} tableName={"Pistepörssi"} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={1}>
+                <Typography sx={{ pb: 2 }}>
+                    Pörssi aloitusyseistä. Onko kyseessä onni vai taito?
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit.
+                </Typography>
+                <GoldenBreakWinsTable rows={results} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={2}>
+                <Typography sx={{ pb: 2 }}>
+                    Aloituspartit, onko pöydällä väliä??
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP.
+                </Typography>
+                <RunoutWinsTable rows={results} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={3}>
+                <Typography sx={{ pb: 2 }}>
+                    Kyyti, tsäkää vai taitoa??
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit.
+                </Typography>
+                <CombinationWinsTable rows={results} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={4}>
+                <Typography sx={{ pb: 2 }}>
+                    Kiven hallintaa vai tuuria??
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat.
+                </Typography>
+                <CaromWinsTable rows={results} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={5}>
+                <Typography sx={{ pb: 2 }}>
+                    Aina ei ole pakko hyökätä, vai??
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot.
+                </Typography>
+                <ThreeFoulWinsTable rows={results} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={6}>
+                <Typography sx={{ pb: 2 }}>
+                    Vain kotiottelut huomioituna.
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
+                </Typography>
+                <DesignationWinsTable designation={"home"} rows={results} tableName={"Kotiotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
+
+            <CustomTabPanel value={activeTab} index={7}>
+                <Typography sx={{ pb: 2 }}>
+                    Vain vierasottelut huomioituna.
+                    <br />
+                    Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
+                </Typography>
+                <DesignationWinsTable designation={"away"} rows={results} tableName={"Vierasotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
+            </CustomTabPanel>
         </Box>
-        
-        <CustomTabPanel value={activeTab} index={0}>
-            <Typography sx={{pb: 2}}>
-                Mukana kaikki alkusarjassa pelatut ottelut.
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
-            </Typography>
-            <TotalWinsTable rows={results} isHighlighted={isHighlighted} tableName={"Pistepörssi"} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={1}>
-            <Typography sx={{pb: 2}}>
-                Pörssi aloitusyseistä. Onko kyseessä onni vai taito?
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras ysit.
-            </Typography>
-            <GoldenBreakWinsTable rows={results} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={2}>
-            <Typography sx={{pb: 2}}>
-                Aloituspartit, onko pöydällä väliä??
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras AP.
-            </Typography>
-            <RunoutWinsTable rows={results} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={3}>
-            <Typography sx={{pb: 2}}>
-                Kyyti, tsäkää vai taitoa??
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras kyydit.
-            </Typography>
-            <CombinationWinsTable rows={results} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={4}>
-            <Typography sx={{pb: 2}}>
-                Kiven hallintaa vai tuuria??
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vieras karat.
-            </Typography>
-            <CaromWinsTable rows={results} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-        
-        <CustomTabPanel value={activeTab} index={5}>
-            <Typography sx={{pb: 2}}>
-                Aina ei ole pakko hyökätä, vai??
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Yhteensä, 2. Vierasvoitot.
-            </Typography>
-            <ThreeFoulWinsTable rows={results} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={6}>
-            <Typography sx={{pb: 2}}>
-                Vain kotiottelut huomioituna.
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
-            </Typography>
-            <DesignationWinsTable designation={"home"} rows={results} tableName={"Kotiotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-
-        <CustomTabPanel value={activeTab} index={7}>
-            <Typography sx={{pb: 2}}>
-                Vain vierasottelut huomioituna.
-                <br />
-                Lajittelun prioriteetti sijoituksille: 1. Pelivoitot, 2. Peli V-H, 3. Erävoitot, 4. Erä V-H.
-            </Typography>
-            <DesignationWinsTable designation={"away"} rows={results} tableName={"Vierasotteluiden Pistepörssi"} isHighlighted={isHighlighted} />
-        </CustomTabPanel>
-    </Box>
     );
 }
 
@@ -223,11 +223,11 @@ const DisplayResultsPlayers: React.FC = () => {
                 },
                 body: JSON.stringify({ queryName, ...(lohko && { params: { lohko } }) }),
             }, null);
-            if (!response.ok) 
+            if (!response.ok)
                 throw new Error(`HTTP error! Status: ${response.status}`);
             const jsonData = await response.json();
             setResultsOld(playerDataProcessor(jsonData));
-        } catch(error) {
+        } catch (error) {
             console.error('Error:', error);
         }
     };
@@ -244,32 +244,32 @@ const DisplayResultsPlayers: React.FC = () => {
 
     return (
         <>
-        {/* <Link to="/">Takaisin</Link> */}
-        <Container maxWidth="md">
+            {/* <Link to="/">Takaisin</Link> */}
+            <Container maxWidth="md">
 
-        <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason />
+                <GroupSelector lohko={lohko} setLohko={setLohko} includeLatestRegularSeason />
 
-        {<Box sx={{my: 2}}>
-            <Typography>
-                Alla pelaajien pistepörssit. 
-                Masters karsinta löytyy{" "}
-                <Link href="/Mporssi39.php">täältä</Link>.
-            </Typography>
-        </Box>}
+                {<Box sx={{ my: 2 }}>
+                    <Typography>
+                        Alla pelaajien pistepörssit.
+                        Masters karsinta löytyy{" "}
+                        <Link href="/Mporssi_nyt.php">täältä</Link>.
+                    </Typography>
+                </Box>}
 
-        {resultsOld ?
-        <PlayerResults results={resultsOld}/>
-        : 
-        "Ladataan pelaajapörssiä.."
-        }
+                {resultsOld ?
+                    <PlayerResults results={resultsOld} />
+                    :
+                    "Ladataan pelaajapörssiä.."
+                }
 
-        {<Box sx={{my: 2}}>
-            <Typography>
-                <Link href="/Ohjelma_nyt.php">Takaisin Alueliiga-sivulle</Link>
-            </Typography>
-        </Box>}
+                {<Box sx={{ my: 2 }}>
+                    <Typography>
+                        <Link href="/Ohjelma_nyt.php">Takaisin Alueliiga-sivulle</Link>
+                    </Typography>
+                </Box>}
 
-        </Container>
+            </Container>
         </>
     );
 }

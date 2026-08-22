@@ -521,8 +521,6 @@ async function getPlayoffMatches(params: Record<string, any>) {
 
 /**
  * Pudotuspelien apufunktio. Hakee tiedot ep_cup taulusta.
- * 
- * TODO lohko tulisi jotenkin tarkistaa pudotuspelilohkoksi.
  */
 async function getPlayoffBracket(params: Record<string, any>) {
     const lohko = Number(params.lohko);
